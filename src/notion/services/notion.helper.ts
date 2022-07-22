@@ -19,7 +19,7 @@ export class NotionHelper {
   }
 
   getMultiSelect(propertyName: string, values: string[]): any {
-    values = values?.filter((v) => !!v);
+    values = values?.filter((v) => !!v && v.length <= 100);
     if (!values || !values.length) return {};
     return {
       [propertyName]: {
@@ -37,12 +37,32 @@ export class NotionHelper {
     };
   }
 
+  getNumber(propertyName: string, value: number): any {
+    if (value == null) return {};
+    return {
+      [propertyName]: {
+        number: value,
+      },
+    };
+  }
+
   getUrl(propertyName: string, value: string): any {
     value = value?.trim();
     if (!value) return {};
     return {
       [propertyName]: {
         url: value.trim(),
+      },
+    };
+  }
+
+  getRelation(propertyName: string, value: string[]): any {
+    value = value?.filter((v) => !!v);
+    if (!value || value.length === 0) return {};
+
+    return {
+      [propertyName]: {
+        relation: value.map((id) => ({ id })),
       },
     };
   }

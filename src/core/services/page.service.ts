@@ -31,6 +31,7 @@ export class PageService {
   constructor(private options: PageServiceOptions) {}
 
   async getPageHtmlElement(url: string): Promise<HTMLElement> {
+    console.log("Fetching page", url);
     const cache = this.getFromCache(url);
     if (cache && !this.options.noCache) {
       return parse(cache);
@@ -59,7 +60,7 @@ export class PageService {
         await page.waitForTimeout(getRandomInt(200, 1200));
         this.failedUserAgents.add(this.lastUserAgent);
         if (tryCount < 10) {
-          console.log("Trying again", tryCount);
+          console.log(`Got invalid page, trying again ${tryCount + 1}/10`);
           this.reset();
           return this.getPage(url, tryCount + 1);
         } else {
@@ -88,7 +89,8 @@ export class PageService {
   }
 
   private getCachePath(url: string): string {
-    return path.join("./cache/", encodeURIComponent(url) + ".html");
+    const cachePath = this.options.cachePath ?? "./cache/";
+    return path.join(cachePath, encodeURIComponent(url) + ".html");
   }
 
   private reset(): void {
@@ -125,7 +127,7 @@ export class PageService {
     do {
       userAgent = new UserAgent().toString();
       ++count;
-      if (count >= 10000) {
+      if (count >= 100) {
         this.failedUserAgents.clear();
       }
     } while (this.failedUserAgents.has(userAgent));
@@ -141,6 +143,7 @@ export interface PageServiceOptions {
   validator?: (page: playwright.Page) => Promise<boolean>;
   cacheContext?: boolean;
   cleaner?: (el: HTMLElement) => void;
+  cachePath?: string;
 }
 
 export type Cookies = Parameters<playwright.BrowserContext["addCookies"]>[0];

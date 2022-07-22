@@ -9,6 +9,7 @@ export interface Config {
   notion: {
     auth: string;
     spellsDbId: string;
+    monstersDbId: string;
   };
   ddb: {
     cobaltSession: string;

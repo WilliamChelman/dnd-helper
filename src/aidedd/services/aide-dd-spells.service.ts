@@ -8,6 +8,7 @@ export class AideDdSpellsService {
   private basePath = "https://www.aidedd.org";
   private pageService: PageService = this.pageFactoryService.create({
     cacheContext: true,
+    cachePath: "./cache/aidedd/spells",
   });
 
   constructor(private pageFactoryService: PageServiceFactory) {}

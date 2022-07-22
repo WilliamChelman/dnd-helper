@@ -1,42 +1,37 @@
 import { Injectable } from "injection-js";
 import { HTMLElement } from "node-html-parser";
 
-import { ConfigService, Cookies, HtmlElementHelper, PageService, PageServiceFactory, PageServiceOptions, Spell } from "../../core";
+import { HtmlElementHelper, PageService, PageServiceFactory, Spell } from "../../core";
+import { DdbHelper } from "./ddb.helper";
 
 @Injectable()
 export class DdbSpellsService {
-  private basePath = "https://www.dndbeyond.com";
   private pageService: PageService;
 
-  constructor(pageServiceFactory: PageServiceFactory, private htmlElementHelper: HtmlElementHelper, private configService: ConfigService) {
-    this.pageService = pageServiceFactory.create(this.getOptions());
+  constructor(pageServiceFactory: PageServiceFactory, private htmlElementHelper: HtmlElementHelper, private ddbHelper: DdbHelper) {
+    this.pageService = pageServiceFactory.create({ ...this.ddbHelper.getDefaultPageServiceOptions(), cachePath: "./cache/ddb/spells/" });
   }
 
   async getSpells(options?: SpellsFilteringOptions): Promise<Spell[]> {
     const spells = [];
-    let nextPage = this.basePath + "/spells";
+    let searchPageUrl = new URL("/spells", this.ddbHelper.basePath).toString();
     if (options?.name) {
-      nextPage += `?filter-search=${encodeURIComponent(options.name)}`;
+      searchPageUrl += `?filter-search=${encodeURIComponent(options.name)}`;
     }
-    while (nextPage) {
-      const listPage = await this.pageService.getPageHtmlElement(nextPage);
-      spells.push(...(await this.getSpellsFromListPage(listPage)));
-      const nextHref = listPage.querySelector(".b-pagination-item-next a")?.getAttribute("href");
-      nextPage = nextHref ? this.basePath + nextHref : undefined;
+    const links = await this.ddbHelper.crawlSearchPages<string>(searchPageUrl, this.getSpellLinksSearchPage.bind(this), this.pageService);
+
+    for (const link of links) {
+      spells.push(await this.getSpellFromDetailPage(link));
     }
 
     return spells;
   }
 
-  private async getSpellsFromListPage(page: HTMLElement): Promise<Spell[]> {
-    const spells = [];
+  private getSpellLinksSearchPage(page: HTMLElement): string[] {
     const links = page.querySelectorAll("ul.rpgspell-listing > div a");
-    for (const link of links) {
-      const url = this.basePath + link.getAttribute("href");
-      const spell = await this.getSpellFromDetailPage(url);
-      spells.push(spell);
-    }
-    return spells;
+    return links.map((link) => {
+      return new URL(link.getAttribute("href"), this.ddbHelper.basePath).toString();
+    });
   }
 
   private async getSpellFromDetailPage(url: string): Promise<Spell> {
@@ -63,7 +58,7 @@ export class DdbSpellsService {
     const content = page.querySelector(".more-info-content");
     const links = content.querySelectorAll("a[href]");
     links.forEach((link) => {
-      const fullHref = this.basePath + link.getAttribute("href");
+      const fullHref = new URL(link.getAttribute("href"), url).toString();
       link.setAttribute("href", fullHref);
     });
     const spell: Spell = {
@@ -87,31 +82,6 @@ export class DdbSpellsService {
     };
 
     return spell;
-  }
-
-  private getCookies(): Cookies {
-    return [
-      {
-        name: "CobaltSession",
-        httpOnly: true,
-        secure: true,
-        domain: ".dndbeyond.com",
-        path: "/",
-        value: this.configService.config.ddb.cobaltSession,
-      },
-    ];
-  }
-
-  private getOptions(): PageServiceOptions {
-    return {
-      cookies: this.getCookies(),
-      validator: async (page) => {
-        return !(await page.innerText("title")).includes("Access to this page has been denied.");
-      },
-      cleaner: (el) => {
-        el.querySelectorAll("head,script,style,iframe,noscript").forEach((e) => e.remove());
-      },
-    };
   }
 }
 

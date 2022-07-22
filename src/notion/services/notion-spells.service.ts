@@ -58,6 +58,10 @@ export class NotionSpellsService extends NotionDbService<Spell, any> {
     };
   }
 
+  protected getCover(spell: Spell) {
+    return undefined;
+  }
+
   protected getChildren(spell: Spell) {
     const md = NodeHtmlMarkdown.translate(spell.htmlContent, { blockElements: ["br"] });
     return markdownToBlocks(md);

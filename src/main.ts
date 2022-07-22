@@ -1,11 +1,12 @@
-import "reflect-metadata";
-
 import { ReflectiveInjector } from "injection-js";
+import "reflect-metadata";
+import { DrsMonstersService } from "./5e-drs";
+import { AideDdMonstersService, AideDdSpellsService } from "./aidedd";
 
-import { ConfigService, HtmlElementHelper, PageServiceFactory } from "./core";
-import { DdbSpellsService } from "./ddb";
-import { NotionHelper, NotionSpellsService } from "./notion";
-import { AideDdSpellsService } from "./aidedd";
+import { AideDdMonstersCommands, DdbMonstersCommands, DrsMonstersCommands, SpellsCommands } from "./commands";
+import { PageServiceFactory, HtmlElementHelper, ConfigService } from "./core";
+import { DdbHelper, DdbMonstersService, DdbSpellsService } from "./ddb";
+import { NotionSpellsService, NotionHelper, NotionMonstersService } from "./notion";
 
 async function main() {
   const injector = ReflectiveInjector.resolveAndCreate([
@@ -16,28 +17,28 @@ async function main() {
     NotionSpellsService,
     NotionHelper,
     AideDdSpellsService,
+    SpellsCommands,
+    DdbHelper,
+    DdbMonstersService,
+    DdbMonstersCommands,
+    NotionMonstersService,
+    AideDdMonstersService,
+    AideDdMonstersCommands,
+    DrsMonstersService,
+    DrsMonstersCommands,
   ]);
   const pageServiceFactory = injector.get(PageServiceFactory) as PageServiceFactory;
-  const ddbService = injector.get(DdbSpellsService) as DdbSpellsService;
-  const aideDdSpellService = injector.get(AideDdSpellsService) as AideDdSpellsService;
-  const notionSpellsService = injector.get(NotionSpellsService) as NotionSpellsService;
+  const spellsCommands = injector.get(SpellsCommands) as SpellsCommands;
+  const ddbMonstersCommands = injector.get(DdbMonstersCommands) as DdbMonstersCommands;
+  const aideDdMonstersCommands = injector.get(AideDdMonstersCommands) as AideDdMonstersCommands;
+  const drsMonstersCommands = injector.get(DrsMonstersCommands) as DrsMonstersCommands;
   try {
-    const spells = await ddbService.getSpells();
-    for (const spell of spells) {
-      const fr = await aideDdSpellService.getFrenchData(spell.name);
-      if (fr) {
-        Object.assign(spell, fr);
-      } else {
-        console.warn("Failed to find  French version of", spell.name);
-      }
-    }
-    await notionSpellsService.initSchema();
-    await notionSpellsService.addPages(spells);
-  } catch (err) {
-    console.error(err);
+    // await spellsCommands.run();
+    // await ddbMonstersCommands.run();
+    // await aideDdMonstersCommands.run();
+    await drsMonstersCommands.run();
   } finally {
-    await pageServiceFactory.closeAll();
-    console.log("DONE");
+    pageServiceFactory.closeAll();
   }
 }
 
