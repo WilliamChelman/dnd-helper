@@ -2,11 +2,11 @@ import { Injectable } from "injection-js";
 
 import { DrsMonstersService } from "../../5e-drs";
 import { Monster } from "../../core";
-import { NotionMonstersService } from "../../notion";
-import { Commands } from "../models";
+import { MonsterProperties, NotionMonstersService } from "../../notion";
+import { Command } from "../models";
 
 @Injectable()
-export class DrsMonstersCommands implements Commands<void> {
+export class DrsMonstersCommand implements Command<void> {
   constructor(private notionService: NotionMonstersService, private drsMonstersService: DrsMonstersService) {}
 
   async run(): Promise<void> {
@@ -17,8 +17,8 @@ export class DrsMonstersCommands implements Commands<void> {
       for (let monster of monsters) {
         console.group(`Processing ${index}/${monsters.length - 1} - ${monster.name}`);
         console.time("Took");
-        if (await this.alreadyExistsInAideDd(monster)) {
-          console.log("Already imported from AideDd, skipping");
+        if (await this.alreadyExistsFromOtherSource(monster)) {
+          console.log("Already imported from elsewhere, skipping");
         } else {
           monster = await this.drsMonstersService.completeMonsterWithDetailPage(monster);
           await this.notionService.addPage(monster);
@@ -34,22 +34,22 @@ export class DrsMonstersCommands implements Commands<void> {
     }
   }
 
-  private async alreadyExistsInAideDd(monster: Monster): Promise<boolean> {
+  private async alreadyExistsFromOtherSource(monster: Monster): Promise<boolean> {
     const response = await this.notionService.notion.databases.query({
       database_id: this.notionService.getDatabaseId(),
       page_size: 1,
       filter: {
         and: [
-          { property: "Data Source", select: { equals: "AideDD" } },
+          { property: MonsterProperties.LINK, url: { does_not_equal: monster.link! } },
           {
             or: [
               {
-                property: "title",
-                rich_text: { equals: monster.name },
+                property: MonsterProperties.NAME,
+                rich_text: { equals: monster.name! },
               },
               {
-                property: "Alt Names",
-                rich_text: { contains: monster.name },
+                property: MonsterProperties.ALT_NAMES,
+                rich_text: { contains: monster.name! },
               },
             ],
           },

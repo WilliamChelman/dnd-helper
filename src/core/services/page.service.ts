@@ -58,7 +58,9 @@ export class PageService {
       const valid = await this.options.validator(page);
       if (!valid) {
         await page.waitForTimeout(getRandomInt(200, 1200));
-        this.failedUserAgents.add(this.lastUserAgent);
+        if (this.lastUserAgent) {
+          this.failedUserAgents.add(this.lastUserAgent);
+        }
         if (tryCount < 10) {
           console.log(`Got invalid page, trying again ${tryCount + 1}/10`);
           this.reset();
@@ -148,7 +150,7 @@ export interface PageServiceOptions {
 
 export type Cookies = Parameters<playwright.BrowserContext["addCookies"]>[0];
 
-function getRandomInt(min, max) {
+function getRandomInt(min: number, max: number): number {
   min = Math.ceil(min);
   max = Math.floor(max);
   return Math.floor(Math.random() * (max - min + 1)) + min;

@@ -5,6 +5,6 @@ import { HTMLElement } from "node-html-parser";
 export class HtmlElementHelper {
   getCleanedInnerText(el: HTMLElement, selector: string): string {
     const target = el.querySelector(selector);
-    return target.innerText.replace(/\s+/g, " ").trim();
+    return target?.innerText.replace(/\s+/g, " ").trim() ?? "";
   }
 }

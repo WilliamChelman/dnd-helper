@@ -3,7 +3,7 @@ import "reflect-metadata";
 import { DrsMonstersService } from "./5e-drs";
 import { AideDdMonstersService, AideDdSpellsService } from "./aidedd";
 
-import { AideDdMonstersCommands, DdbMonstersCommands, DrsMonstersCommands, SpellsCommands } from "./commands";
+import { AideDdMonstersCommands, DdbMonstersCommands, DrsMonstersCommand, SpellsCommands } from "./commands";
 import { PageServiceFactory, HtmlElementHelper, ConfigService } from "./core";
 import { DdbHelper, DdbMonstersService, DdbSpellsService } from "./ddb";
 import { NotionSpellsService, NotionHelper, NotionMonstersService } from "./notion";
@@ -25,18 +25,25 @@ async function main() {
     AideDdMonstersService,
     AideDdMonstersCommands,
     DrsMonstersService,
-    DrsMonstersCommands,
+    DrsMonstersCommand,
   ]);
+  const configService = injector.get(ConfigService) as ConfigService;
   const pageServiceFactory = injector.get(PageServiceFactory) as PageServiceFactory;
   const spellsCommands = injector.get(SpellsCommands) as SpellsCommands;
   const ddbMonstersCommands = injector.get(DdbMonstersCommands) as DdbMonstersCommands;
   const aideDdMonstersCommands = injector.get(AideDdMonstersCommands) as AideDdMonstersCommands;
-  const drsMonstersCommands = injector.get(DrsMonstersCommands) as DrsMonstersCommands;
+  const drsMonstersCommands = injector.get(DrsMonstersCommand) as DrsMonstersCommand;
   try {
     // await spellsCommands.run();
-    // await ddbMonstersCommands.run();
-    // await aideDdMonstersCommands.run();
-    await drsMonstersCommands.run();
+    if (configService.config.ddb?.monsters) {
+      await ddbMonstersCommands.run();
+    }
+    if (configService.config.aidedd?.monsters) {
+      await aideDdMonstersCommands.run();
+    }
+    if (configService.config.srd5e?.monsters) {
+      await drsMonstersCommands.run();
+    }
   } finally {
     pageServiceFactory.closeAll();
   }

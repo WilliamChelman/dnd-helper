@@ -2,6 +2,7 @@ import { Injectable } from "injection-js";
 import { HTMLElement, parse } from "node-html-parser";
 
 import { HtmlElementHelper, Monster, PageService, PageServiceFactory } from "../../core";
+import { notNil } from "../../core";
 import { DdbHelper } from "./ddb.helper";
 
 @Injectable()
@@ -22,60 +23,70 @@ export class DdbMonstersService {
 
   private getMonstersFromSearchPage(page: HTMLElement): Monster[] {
     const monsterBlocks = page.querySelectorAll(".listing-body ul > div");
-    return monsterBlocks.map((block) => {
-      const linkAnchor = block.querySelector(".name a:not(.badge-cta)");
-      const link = new URL(linkAnchor.getAttribute("href"), this.ddbHelper.basePath).toString();
-      const iconStyle = block.querySelector(".monster-icon .image")?.getAttribute("style");
-      const badge = block.querySelector(".badge-label")?.innerText.trim();
-      const isLegacy = !!badge?.includes("Legacy");
-      let name = linkAnchor.innerText.trim();
-      if (isLegacy) {
-        name += " (Legacy)";
-      }
-      const subtype = block.querySelector(".monster-type .subtype").innerText.trim().replace("(", "").replace(")", "").trim();
+    return monsterBlocks
+      .map((block) => {
+        const linkAnchor = block.querySelector(".name a:not(.badge-cta)");
+        if (!linkAnchor) return undefined;
+        const link = new URL(linkAnchor.getAttribute("href")!, this.ddbHelper.basePath).toString();
+        const iconStyle = block.querySelector(".monster-icon .image")?.getAttribute("style");
+        const badge = block.querySelector(".badge-label")?.innerText.trim();
+        const isLegacy = !!badge?.includes("Legacy");
+        let name = linkAnchor.innerText.trim();
+        if (isLegacy) {
+          name += " (Legacy)";
+        }
+        const subtype = block.querySelector(".monster-type .subtype")?.innerText.trim().replace("(", "").replace(")", "").trim();
 
-      return {
-        name,
-        isLegacy,
-        link,
-        iconLink: this.getBackgroundUrlFromStyle(iconStyle),
-        challenge: block.querySelector(".monster-challenge").innerText.trim(),
-        source: block.querySelector(".source").innerText.trim(),
-        type: block.querySelector(".monster-type .type").innerText.trim(),
-        subtype: capitalizeFirstLetter(subtype),
-        size: block.querySelector(".monster-size").innerText.trim(),
-        alignment: block.querySelector(".monster-alignment").innerText.trim(),
-        isLegendary: !!block.querySelector(".i-legendary-monster"),
-        lang: "EN",
-        dataSource: "DDB",
-      };
-    });
+        return {
+          name,
+          isLegacy,
+          link,
+          iconLink: this.getBackgroundUrlFromStyle(iconStyle),
+          challenge: block.querySelector(".monster-challenge")?.innerText.trim(),
+          source: block.querySelector(".source")?.innerText.trim(),
+          type: block.querySelector(".monster-type .type")?.innerText.trim(),
+          subtype: subtype ? capitalizeFirstLetter(subtype) : undefined,
+          size: block.querySelector(".monster-size")?.innerText.trim(),
+          alignment: block.querySelector(".monster-alignment")?.innerText.trim(),
+          isLegendary: !!block.querySelector(".i-legendary-monster"),
+          lang: "EN",
+          dataSource: "DDB",
+        };
+      })
+      .filter(notNil);
   }
 
   private getBackgroundUrlFromStyle(style: string | undefined): string | undefined {
-    return style?.match(/background-image: url\('(.*)'\);/)[1];
+    return style?.match(/background-image: url\('(.*)'\);/)?.[1] ?? undefined;
   }
 
   async completeMonsterWithDetailPage(partialMonster: Monster): Promise<Monster> {
     const monster = { ...partialMonster };
-    const page = await this.pageService.getPageHtmlElement(monster.link);
+    const page = await this.pageService.getPageHtmlElement(monster.link!);
     const content = page.querySelector(".more-info.details-more-info");
     const imgSrc = page.querySelector(".image img")?.getAttribute("src");
-    monster.coverLink = new URL(imgSrc, partialMonster.link).toString();
+    if (imgSrc) {
+      monster.coverLink = new URL(imgSrc, partialMonster.link).toString();
+    }
     if (!monster.iconLink) monster.iconLink = monster.coverLink;
+
+    if (!content) return monster;
 
     const attributes = content.querySelectorAll(".mon-stat-block__attribute");
 
     attributes.forEach((attribute) => {
       const label = attribute.querySelector(".mon-stat-block__attribute-label")?.innerText.trim();
       const value = attribute.querySelector(".mon-stat-block__attribute-data,.mon-stat-block__attribute-value")?.innerText.trim();
-      if (label.includes("Hit Points")) {
-        monster.avgHitPoints = parseInt(value.match(/(\d+)/)[1]);
+      if (value == null) return;
+      if (label?.includes("Hit Points")) {
+        const parsed = value?.match(/(\d+)/)?.[1];
+        monster.avgHitPoints = parsed ? parseInt(parsed) : undefined;
       }
-      if (label.includes("Armor Class")) {
-        monster.armorClass = parseInt(value.match(/(\d+)/)[1]);
+      if (label?.includes("Armor Class")) {
+        const parsed = value?.match(/(\d+)/)?.[1];
+        monster.armorClass = parsed ? parseInt(parsed) : undefined;
       }
-      if (label.includes("Speed")) {
+      if (label?.includes("Speed")) {
         monster.movementTypes = this.getDistanceField(value);
       }
     });
@@ -84,6 +95,7 @@ export class DdbMonstersService {
     tidbits.forEach((tidbit) => {
       const label = tidbit.querySelector(".mon-stat-block__tidbit-label")?.innerText.trim();
       const value = tidbit.querySelector(".mon-stat-block__tidbit-data")?.innerText.trim();
+      if (value == null || label == null) return;
 
       if (label.includes("Saving Throws")) {
         monster.saveProficiencies = value
@@ -122,7 +134,7 @@ export class DdbMonstersService {
     });
     monster.environment = content.querySelectorAll(".environment-tag").map((env) => env.innerText.trim());
     monster.tags = content.querySelectorAll(".monster-tag").map((env) => env.innerText.trim());
-    monster.sourceDetails = content.querySelector(".monster-source").innerText.trim();
+    monster.sourceDetails = content.querySelector(".monster-source")?.innerText.trim();
     monster.isMythic = content
       .querySelectorAll(".mon-stat-block__description-block-heading")
       .some((heading) => heading.innerText.includes("Mythic Actions"));
@@ -134,32 +146,33 @@ export class DdbMonstersService {
   private cleanupContent(content: HTMLElement, monster: Monster) {
     const links = content.querySelectorAll("a[href]");
     links.forEach((link) => {
-      const fullHref = new URL(link.getAttribute("href"), monster.link).toString();
+      const fullHref = new URL(link.getAttribute("href")!, monster.link).toString();
       link.setAttribute("href", fullHref);
     });
     content.querySelectorAll(".image").forEach((img) => img.remove());
 
     const title = content.querySelector(".mon-stat-block__name");
-    const newTitle = parse(`<h1>${title.innerText.trim()}</h1>`);
-    title.replaceWith(newTitle);
+    const newTitle = parse(`<h1>${title?.innerText.trim()}</h1>`);
+    title?.replaceWith(newTitle);
 
     content.querySelectorAll(".mon-stat-block__description-block-heading").forEach((h2) => {
       h2.replaceWith(parse(`<h2>${h2.innerText.trim()}</h2>`));
     });
 
-    content.querySelector("footer").remove();
+    content.querySelector("footer")?.remove();
 
     const abilityBlock = content.querySelector(".ability-block");
-    const cleanText = (value: string) => value.trim();
-    const abilityLabels = abilityBlock
-      .querySelectorAll(".ability-block__heading")
-      .map((labelBlock) => `<td>${cleanText(labelBlock.innerText)}</td>`)
-      .join("\n");
-    const abilityValues = abilityBlock
-      .querySelectorAll(".ability-block__data")
-      .map((valueBlock) => `<td>${cleanText(valueBlock.innerText)}</td>`)
-      .join("\n");
-    const abilityTable = parse(`
+    if (abilityBlock) {
+      const cleanText = (value: string) => value.trim();
+      const abilityLabels = abilityBlock
+        .querySelectorAll(".ability-block__heading")
+        .map((labelBlock) => `<td>${cleanText(labelBlock.innerText)}</td>`)
+        .join("\n");
+      const abilityValues = abilityBlock
+        .querySelectorAll(".ability-block__data")
+        .map((valueBlock) => `<td>${cleanText(valueBlock.innerText)}</td>`)
+        .join("\n");
+      const abilityTable = parse(`
       <table>
         <tbody>
           <tr>${abilityLabels}</tr>
@@ -167,7 +180,8 @@ export class DdbMonstersService {
         </tbody>
       </table>
     `);
-    abilityBlock.replaceWith(abilityTable);
+      abilityBlock.replaceWith(abilityTable);
+    }
 
     // fix for https://www.dndbeyond.com/monsters/94512-sibriex, failed to be translated to notion
     const complexBlockquote = content.querySelector("blockquote table")?.parentNode;
@@ -180,7 +194,7 @@ export class DdbMonstersService {
     const specialMatch = /((Bludgeoning|Piercing|Slashing).*)/;
     const special = value.match(specialMatch)?.[1]?.replace(/, /g, " ");
     value = value.replace(specialMatch, "").replace(";", "");
-    return [special, ...value.split(",")].map((v) => v?.trim()).filter((v) => !!v);
+    return [special, ...value.split(",")].map((v) => v?.trim()).filter(notNil);
   }
 
   private getDistanceField(value: string): string[] {
@@ -195,6 +209,6 @@ export interface MonstersFilteringOptions {
   name?: string;
 }
 
-function capitalizeFirstLetter(string) {
-  return string.charAt(0).toUpperCase() + string.slice(1);
+function capitalizeFirstLetter(v: string) {
+  return v.charAt(0).toUpperCase() + v.slice(1);
 }

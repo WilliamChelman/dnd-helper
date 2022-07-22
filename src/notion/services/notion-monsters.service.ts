@@ -2,7 +2,8 @@ import { markdownToBlocks } from "@tryfabric/martian";
 import { Injectable } from "injection-js";
 import { NodeHtmlMarkdown } from "node-html-markdown";
 
-import { ConfigService, Monster } from "../../core";
+import { ConfigService, Monster, notNil } from "../../core";
+import { MonsterProperties } from "../models";
 import { NotionDbService, PropertiesSchema } from "./notion-db.service";
 import { NotionHelper } from "./notion.helper";
 
@@ -20,9 +21,9 @@ export class NotionMonstersService extends NotionDbService<Monster, any> {
         and: [
           {
             property: "title",
-            rich_text: { equals: page.name },
+            rich_text: { equals: page.name! },
           },
-          { property: "Data Source", select: { equals: page.dataSource } },
+          { property: MonsterProperties.DATA_SOURCE, select: { equals: page.dataSource! } },
         ],
       },
     });
@@ -36,36 +37,36 @@ export class NotionMonstersService extends NotionDbService<Monster, any> {
 
   protected getProperties(monster: Monster): any {
     return {
-      ...this.notionHelper.getTitle("Name", monster.name),
-      ...this.notionHelper.getSelect("Source", monster.source),
-      ...this.notionHelper.getUrl("Link", monster.link),
-      ...this.notionHelper.getMultiSelect("Tags", monster.tags),
-      ...this.notionHelper.getSelect("CR", monster.challenge),
-      ...this.notionHelper.getRichText("Source Details", [monster.sourceDetails]),
-      ...this.notionHelper.getSelect("Type", monster.type),
-      ...this.notionHelper.getSelect("Subtype", monster.subtype),
-      ...this.notionHelper.getSelect("Size", monster.size),
-      ...this.notionHelper.getSelect("Alignment", monster.alignment),
-      ...this.notionHelper.getMultiSelect("Environment", monster.environment),
-      ...this.notionHelper.getNumber("AC", monster.armorClass),
-      ...this.notionHelper.getNumber("Avg. HP", monster.avgHitPoints),
-      ...this.notionHelper.getMultiSelect("Senses", monster.senses),
-      ...this.notionHelper.getMultiSelect("Save prof.", monster.saveProficiencies),
-      ...this.notionHelper.getMultiSelect("Skill prof.", monster.skillProficiencies),
-      ...this.notionHelper.getCheckbox("Legendary", monster.isLegendary),
-      ...this.notionHelper.getCheckbox("Mythic", monster.isMythic),
-      ...this.notionHelper.getCheckbox("Legacy", monster.isLegacy),
-      ...this.notionHelper.getCheckbox("Lair", monster.hasLair),
-      ...this.notionHelper.getMultiSelect("Resistances", monster.resistances),
-      ...this.notionHelper.getMultiSelect("Dmg. Immunities", monster.damageImmunities),
-      ...this.notionHelper.getMultiSelect("Conditions Immunities", monster.conditionImmunities),
-      ...this.notionHelper.getMultiSelect("Vulnerabilities", monster.vulnerabilities),
-      ...this.notionHelper.getMultiSelect("Languages", monster.languages),
-      ...this.notionHelper.getMultiSelect("Movement Types", monster.movementTypes),
-      ...this.notionHelper.getRichText("Alt Names", monster.altNames),
-      ...this.notionHelper.getRelation("Same as", monster.sameAs),
-      ...this.notionHelper.getSelect("Lang", monster.lang),
-      ...this.notionHelper.getSelect("Data Source", monster.dataSource),
+      ...this.notionHelper.getTitle(MonsterProperties.NAME, monster.name),
+      ...this.notionHelper.getSelect(MonsterProperties.SOURCE, monster.source),
+      ...this.notionHelper.getUrl(MonsterProperties.LINK, monster.link),
+      ...this.notionHelper.getMultiSelect(MonsterProperties.TAGS, monster.tags),
+      ...this.notionHelper.getSelect(MonsterProperties.CR, monster.challenge),
+      ...this.notionHelper.getRichText(MonsterProperties.SOURCE_DETAILS, [monster.sourceDetails].filter(notNil)),
+      ...this.notionHelper.getSelect(MonsterProperties.TYPE, monster.type),
+      ...this.notionHelper.getSelect(MonsterProperties.SUBTYPE, monster.subtype),
+      ...this.notionHelper.getSelect(MonsterProperties.SIZE, monster.size),
+      ...this.notionHelper.getSelect(MonsterProperties.ALIGNMENT, monster.alignment),
+      ...this.notionHelper.getMultiSelect(MonsterProperties.ENVIRONMENT, monster.environment),
+      ...this.notionHelper.getNumber(MonsterProperties.AC, monster.armorClass),
+      ...this.notionHelper.getNumber(MonsterProperties.AVG_HP, monster.avgHitPoints),
+      ...this.notionHelper.getMultiSelect(MonsterProperties.SENSES, monster.senses),
+      ...this.notionHelper.getMultiSelect(MonsterProperties.SAVES, monster.saveProficiencies),
+      ...this.notionHelper.getMultiSelect(MonsterProperties.SKILLS, monster.skillProficiencies),
+      ...this.notionHelper.getCheckbox(MonsterProperties.LEGENDARY, monster.isLegendary),
+      ...this.notionHelper.getCheckbox(MonsterProperties.MYTHIC, monster.isMythic),
+      ...this.notionHelper.getCheckbox(MonsterProperties.LEGACY, monster.isLegacy),
+      ...this.notionHelper.getCheckbox(MonsterProperties.LAIR, monster.hasLair),
+      ...this.notionHelper.getMultiSelect(MonsterProperties.RESISTANCES, monster.resistances),
+      ...this.notionHelper.getMultiSelect(MonsterProperties.DAMAGE_IMMUNITIES, monster.damageImmunities),
+      ...this.notionHelper.getMultiSelect(MonsterProperties.CONDITION_IMMUNITIES, monster.conditionImmunities),
+      ...this.notionHelper.getMultiSelect(MonsterProperties.VULNERABILITIES, monster.vulnerabilities),
+      ...this.notionHelper.getMultiSelect(MonsterProperties.LANGUAGES, monster.languages),
+      ...this.notionHelper.getMultiSelect(MonsterProperties.MOVEMENT_TYPES, monster.movementTypes),
+      ...this.notionHelper.getRichText(MonsterProperties.ALT_NAMES, monster.altNames),
+      ...this.notionHelper.getRelation(MonsterProperties.SAME_AS, monster.sameAs),
+      ...this.notionHelper.getSelect(MonsterProperties.LANG, monster.lang),
+      ...this.notionHelper.getSelect(MonsterProperties.DATA_SOURCE, monster.dataSource),
     };
   }
 
@@ -88,6 +89,7 @@ export class NotionMonstersService extends NotionDbService<Monster, any> {
   }
 
   protected getChildren(monster: Monster) {
+    if (!monster.htmlContent) return [];
     const md = NodeHtmlMarkdown.translate(monster.htmlContent, { blockElements: ["br"] }, {});
     const blocks = markdownToBlocks(md);
     if (monster.coverLink) {
@@ -110,40 +112,40 @@ export class NotionMonstersService extends NotionDbService<Monster, any> {
 
   protected getSchema(): PropertiesSchema {
     return {
-      Name: { title: {} },
-      "Alt Names": { rich_text: {} },
-      Tags: { multi_select: {} },
-      Source: { select: {} },
-      "Source Details": { rich_text: {} },
-      Link: { url: {} },
-      CR: { select: {} },
-      Type: { select: {} },
-      Subtype: { select: {} },
-      Size: { select: {} },
-      Alignment: { select: {} },
-      Environment: { multi_select: {} },
-      AC: { number: {} },
-      "Avg. HP": { number: {} },
-      Senses: { multi_select: {} },
-      "Save prof.": { multi_select: {} },
-      "Skill prof.": { multi_select: {} },
-      Legendary: { checkbox: {} },
-      Mythic: { checkbox: {} },
-      Legacy: { checkbox: {} },
-      Lair: { checkbox: {} },
-      Resistances: { multi_select: {} },
-      "Dmg. Immunities": { multi_select: {} },
-      "Conditions Immunities": { multi_select: {} },
-      Vulnerabilities: { multi_select: {} },
-      Languages: { multi_select: {} },
-      "Movement Types": { multi_select: {} },
-      "Data Source": { select: {} },
-      "Same as": { relation: { database_id: this.getDbId(), single_property: {} } },
-      Lang: { select: {} },
+      [MonsterProperties.NAME]: { title: {} },
+      [MonsterProperties.ALT_NAMES]: { rich_text: {} },
+      [MonsterProperties.TAGS]: { multi_select: {} },
+      [MonsterProperties.SOURCE]: { select: {} },
+      [MonsterProperties.SOURCE_DETAILS]: { rich_text: {} },
+      [MonsterProperties.LINK]: { url: {} },
+      [MonsterProperties.CR]: { select: {} },
+      [MonsterProperties.TYPE]: { select: {} },
+      [MonsterProperties.SUBTYPE]: { select: {} },
+      [MonsterProperties.SIZE]: { select: {} },
+      [MonsterProperties.ALIGNMENT]: { select: {} },
+      [MonsterProperties.ENVIRONMENT]: { multi_select: {} },
+      [MonsterProperties.AC]: { number: {} },
+      [MonsterProperties.AVG_HP]: { number: {} },
+      [MonsterProperties.SENSES]: { multi_select: {} },
+      [MonsterProperties.SAVES]: { multi_select: {} },
+      [MonsterProperties.SKILLS]: { multi_select: {} },
+      [MonsterProperties.LEGENDARY]: { checkbox: {} },
+      [MonsterProperties.MYTHIC]: { checkbox: {} },
+      [MonsterProperties.LEGACY]: { checkbox: {} },
+      [MonsterProperties.LAIR]: { checkbox: {} },
+      [MonsterProperties.RESISTANCES]: { multi_select: {} },
+      [MonsterProperties.DAMAGE_IMMUNITIES]: { multi_select: {} },
+      [MonsterProperties.CONDITION_IMMUNITIES]: { multi_select: {} },
+      [MonsterProperties.VULNERABILITIES]: { multi_select: {} },
+      [MonsterProperties.LANGUAGES]: { multi_select: {} },
+      [MonsterProperties.MOVEMENT_TYPES]: { multi_select: {} },
+      [MonsterProperties.DATA_SOURCE]: { select: {} },
+      [MonsterProperties.SAME_AS]: { relation: { database_id: this.getDbId(), single_property: {} } },
+      [MonsterProperties.LANG]: { select: {} },
     };
   }
 
   protected getTitle(page: Monster): string {
-    return page.name;
+    return page.name!;
   }
 }

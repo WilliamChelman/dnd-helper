@@ -3,6 +3,7 @@ import { URL } from "url";
 import { HTMLElement, parse } from "node-html-parser";
 
 import { Monster, PageService, PageServiceFactory } from "../../core";
+import { notNil } from "../../core/utils";
 
 @Injectable()
 export class AideDdMonstersService {
@@ -20,9 +21,10 @@ export class AideDdMonstersService {
     const anchors = listPage.querySelectorAll(".content .liste a");
     return anchors.map((anchor) => {
       const name = anchor.innerText.trim().replace("(legacy)", "(Legacy)");
+      const href = anchor.getAttribute("href")?.replace("..", "");
       return {
         name: name,
-        link: new URL(anchor.getAttribute("href").replace("..", ""), listPageUrl).toString(),
+        link: href ? new URL(href, listPageUrl).toString() : undefined,
         isLegacy: name.includes("(Legacy)"),
         dataSource: "AideDD",
         lang: "FR",
@@ -32,25 +34,29 @@ export class AideDdMonstersService {
 
   async completeMonsterWithDetailPage(partialMonster: Monster): Promise<Monster> {
     const monster = { ...partialMonster };
-    const detailPage = await this.pageService.getPageHtmlElement(partialMonster.link);
+    const detailPage = await this.pageService.getPageHtmlElement(partialMonster.link!);
     const content = detailPage.querySelector(".bloc .jaune");
 
-    monster.source = detailPage.querySelector(".source").innerText;
+    if (!content) {
+      throw new Error("Failed to find page content");
+    }
+
+    monster.source = detailPage.querySelector(".source")?.innerText;
     const altNames = detailPage
-      .querySelector(".trad")
-      .innerText.match(/\[([^\]]*)\]/g)
-      .map((v) => v.replace("[", "").replace("]", "").trim())
+      ?.querySelector(".trad")
+      ?.innerText?.match(/\[([^\]]*)\]/g)
+      ?.map((v) => v.replace("[", "").replace("]", "").trim())
       .filter((altName) => altName !== monster.name);
     monster.altNames = altNames;
 
-    const typeBlock = content.querySelector(".type").innerText.trim();
-    const typeMatch = typeBlock.match(/(.*) de taille (.*), (.*)/);
+    const typeBlock = content.querySelector(".type")?.innerText.trim();
+    const typeMatch = typeBlock?.match(/(.*) de taille (.*), (.*)/);
     const subtypeRegexp = /(\(.*\))/;
-    const typeAndSubType = typeMatch[1].match(/([^\(]+)( \(.*\))?/);
-    monster.subtype = typeMatch[1].match(subtypeRegexp)?.[1].replace("(", "").replace(")", "").trim();
-    monster.type = typeAndSubType[1].replace(subtypeRegexp, "").trim();
-    monster.size = typeMatch[2];
-    monster.alignment = typeMatch[3];
+    const typeAndSubType = typeMatch?.[1].match(/([^\(]+)( \(.*\))?/);
+    monster.subtype = typeMatch?.[1].match(subtypeRegexp)?.[1].replace("(", "").replace(")", "").trim();
+    monster.type = typeAndSubType?.[1].replace(subtypeRegexp, "").trim();
+    monster.size = typeMatch?.[2];
+    monster.alignment = typeMatch?.[3];
 
     content.querySelectorAll("strong").forEach((header) => {
       const rawValue = header.nextSibling.innerText.trim();
@@ -103,14 +109,14 @@ export class AideDdMonstersService {
   }
 
   private cleanContent(content: HTMLElement): void {
-    const caracs = content.querySelectorAll(".carac");
-    const labels = [];
-    const values = [];
+    const attributes = content.querySelectorAll(".carac");
+    const labels: string[] = [];
+    const values: string[] = [];
     const cleanText = (value: string) => value.trim();
-    caracs.forEach((carac) => {
-      const label = carac.querySelector("strong").innerText.trim();
+    attributes.forEach((attr) => {
+      const label = attr.querySelector("strong")?.innerText.trim() ?? "";
       labels.push(`<td>${cleanText(label)}</td>`);
-      const value = carac.innerText.replace(label, "").trim();
+      const value = attr.innerText.replace(label, "").trim();
       values.push(`<td>${cleanText(value)}</td>`);
     });
 
@@ -122,11 +128,11 @@ export class AideDdMonstersService {
         </tbody>
       </table>
     `);
-    for (let i = 0; i < caracs.length; ++i) {
+    for (let i = 0; i < attributes.length; ++i) {
       if (i === 0) {
-        caracs[i].replaceWith(abilityTable);
+        attributes[i].replaceWith(abilityTable);
       } else {
-        caracs[i].remove();
+        attributes[i].remove();
       }
     }
 
@@ -137,13 +143,12 @@ export class AideDdMonstersService {
 
   private getDistanceField(value: string): string[] {
     return value.split(",").map((v) => v.match(/([\w\s]+) \d+ m\.?/)?.[1]?.trim() ?? "");
-    // .map(capitalizeFirstLetter);
   }
 
   private getDamageField(value: string): string[] {
     const specialMatch = /((contondant|contondant|tranchant).*)/i;
     const special = value.match(specialMatch)?.[1]?.replace(/, /g, " ");
     value = value.replace(specialMatch, "").replace(";", "");
-    return [special, ...value.split(",")].map((v) => v?.trim()).filter((v) => !!v);
+    return [special, ...value.split(",")].map((v) => v?.trim()).filter(notNil);
   }
 }

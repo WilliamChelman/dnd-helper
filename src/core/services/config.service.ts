@@ -13,5 +13,14 @@ export interface Config {
   };
   ddb: {
     cobaltSession: string;
+    spells?: boolean;
+    monsters?: boolean;
+  };
+  aidedd: {
+    spells?: boolean;
+    monsters?: boolean;
+  };
+  srd5e: {
+    monsters?: boolean;
   };
 }

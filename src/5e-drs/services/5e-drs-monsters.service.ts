@@ -4,6 +4,7 @@ import { URL } from "url";
 import { parse } from "yaml";
 
 import { Monster, PageService, PageServiceFactory } from "../../core";
+import { notNil } from "../../core/utils";
 
 @Injectable()
 export class DrsMonstersService {
@@ -27,7 +28,6 @@ export class DrsMonstersService {
       nextPage += `?page=${i}`;
       listPage = await this.pageService.getPageHtmlElement(nextPage);
       items.push(...this.getPartialMonstersFromOneSearchPage(listPage));
-      // break;
     }
 
     return items;
@@ -35,22 +35,25 @@ export class DrsMonstersService {
 
   private getPartialMonstersFromOneSearchPage(searchPage: HTMLElement): Monster[] {
     const rows = searchPage.querySelectorAll(".v-data-table__wrapper tbody tr");
-    return rows.map((row) => {
-      const anchor = row.querySelector("td:nth-child(3) a");
-      return {
-        name: anchor.innerText.trim(),
-        link: new URL(anchor.getAttribute("href"), this.basePath).toString(),
-        dataSource: "5eDrs",
-        lang: "FR",
-      };
-    });
+    return rows
+      .map((row) => {
+        const anchor = row.querySelector("td:nth-child(3) a");
+        if (!anchor) return undefined;
+        return {
+          name: anchor.innerText.trim(),
+          link: new URL(anchor.getAttribute("href") as string, this.basePath).toString(),
+          dataSource: "5eDrs",
+          lang: "FR",
+        };
+      })
+      .filter(notNil);
   }
 
   async completeMonsterWithDetailPage(partialMonster: Monster): Promise<Monster> {
     const monster = { ...partialMonster };
-    const detailPage = await this.pageService.getPageHtmlElement(partialMonster.link);
+    const detailPage = await this.pageService.getPageHtmlElement(partialMonster.link as string);
 
-    const metadata = await this.getGithubMetadata(partialMonster.link);
+    const metadata = await this.getGithubMetadata(partialMonster.link as string);
     monster.type = metadata.type;
     monster.subtype = metadata.subtype;
     monster.languages = metadata.languages?.map((lang) => lang.replace(/,/g, ""));
@@ -78,41 +81,45 @@ export class DrsMonstersService {
     }
 
     const content = detailPage.querySelector(".page.content");
-    monster.isLegendary = content.innerText.includes("Actions légendaires");
-    const armorClassRaw = content.querySelector(".monster-armor-class")?.innerText?.match(/(\d+)/)[1];
-    monster.armorClass = armorClassRaw ? parseInt(armorClassRaw) : undefined;
-    const hitPointsRaw = content.querySelector(".monster-hit-points")?.innerText?.match(/Points de vie (\d+)/)[1];
-    monster.avgHitPoints = hitPointsRaw ? parseInt(hitPointsRaw) : undefined;
-    this.cleanContent(content);
-    monster.htmlContent = content.outerHTML;
+    if (content) {
+      monster.isLegendary = content.innerText.includes("Actions légendaires");
+      const armorClassRaw = content.querySelector(".monster-armor-class")?.innerText?.match(/(\d+)/)?.[1];
+      monster.armorClass = armorClassRaw ? parseInt(armorClassRaw) : undefined;
+      const hitPointsRaw = content.querySelector(".monster-hit-points")?.innerText?.match(/Points de vie (\d+)/)?.[1];
+      monster.avgHitPoints = hitPointsRaw ? parseInt(hitPointsRaw) : undefined;
+      this.cleanContent(content);
+      monster.htmlContent = content.outerHTML;
+    }
 
     return monster;
   }
 
   private cleanContent(content: HTMLElement): void {
     const abilityBlock = content.querySelector(".monster-ability-scores");
-    const cleanText = (value: string) => value.trim();
-    const abilityLabels = abilityBlock
-      .querySelectorAll(".ability-label")
-      .map((labelBlock) => `<td>${cleanText(labelBlock.innerText)}</td>`)
-      .join("\n");
-    const abilityValues = abilityBlock
-      .querySelectorAll(".ability-score")
-      .map((valueBlock) => `<td>${cleanText(valueBlock.innerText)}</td>`)
-      .join("\n");
-    const abilityTable = parse(`
-      <table>
-        <tbody>
-          <tr>${abilityLabels}</tr>
-          <tr>${abilityValues}</tr>
-        </tbody>
-      </table>
-    `);
-    abilityBlock.replaceWith(abilityTable);
+    if (abilityBlock) {
+      const cleanText = (value: string) => value.trim();
+      const abilityLabels = abilityBlock
+        .querySelectorAll(".ability-label")
+        .map((labelBlock) => `<td>${cleanText(labelBlock.innerText)}</td>`)
+        .join("\n");
+      const abilityValues = abilityBlock
+        .querySelectorAll(".ability-score")
+        .map((valueBlock) => `<td>${cleanText(valueBlock.innerText)}</td>`)
+        .join("\n");
+      const abilityTable = parse(`
+        <table>
+          <tbody>
+            <tr>${abilityLabels}</tr>
+            <tr>${abilityValues}</tr>
+          </tbody>
+        </table>
+      `);
+      abilityBlock.replaceWith(abilityTable);
+    }
 
     content.querySelectorAll("a").forEach((anchor) => {
       const href = anchor.getAttribute("href");
-      anchor.setAttribute("href", new URL(href, this.basePath).toString());
+      anchor.setAttribute("href", new URL(href as string, this.basePath).toString());
     });
   }
 
@@ -127,8 +134,8 @@ export class DrsMonstersService {
     if (githubPage.innerText.includes("404: Not Found")) {
       throw new Error("github readme not found");
     }
-    const githubMd = githubPage.querySelector("pre").innerText;
-    const lines = githubMd.split("\n");
+    const githubMd = githubPage.querySelector("pre")?.innerText;
+    const lines = githubMd?.split("\n") ?? [];
     let start, end;
     for (let i = 0; i < lines.length; ++i) {
       if (lines[i].startsWith("---")) {

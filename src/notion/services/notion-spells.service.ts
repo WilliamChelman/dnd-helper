@@ -2,13 +2,13 @@ import { markdownToBlocks } from "@tryfabric/martian";
 import { Injectable } from "injection-js";
 import { NodeHtmlMarkdown } from "node-html-markdown";
 
-import { ConfigService, Spell } from "../../core";
+import { ConfigService, notNil, Spell } from "../../core";
 import { NotionDbService, PropertiesSchema } from "./notion-db.service";
 import { NotionHelper } from "./notion.helper";
 
 @Injectable()
 export class NotionSpellsService extends NotionDbService<Spell, any> {
-  private iconMap = {
+  private iconMap: { [school: string]: string } = {
     Abjuration: "https://www.dndbeyond.com/attachments/2/707/abjuration.png",
     Conjuration: "https://www.dndbeyond.com/attachments/2/708/conjuration.png",
     Divination: "https://www.dndbeyond.com/attachments/2/709/divination.png",
@@ -30,27 +30,28 @@ export class NotionSpellsService extends NotionDbService<Spell, any> {
   protected getProperties(spell: Spell): any {
     return {
       ...this.notionHelper.getTitle("Name", spell.name),
-      ...this.notionHelper.getRichText("Name (FR)", [spell.nameFr]),
+      ...this.notionHelper.getRichText("Name (FR)", [spell.nameFr].filter(notNil)),
       ...this.notionHelper.getSelect("Level", spell.level),
       ...this.notionHelper.getSelect("School", spell.school),
-      ...this.notionHelper.getRichText("Casting Time", [spell.castingTime]),
-      ...this.notionHelper.getRichText("Range (Area)", [spell.rangeAndArea]),
-      ...this.notionHelper.getRichText("Duration", [spell.duration]),
-      ...this.notionHelper.getRichText("Components", [spell.components]),
+      ...this.notionHelper.getRichText("Casting Time", [spell.castingTime].filter(notNil)),
+      ...this.notionHelper.getRichText("Range (Area)", [spell.rangeAndArea].filter(notNil)),
+      ...this.notionHelper.getRichText("Duration", [spell.duration].filter(notNil)),
+      ...this.notionHelper.getRichText("Components", [spell.components].filter(notNil)),
       ...this.notionHelper.getSelect("Source", spell.source),
-      ...this.notionHelper.getRichText("Source Details", [spell.sourceDetails]),
+      ...this.notionHelper.getRichText("Source Details", [spell.sourceDetails].filter(notNil)),
       ...this.notionHelper.getMultiSelect("Spell Lists", spell.spellLists),
       ...this.notionHelper.getCheckbox("Ritual", spell.ritual),
       ...this.notionHelper.getCheckbox("Concentration", spell.concentration),
       ...this.notionHelper.getUrl("Link", spell.link),
-      ...this.notionHelper.getRichText("Attack/Save", [spell.attackOrSave]),
-      ...this.notionHelper.getRichText("Damage/Effect", [spell.damageOrEffect]),
+      ...this.notionHelper.getRichText("Attack/Save", [spell.attackOrSave].filter(notNil)),
+      ...this.notionHelper.getRichText("Damage/Effect", [spell.damageOrEffect].filter(notNil)),
       ...this.notionHelper.getMultiSelect("Tags", spell.tags),
       ...this.notionHelper.getUrl("Link (FR)", spell.linkFr),
     };
   }
 
   protected getIcon(spell: Spell) {
+    if (!spell.school) return undefined;
     return {
       external: {
         url: this.iconMap[spell.school],
@@ -63,6 +64,7 @@ export class NotionSpellsService extends NotionDbService<Spell, any> {
   }
 
   protected getChildren(spell: Spell) {
+    if (!spell.htmlContent) return [];
     const md = NodeHtmlMarkdown.translate(spell.htmlContent, { blockElements: ["br"] });
     return markdownToBlocks(md);
   }
@@ -95,6 +97,6 @@ export class NotionSpellsService extends NotionDbService<Spell, any> {
   }
 
   protected getTitle(page: Spell): string {
-    return page.name;
+    return page.name!;
   }
 }

@@ -43,12 +43,12 @@ export class WikidotSpellsService {
       components: cells[5].textContent,
     };
 
-    if (spell.name.includes("(UA)")) {
+    if (spell.name?.includes("(UA)")) {
       return undefined;
     }
 
-    const pageLink = cells[0].querySelector("a").getAttribute("href");
-    const fullPageLink = join(this.basePath, pageLink);
+    const pageLink = cells[0].querySelector("a")?.getAttribute("href");
+    const fullPageLink = join(this.basePath, pageLink ?? "");
     const spellPage = await this.pageService.getPageHtmlElement(fullPageLink);
     const content = spellPage.querySelector("#page-content");
     const paragraphs = spellPage.querySelectorAll("#page-content p");
@@ -61,19 +61,20 @@ export class WikidotSpellsService {
       spell.spellLists = spellsListTag.innerText.replace(spellListRegexp, "").split(",").map(this.cleanupText.bind(this));
     }
 
-    const componentsNode = content.querySelectorAll("strong").find((tag) => tag.innerText.includes("Components")).nextSibling;
+    if (!content) return spell;
+
+    const componentsNode = content.querySelectorAll("strong")?.find((tag) => tag.innerText.includes("Components"))?.nextSibling;
     if (componentsNode) {
       spell.components = this.cleanupText(componentsNode.innerText);
     }
 
-    const castingTimeNode = content.querySelectorAll("strong").find((tag) => tag.innerText.includes("Casting Time")).nextSibling;
+    const castingTimeNode = content.querySelectorAll("strong")?.find((tag) => tag.innerText.includes("Casting Time"))?.nextSibling;
     if (castingTimeNode) {
       spell.castingTime = this.cleanupText(castingTimeNode.innerText);
     }
-    spell.concentration = spell.duration.includes("Concentration");
+    spell.concentration = spell.duration?.includes("Concentration");
     spell.ritual = paragraphs[1].innerText.includes("(ritual)");
-    spell.htmlContent = spellPage.querySelector("#page-content").outerHTML;
-    // console.log("🚀 ~ WikidotSpellsService ~ fullPageLink", fullPageLink);
+    spell.htmlContent = spellPage.querySelector("#page-content")?.outerHTML;
     return spell;
   }
 

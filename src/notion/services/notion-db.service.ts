@@ -6,7 +6,6 @@ import {
   UpdateDatabaseParameters,
 } from "@notionhq/client/build/src/api-endpoints";
 import { Injectable } from "injection-js";
-import { resolve } from "path";
 
 import { ConfigService } from "../../core";
 import { NotionHelper } from "./notion.helper";
@@ -27,6 +26,76 @@ export abstract class NotionDbService<T, U> {
     await this.notion.databases.update({
       database_id: this.getDatabaseId(),
       properties: schema,
+    });
+  }
+
+  async cleanSelect(propertyName: string): Promise<void> {
+    const db = await this.notion.databases.retrieve({ database_id: this.getDatabaseId() });
+    const property = db.properties[propertyName];
+    if (property.type !== "select") return;
+    console.log("schema", property);
+    const keptOptions: typeof property.select.options = [];
+    for (const option of property.select.options) {
+      const response = await this.notion.databases.query({
+        database_id: this.getDatabaseId(),
+        page_size: 1,
+        filter: { property: propertyName, select: { equals: option.name } },
+      });
+      if (response.results.length > 0) {
+        keptOptions.push(option);
+      } else {
+        console.log(`Option not used, removing`, option.name);
+      }
+    }
+    keptOptions.sort((a, b) => a.name.localeCompare(b.name));
+
+    const newSchema = {
+      [propertyName]: {
+        ...property,
+        select: {
+          ...property.select,
+          options: keptOptions,
+        },
+      },
+    };
+    await this.notion.databases.update({
+      database_id: this.getDatabaseId(),
+      properties: newSchema,
+    });
+  }
+
+  async cleanMultiSelect(propertyName: string): Promise<void> {
+    console.log("Cleaning property", propertyName);
+    const db = await this.notion.databases.retrieve({ database_id: this.getDatabaseId() });
+    const property = db.properties[propertyName];
+    if (property.type !== "multi_select") return;
+    const keptOptions: typeof property.multi_select.options = [];
+    for (const option of property.multi_select.options) {
+      const response = await this.notion.databases.query({
+        database_id: this.getDatabaseId(),
+        page_size: 1,
+        filter: { property: propertyName, multi_select: { contains: option.name } },
+      });
+      if (response.results.length > 0) {
+        keptOptions.push(option);
+      } else {
+        console.log(`Option not used, removing`, option.name);
+      }
+    }
+    keptOptions.sort((a, b) => a.name.localeCompare(b.name));
+
+    const newSchema = {
+      [propertyName]: {
+        ...property,
+        multi_select: {
+          ...property.multi_select,
+          options: keptOptions,
+        },
+      },
+    };
+    await this.notion.databases.update({
+      database_id: this.getDatabaseId(),
+      properties: newSchema,
     });
   }
 
@@ -81,9 +150,9 @@ export abstract class NotionDbService<T, U> {
 
     if (currentId) {
       console.log("Updating", title);
-      // await this.deleteChildren(currentId);
-      // const newChildren = this.getChildren(page);
-      // await this.notion.blocks.children.append({ block_id: currentId, children: newChildren });
+      await this.deleteChildren(currentId);
+      const newChildren = this.getChildren(page);
+      await this.notion.blocks.children.append({ block_id: currentId, children: newChildren ?? [] });
       return (
         await this.notion.pages.update({
           page_id: currentId,

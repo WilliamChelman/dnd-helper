@@ -30,7 +30,7 @@ export class DdbSpellsService {
   private getSpellLinksSearchPage(page: HTMLElement): string[] {
     const links = page.querySelectorAll("ul.rpgspell-listing > div a");
     return links.map((link) => {
-      return new URL(link.getAttribute("href"), this.ddbHelper.basePath).toString();
+      return new URL(link.getAttribute("href")!, this.ddbHelper.basePath).toString();
     });
   }
 
@@ -56,9 +56,12 @@ export class DdbSpellsService {
       rangeAndArea = rangeAndArea.replace(")", `${geometry})`);
     }
     const content = page.querySelector(".more-info-content");
+    if (!content) {
+      throw new Error("Failed to get spell content");
+    }
     const links = content.querySelectorAll("a[href]");
     links.forEach((link) => {
-      const fullHref = new URL(link.getAttribute("href"), url).toString();
+      const fullHref = new URL(link.getAttribute("href")!, url).toString();
       link.setAttribute("href", fullHref);
     });
     const spell: Spell = {
@@ -71,7 +74,7 @@ export class DdbSpellsService {
       school: this.htmlElementHelper.getCleanedInnerText(page, ".ddb-statblock-item-school .ddb-statblock-item-value"),
       attackOrSave: this.htmlElementHelper.getCleanedInnerText(page, ".ddb-statblock-item-attack-save .ddb-statblock-item-value"),
       damageOrEffect: this.htmlElementHelper.getCleanedInnerText(page, ".ddb-statblock-item-damage-effect .ddb-statblock-item-value"),
-      htmlContent: content.outerHTML,
+      htmlContent: content?.outerHTML,
       spellLists: page.querySelectorAll(".tags.available-for .class-tag").map((el) => el.innerText),
       tags: page.querySelectorAll(".tags.spell-tags .spell-tag").map((el) => el.innerText),
       sourceDetails,

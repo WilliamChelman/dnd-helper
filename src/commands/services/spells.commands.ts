@@ -2,10 +2,10 @@ import { Injectable } from "injection-js";
 import { AideDdSpellsService } from "../../aidedd";
 import { DdbSpellsService } from "../../ddb";
 import { NotionSpellsService } from "../../notion";
-import { Commands } from "../models";
+import { Command } from "../models";
 
 @Injectable()
-export class SpellsCommands implements Commands<void> {
+export class SpellsCommands implements Command<void> {
   constructor(
     private ddbSpellsService: DdbSpellsService,
     private aideDdSpellService: AideDdSpellsService,
@@ -16,7 +16,7 @@ export class SpellsCommands implements Commands<void> {
     try {
       const spells = await this.ddbSpellsService.getSpells({ name: "fireball" });
       for (const spell of spells) {
-        const fr = await this.aideDdSpellService.getFrenchData(spell.name);
+        const fr = await this.aideDdSpellService.getFrenchData(spell.name!);
         if (fr) {
           Object.assign(spell, fr);
         } else {

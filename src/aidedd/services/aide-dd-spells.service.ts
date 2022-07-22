@@ -23,7 +23,7 @@ export class AideDdSpellsService {
       return undefined;
     }
     const href = frenchLink.getAttribute("href");
-    const frenchUrl = new URL(href, url).toString();
+    const frenchUrl = new URL(href!, url).toString();
     return {
       nameFr: frenchLink.innerText,
       linkFr: frenchUrl,

@@ -1,6 +1,6 @@
 import { Injectable } from "injection-js";
 import { HTMLElement } from "node-html-parser";
-import { ConfigService, Cookies, PageService, PageServiceOptions } from "../../core";
+import { ConfigService, Cookies, notNil, PageService, PageServiceOptions } from "../../core";
 
 @Injectable()
 export class DdbHelper {
@@ -10,12 +10,16 @@ export class DdbHelper {
 
   async crawlSearchPages<T>(firstPageUrl: string, parser: (page: HTMLElement) => T[], pageService: PageService): Promise<T[]> {
     const items = [];
-    let nextPage = firstPageUrl;
-    while (nextPage) {
-      const listPage = await pageService.getPageHtmlElement(nextPage);
+    let nextPageUrl: string = firstPageUrl;
+    while (true) {
+      const listPage = await pageService.getPageHtmlElement(nextPageUrl);
       items.push(...parser(listPage));
       const nextHref = listPage.querySelector(".b-pagination-item-next a")?.getAttribute("href");
-      nextPage = nextHref ? new URL(nextHref, nextPage).toString() : undefined;
+      if (nextHref) {
+        nextPageUrl = new URL(nextHref, nextPageUrl).toString();
+      } else {
+        break;
+      }
     }
 
     return items;

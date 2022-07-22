@@ -1,31 +1,24 @@
 import { Injectable } from "injection-js";
+
 import { AideDdMonstersService } from "../../aidedd";
 import { Monster } from "../../core";
-
-import { DdbMonstersService } from "../../ddb";
 import { NotionMonstersService } from "../../notion";
-import { Commands } from "../models";
+import { Command } from "../models";
 
 @Injectable()
-export class AideDdMonstersCommands implements Commands<void> {
-  constructor(
-    private ddbMonstersService: DdbMonstersService,
-    private notionService: NotionMonstersService,
-    private aideDd: AideDdMonstersService
-  ) {}
+export class AideDdMonstersCommands implements Command<void> {
+  constructor(private notionService: NotionMonstersService, private aideDd: AideDdMonstersService) {}
 
   async run(): Promise<void> {
     try {
       await this.notionService.initSchema();
       const monsters = await this.aideDd.getPartialMonsters();
-      let index = 579 + 107;
-      // for (let monster of monsters.filter((m) => m.name === "Dragon bleu, ancien")) {
+      let index = 0;
       for (let monster of monsters.slice(index)) {
-        // console.log("🚀 ~ AideDdMonstersCommands ~ monster", monster);
         console.group(`Processing ${index}/${monsters.length - 1} - ${monster.name}`);
         console.time("Took");
         monster = await this.aideDd.completeMonsterWithDetailPage(monster);
-        let partialSameAs: Monster;
+        let partialSameAs: Monster | undefined = undefined;
         const names = [monster.name, ...(monster.altNames ?? [])];
         for (const altName of names) {
           let searchName = altName;

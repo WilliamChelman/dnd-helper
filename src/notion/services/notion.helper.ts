@@ -2,7 +2,7 @@ import { Injectable } from "injection-js";
 
 @Injectable()
 export class NotionHelper {
-  getTitle(propertyName: string, value: string): any {
+  getTitle(propertyName: string, value: string | undefined): any {
     if (!value) return {};
     return {
       [propertyName]: {
@@ -12,13 +12,13 @@ export class NotionHelper {
     };
   }
 
-  getSelect(propertyName: string, value: string): any {
+  getSelect(propertyName: string, value: string | undefined): any {
     value = value?.replace(/,\s/g, " ").replace(/,/g, "");
     if (!value) return {};
     return { [propertyName]: { select: { name: value } } };
   }
 
-  getMultiSelect(propertyName: string, values: string[]): any {
+  getMultiSelect(propertyName: string, values: string[] | undefined): any {
     values = values?.filter((v) => !!v && v.length <= 100);
     if (!values || !values.length) return {};
     return {
@@ -28,7 +28,7 @@ export class NotionHelper {
     };
   }
 
-  getCheckbox(propertyName: string, value: boolean): any {
+  getCheckbox(propertyName: string, value: boolean | undefined): any {
     if (value == null) return {};
     return {
       [propertyName]: {
@@ -37,7 +37,7 @@ export class NotionHelper {
     };
   }
 
-  getNumber(propertyName: string, value: number): any {
+  getNumber(propertyName: string, value: number | undefined): any {
     if (value == null) return {};
     return {
       [propertyName]: {
@@ -46,7 +46,7 @@ export class NotionHelper {
     };
   }
 
-  getUrl(propertyName: string, value: string): any {
+  getUrl(propertyName: string, value: string | undefined): any {
     value = value?.trim();
     if (!value) return {};
     return {
@@ -56,7 +56,7 @@ export class NotionHelper {
     };
   }
 
-  getRelation(propertyName: string, value: string[]): any {
+  getRelation(propertyName: string, value: string[] | undefined): any {
     value = value?.filter((v) => !!v);
     if (!value || value.length === 0) return {};
 
@@ -67,7 +67,7 @@ export class NotionHelper {
     };
   }
 
-  getRichText(propertyName: string, values: string[]): any {
+  getRichText(propertyName: string, values: string[] | undefined): any {
     values = values?.filter((v) => !!v);
     if (!values || !values.length) return {};
     return {
