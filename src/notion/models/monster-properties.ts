@@ -29,4 +29,6 @@ export enum MonsterProperties {
   DATA_SOURCE = "Data Source",
   SAME_AS = "Same as",
   LANG = "Lang",
+  URI = "URI",
+  ID = "Id",
 }

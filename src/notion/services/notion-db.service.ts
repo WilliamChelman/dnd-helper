@@ -7,11 +7,11 @@ import {
 } from "@notionhq/client/build/src/api-endpoints";
 import { Injectable } from "injection-js";
 
-import { ConfigService } from "../../core";
+import { ConfigService, Entity } from "../../core";
 import { NotionHelper } from "./notion.helper";
 
 @Injectable()
-export abstract class NotionDbService<T, U> {
+export abstract class NotionDbService<T extends Entity> {
   notion = new Client({
     auth: this.configService.config.notion.auth,
   });
@@ -134,8 +134,13 @@ export abstract class NotionDbService<T, U> {
   }
 
   async getCurrentId(page: T): Promise<string | undefined> {
-    const title = this.getTitle(page);
-    return await this.getPageIdByTitle(title);
+    const response = await this.notion.databases.query({
+      database_id: this.getDatabaseId(),
+      page_size: 1,
+      filter: { property: "URI", url: { equals: page.uri } },
+    });
+
+    return response.results[0]?.id;
   }
 
   async getPageAndData(pageId: string): Promise<{ page: GetPageResponse; data: T }> {
@@ -150,9 +155,9 @@ export abstract class NotionDbService<T, U> {
 
     if (currentId) {
       console.log("Updating", title);
-      await this.deleteChildren(currentId);
-      const newChildren = this.getChildren(page);
-      await this.notion.blocks.children.append({ block_id: currentId, children: newChildren ?? [] });
+      // await this.deleteChildren(currentId);
+      // const newChildren = this.getChildren(page);
+      // await this.notion.blocks.children.append({ block_id: currentId, children: newChildren ?? [] });
       return (
         await this.notion.pages.update({
           page_id: currentId,
@@ -175,7 +180,7 @@ export abstract class NotionDbService<T, U> {
     }
   }
 
-  async patchPage(pageId: string, page: T): Promise<string> {
+  async patchPage(pageId: string, page: Partial<T>): Promise<string> {
     const properties = this.getProperties(page);
 
     return (
@@ -201,7 +206,7 @@ export abstract class NotionDbService<T, U> {
     }
   }
 
-  protected abstract getProperties(page: T): any;
+  protected abstract getProperties(page: Partial<T>): any;
   protected abstract getChildren(page: T): CreatePageParameters["children"];
   protected abstract getIcon(page: T): CreatePageParameters["icon"] | undefined;
   protected abstract getCover(page: T): CreatePageParameters["cover"] | undefined;
@@ -211,8 +216,3 @@ export abstract class NotionDbService<T, U> {
 }
 
 export type PropertiesSchema = UpdateDatabaseParameters["properties"];
-
-export interface NotionDbServiceOptions {
-  schema: PropertiesSchema;
-  databaseId: string;
-}

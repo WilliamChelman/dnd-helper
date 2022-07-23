@@ -3,7 +3,7 @@ import { HTMLElement } from "node-html-parser";
 import { URL } from "url";
 import { parse } from "yaml";
 
-import { Monster, PageService, PageServiceFactory } from "../../core";
+import { LabelsHelper, Monster, PageService, PageServiceFactory } from "../../core";
 import { notNil } from "../../core/utils";
 
 @Injectable()
@@ -14,7 +14,7 @@ export class DrsMonstersService {
     cachePath: "./cache/5e-drs/monsters",
   });
 
-  constructor(private pageFactoryService: PageServiceFactory) {}
+  constructor(private pageFactoryService: PageServiceFactory, private labelsHelper: LabelsHelper) {}
 
   async getPartialMonsters(): Promise<Monster[]> {
     const items = [];
@@ -39,9 +39,15 @@ export class DrsMonstersService {
       .map((row) => {
         const anchor = row.querySelector("td:nth-child(3) a");
         if (!anchor) return undefined;
+        const uri = new URL(anchor.getAttribute("href") as string, this.basePath).toString();
         return {
-          name: anchor.innerText.trim(),
-          link: new URL(anchor.getAttribute("href") as string, this.basePath).toString(),
+          id: uri
+            .split("/")
+            .filter((v) => !!v)
+            .pop()!,
+          name: this.labelsHelper.getName(anchor.innerText.trim())!,
+          uri,
+          link: uri,
           dataSource: "5eDrs",
           lang: "FR",
         };
@@ -57,7 +63,7 @@ export class DrsMonstersService {
     monster.type = metadata.type;
     monster.subtype = metadata.subtype;
     monster.languages = metadata.languages?.map((lang) => lang.replace(/,/g, ""));
-    monster.source = metadata.source.replace(/&amp;/g, "&");
+    monster.source = this.labelsHelper.getSource(metadata.source);
     monster.sourceDetails = metadata.source_page ? `pg. ${metadata.source_page}` : undefined;
     monster.damageImmunities = metadata.damageTypeImmunities;
     monster.resistances = metadata.damageTypeResistances;

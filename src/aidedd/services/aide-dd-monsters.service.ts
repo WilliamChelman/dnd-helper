@@ -1,9 +1,8 @@
 import { Injectable } from "injection-js";
-import { URL } from "url";
 import { HTMLElement, parse } from "node-html-parser";
+import { URL } from "url";
 
-import { Monster, PageService, PageServiceFactory } from "../../core";
-import { notNil } from "../../core/utils";
+import { LabelsHelper, Monster, notNil, PageService, PageServiceFactory } from "../../core";
 
 @Injectable()
 export class AideDdMonstersService {
@@ -13,7 +12,7 @@ export class AideDdMonstersService {
     cachePath: "./cache/aidedd/monsters",
   });
 
-  constructor(private pageFactoryService: PageServiceFactory) {}
+  constructor(private pageFactoryService: PageServiceFactory, private labelsHelper: LabelsHelper) {}
 
   async getPartialMonsters(): Promise<Monster[]> {
     const listPageUrl = new URL("/regles/liste-monstres/", this.basePath).toString();
@@ -21,10 +20,13 @@ export class AideDdMonstersService {
     const anchors = listPage.querySelectorAll(".content .liste a");
     return anchors.map((anchor) => {
       const name = anchor.innerText.trim().replace("(legacy)", "(Legacy)");
-      const href = anchor.getAttribute("href")?.replace("..", "");
+      const href = anchor.getAttribute("href")?.replace("..", "")!;
+      const uri = new URL(href, listPageUrl).toString();
       return {
-        name: name,
-        link: href ? new URL(href, listPageUrl).toString() : undefined,
+        name: this.labelsHelper.getName(name)!,
+        uri,
+        id: uri.match(/\?vf=(.*)/)![1],
+        link: uri,
         isLegacy: name.includes("(Legacy)"),
         dataSource: "AideDD",
         lang: "FR",
@@ -41,7 +43,7 @@ export class AideDdMonstersService {
       throw new Error("Failed to find page content");
     }
 
-    monster.source = detailPage.querySelector(".source")?.innerText;
+    monster.source = this.getSource(detailPage.querySelector(".source")?.innerText);
     const altNames = detailPage
       ?.querySelector(".trad")
       ?.innerText?.match(/\[([^\]]*)\]/g)
@@ -106,6 +108,18 @@ export class AideDdMonstersService {
     monster.htmlContent = content.outerHTML;
 
     return monster;
+  }
+
+  private getSource(value: string | undefined): string | undefined {
+    if (!value) return value;
+    value = value.trim();
+    if (value.startsWith("Rules (")) {
+      value = value.replace("Rules (", "").replace(")", "").trim();
+    } else if (value.startsWith("Adventures (")) {
+      value = value.replace("Adventures (", "").replace(")", "").trim();
+    }
+
+    return this.labelsHelper.getSource(value);
   }
 
   private cleanContent(content: HTMLElement): void {

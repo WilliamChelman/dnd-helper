@@ -1,5 +1,10 @@
-export interface Monster {
-  name?: string;
+import { Entity } from "./entity";
+
+export interface Monster extends Entity {
+  id: string;
+  name: string;
+  dataSource: string;
+  lang: string;
   altNames?: string[];
   link?: string;
   iconLink?: string;
@@ -29,7 +34,5 @@ export interface Monster {
   tags?: string[];
   coverLink?: string;
   htmlContent?: string;
-  lang?: string;
   sameAs?: string[];
-  dataSource?: string;
 }

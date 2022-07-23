@@ -8,7 +8,7 @@ import { NotionDbService, PropertiesSchema } from "./notion-db.service";
 import { NotionHelper } from "./notion.helper";
 
 @Injectable()
-export class NotionMonstersService extends NotionDbService<Monster, any> {
+export class NotionMonstersService extends NotionDbService<Monster> {
   constructor(configService: ConfigService, notionHelper: NotionHelper) {
     super(configService, notionHelper);
   }
@@ -39,9 +39,11 @@ export class NotionMonstersService extends NotionDbService<Monster, any> {
     return {
       ...this.notionHelper.getTitle(MonsterProperties.NAME, monster.name),
       ...this.notionHelper.getSelect(MonsterProperties.SOURCE, monster.source),
+      ...this.notionHelper.getUrl(MonsterProperties.URI, monster.uri),
       ...this.notionHelper.getUrl(MonsterProperties.LINK, monster.link),
       ...this.notionHelper.getMultiSelect(MonsterProperties.TAGS, monster.tags),
       ...this.notionHelper.getSelect(MonsterProperties.CR, monster.challenge),
+      ...this.notionHelper.getRichText(MonsterProperties.ID, [monster.id].filter(notNil)),
       ...this.notionHelper.getRichText(MonsterProperties.SOURCE_DETAILS, [monster.sourceDetails].filter(notNil)),
       ...this.notionHelper.getSelect(MonsterProperties.TYPE, monster.type),
       ...this.notionHelper.getSelect(MonsterProperties.SUBTYPE, monster.subtype),
@@ -114,9 +116,11 @@ export class NotionMonstersService extends NotionDbService<Monster, any> {
     return {
       [MonsterProperties.NAME]: { title: {} },
       [MonsterProperties.ALT_NAMES]: { rich_text: {} },
+      [MonsterProperties.ID]: { rich_text: {} },
       [MonsterProperties.TAGS]: { multi_select: {} },
       [MonsterProperties.SOURCE]: { select: {} },
       [MonsterProperties.SOURCE_DETAILS]: { rich_text: {} },
+      [MonsterProperties.URI]: { url: {} },
       [MonsterProperties.LINK]: { url: {} },
       [MonsterProperties.CR]: { select: {} },
       [MonsterProperties.TYPE]: { select: {} },

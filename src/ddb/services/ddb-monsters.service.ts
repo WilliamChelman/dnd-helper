@@ -1,7 +1,7 @@
 import { Injectable } from "injection-js";
 import { HTMLElement, parse } from "node-html-parser";
 
-import { HtmlElementHelper, Monster, PageService, PageServiceFactory } from "../../core";
+import { HtmlElementHelper, LabelsHelper, Monster, PageService, PageServiceFactory } from "../../core";
 import { notNil } from "../../core";
 import { DdbHelper } from "./ddb.helper";
 
@@ -9,7 +9,7 @@ import { DdbHelper } from "./ddb.helper";
 export class DdbMonstersService {
   private pageService: PageService;
 
-  constructor(pageServiceFactory: PageServiceFactory, private htmlElementHelper: HtmlElementHelper, private ddbHelper: DdbHelper) {
+  constructor(pageServiceFactory: PageServiceFactory, private labelsHelper: LabelsHelper, private ddbHelper: DdbHelper) {
     this.pageService = pageServiceFactory.create({ ...this.ddbHelper.getDefaultPageServiceOptions(), cachePath: "./cache/ddb/monsters" });
   }
 
@@ -38,12 +38,14 @@ export class DdbMonstersService {
         const subtype = block.querySelector(".monster-type .subtype")?.innerText.trim().replace("(", "").replace(")", "").trim();
 
         return {
-          name,
+          name: this.labelsHelper.getName(name)!,
           isLegacy,
+          uri: link,
+          id: link.split("/").pop()!,
           link,
           iconLink: this.getBackgroundUrlFromStyle(iconStyle),
           challenge: block.querySelector(".monster-challenge")?.innerText.trim(),
-          source: block.querySelector(".source")?.innerText.trim(),
+          source: this.labelsHelper.getSource(block.querySelector(".source")?.innerText.trim()),
           type: block.querySelector(".monster-type .type")?.innerText.trim(),
           subtype: subtype ? capitalizeFirstLetter(subtype) : undefined,
           size: block.querySelector(".monster-size")?.innerText.trim(),

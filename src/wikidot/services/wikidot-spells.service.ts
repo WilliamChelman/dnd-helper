@@ -33,8 +33,8 @@ export class WikidotSpellsService {
 
   private async getSpell(row: HTMLElement, level: string): Promise<Spell | undefined> {
     const cells = row.querySelectorAll("td");
-    const spell: Spell = {
-      level,
+    const spell: any = {
+      level: level,
       name: cells[0].textContent,
       school: cells[1].textContent.trim().split(/\s/)[0],
       castingTime: cells[2].textContent,

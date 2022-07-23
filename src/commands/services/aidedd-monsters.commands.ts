@@ -13,7 +13,7 @@ export class AideDdMonstersCommands implements Command<void> {
     try {
       await this.notionService.initSchema();
       const monsters = await this.aideDd.getPartialMonsters();
-      let index = 0;
+      let index = 501;
       for (let monster of monsters.slice(index)) {
         console.group(`Processing ${index}/${monsters.length - 1} - ${monster.name}`);
         console.time("Took");
@@ -25,7 +25,7 @@ export class AideDdMonstersCommands implements Command<void> {
           if (monster.isLegacy) {
             searchName += " (Legacy)";
           }
-          partialSameAs = { name: searchName, dataSource: "DDB" };
+          partialSameAs = { name: searchName, dataSource: "DDB" } as Monster;
           const sameAs = await this.notionService.getCurrentId(partialSameAs);
           if (sameAs) {
             monster.altNames = monster.altNames?.filter((n) => n !== altName);

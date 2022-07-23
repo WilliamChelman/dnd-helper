@@ -10,6 +10,7 @@ export interface Config {
     auth: string;
     spellsDbId: string;
     monstersDbId: string;
+    itemsDbId: string;
   };
   ddb: {
     cobaltSession: string;
@@ -20,7 +21,8 @@ export interface Config {
     spells?: boolean;
     monsters?: boolean;
   };
-  srd5e: {
+  drs5e: {
+    spells?: boolean;
     monsters?: boolean;
   };
 }

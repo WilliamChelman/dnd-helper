@@ -1,8 +1,11 @@
-import { HTMLElement } from "node-html-parser";
+import { Entity } from "./entity";
 
-export interface Spell {
+export interface Spell extends Entity {
+  id: string;
+  name: string;
+  dataSource: string;
+  lang: string;
   level?: string;
-  name?: string;
   school?: string;
   castingTime?: string;
   rangeAndArea?: string;
@@ -17,7 +20,6 @@ export interface Spell {
   attackOrSave?: string;
   damageOrEffect?: string;
   tags?: string[];
-  link?: string;
-  nameFr?: string;
-  linkFr?: string;
+  sameAs?: string[];
+  altNames?: string[];
 }

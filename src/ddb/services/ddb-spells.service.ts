@@ -1,14 +1,19 @@
 import { Injectable } from "injection-js";
 import { HTMLElement } from "node-html-parser";
 
-import { HtmlElementHelper, PageService, PageServiceFactory, Spell } from "../../core";
+import { HtmlElementHelper, LabelsHelper, PageService, PageServiceFactory, Spell } from "../../core";
 import { DdbHelper } from "./ddb.helper";
 
 @Injectable()
 export class DdbSpellsService {
   private pageService: PageService;
 
-  constructor(pageServiceFactory: PageServiceFactory, private htmlElementHelper: HtmlElementHelper, private ddbHelper: DdbHelper) {
+  constructor(
+    pageServiceFactory: PageServiceFactory,
+    private htmlElementHelper: HtmlElementHelper,
+    private ddbHelper: DdbHelper,
+    private labelsHelper: LabelsHelper
+  ) {
     this.pageService = pageServiceFactory.create({ ...this.ddbHelper.getDefaultPageServiceOptions(), cachePath: "./cache/ddb/spells/" });
   }
 
@@ -65,8 +70,12 @@ export class DdbSpellsService {
       link.setAttribute("href", fullHref);
     });
     const spell: Spell = {
-      name: this.htmlElementHelper.getCleanedInnerText(page, "header .page-title"),
-      level: this.htmlElementHelper.getCleanedInnerText(page, ".ddb-statblock-item-level .ddb-statblock-item-value"),
+      uri: url,
+      id: url.split("/").pop()!,
+      name: this.labelsHelper.getName(this.htmlElementHelper.getCleanedInnerText(page, "header .page-title"))!,
+      level: this.labelsHelper.getLevel(
+        this.htmlElementHelper.getCleanedInnerText(page, ".ddb-statblock-item-level .ddb-statblock-item-value")
+      ),
       castingTime: castingTime,
       rangeAndArea: rangeAndArea,
       components: this.htmlElementHelper.getCleanedInnerText(page, ".ddb-statblock-item-components .ddb-statblock-item-value"),
@@ -77,11 +86,12 @@ export class DdbSpellsService {
       htmlContent: content?.outerHTML,
       spellLists: page.querySelectorAll(".tags.available-for .class-tag").map((el) => el.innerText),
       tags: page.querySelectorAll(".tags.spell-tags .spell-tag").map((el) => el.innerText),
-      sourceDetails,
-      source: sourceDetails.split(",")[0].trim(),
+      sourceDetails: sourceDetails.split(",").slice(1).join(","),
+      source: this.labelsHelper.getSource(sourceDetails.split(",")[0].trim()),
       ritual,
       concentration,
-      link: url,
+      dataSource: "DDB",
+      lang: "EN",
     };
 
     return spell;
