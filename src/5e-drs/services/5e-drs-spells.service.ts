@@ -42,6 +42,7 @@ export class DrsSpellsService {
         const link = new URL(anchor.getAttribute("href") as string, this.basePath).toString();
         return {
           uri: link,
+          entityType: "Spell" as const,
           id: link
             .split("/")
             .filter((v) => !!v)

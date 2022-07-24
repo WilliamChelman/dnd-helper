@@ -16,6 +16,7 @@ export interface Config {
     cobaltSession: string;
     spells?: boolean;
     monsters?: boolean;
+    items?: boolean;
   };
   aidedd: {
     spells?: boolean;

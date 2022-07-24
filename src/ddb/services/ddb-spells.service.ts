@@ -71,6 +71,7 @@ export class DdbSpellsService {
     });
     const spell: Spell = {
       uri: url,
+      entityType: "Spell" as const,
       id: url.split("/").pop()!,
       name: this.labelsHelper.getName(this.htmlElementHelper.getCleanedInnerText(page, "header .page-title"))!,
       level: this.labelsHelper.getLevel(

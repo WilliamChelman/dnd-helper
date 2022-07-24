@@ -27,6 +27,7 @@ export class AideDdSpellsService {
       return {
         uri,
         id: uri.match(/\?vf=(.*)/)![1],
+        entityType: "Spell" as const,
         name: name,
         link: uri,
         dataSource: "AideDD",

@@ -1,15 +1,16 @@
-import { ReflectiveInjector } from "injection-js";
+import { ReflectiveInjector, Provider } from "injection-js";
 import "reflect-metadata";
 import { DrsMonstersService } from "./5e-drs";
 import { DrsSpellsService } from "./5e-drs/services/5e-drs-spells.service";
 import { AideDdMonstersService, AideDdSpellsService } from "./aidedd";
 
-import { AideDdMonstersCommands, DdbMonstersCommands, DrsMonstersCommand, DdbSpellsCommand } from "./commands";
+import { AideDdMonstersCommands, DdbMonstersCommands, DrsMonstersCommand, DdbSpellsCommand, DdbItemsCommands } from "./commands";
 import { DrsSpellsCommand } from "./commands/services/5e-drs-spells.command";
 import { AideDdSpellsCommand } from "./commands/services/aidedd-spells.command";
 import { PageServiceFactory, HtmlElementHelper, ConfigService, LabelsHelper, AssetsService } from "./core";
 import { DdbHelper, DdbMonstersService, DdbSpellsService } from "./ddb";
-import { NotionSpellsService, NotionHelper, NotionMonstersService } from "./notion";
+import { DdbItemsService } from "./ddb/services/ddb-items.service";
+import { NotionSpellsService, NotionHelper, NotionMonstersService, NotionItemsService } from "./notion";
 
 async function main() {
   const injector = ReflectiveInjector.resolveAndCreate([
@@ -33,12 +34,16 @@ async function main() {
     NotionMonstersService,
     NotionSpellsService,
     PageServiceFactory,
+    NotionItemsService,
+    DdbItemsCommands,
+    DdbItemsService,
     LabelsHelper,
   ]);
   const configService = injector.get(ConfigService) as ConfigService;
   const pageServiceFactory = injector.get(PageServiceFactory) as PageServiceFactory;
   const ddbSpellsCommands = injector.get(DdbSpellsCommand) as DdbSpellsCommand;
   const ddbMonstersCommands = injector.get(DdbMonstersCommands) as DdbMonstersCommands;
+  const ddbItemsCommands = injector.get(DdbItemsCommands) as DdbItemsCommands;
   const aideDdMonstersCommands = injector.get(AideDdMonstersCommands) as AideDdMonstersCommands;
   const aideDdSpellsCommands = injector.get(AideDdSpellsCommand) as AideDdSpellsCommand;
   const drsSpellsCommands = injector.get(DrsSpellsCommand) as DrsSpellsCommand;
@@ -49,6 +54,9 @@ async function main() {
     }
     if (configService.config.ddb?.monsters) {
       await ddbMonstersCommands.run();
+    }
+    if (configService.config.ddb?.items) {
+      await ddbItemsCommands.run();
     }
     if (configService.config.aidedd?.spells) {
       await aideDdSpellsCommands.run();

@@ -42,6 +42,7 @@ export class DdbMonstersService {
           isLegacy,
           uri: link,
           id: link.split("/").pop()!,
+          entityType: "Monster" as const,
           link,
           iconLink: this.getBackgroundUrlFromStyle(iconStyle),
           challenge: block.querySelector(".monster-challenge")?.innerText.trim(),

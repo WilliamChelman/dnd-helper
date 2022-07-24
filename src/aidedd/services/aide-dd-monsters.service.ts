@@ -25,6 +25,7 @@ export class AideDdMonstersService {
       return {
         name: this.labelsHelper.getName(name)!,
         uri,
+        entityType: "Monster" as const,
         id: uri.match(/\?vf=(.*)/)![1],
         link: uri,
         isLegacy: name.includes("(Legacy)"),

@@ -9,5 +9,6 @@ export interface Item extends Entity {
   cost?: string;
   weight?: string;
   tags?: string[];
-  htmlContent?: string[];
+  notes?: string[];
+  htmlContent?: string;
 }

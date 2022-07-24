@@ -1,6 +1,7 @@
 import { Entity } from "./entity";
 
 export interface Spell extends Entity {
+  entityType: "Spell";
   id: string;
   name: string;
   dataSource: string;

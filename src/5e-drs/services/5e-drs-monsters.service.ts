@@ -47,6 +47,7 @@ export class DrsMonstersService {
             .pop()!,
           name: this.labelsHelper.getName(anchor.innerText.trim())!,
           uri,
+          entityType: "Monster" as const,
           link: uri,
           dataSource: "5eDrs",
           lang: "FR",
