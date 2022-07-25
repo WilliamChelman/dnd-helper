@@ -1,4 +1,5 @@
 import { Injectable } from "injection-js";
+import { NodeHtmlMarkdown } from "node-html-markdown";
 import { HTMLElement } from "node-html-parser";
 
 import { Item, LabelsHelper, notNil, PageService, PageServiceFactory } from "../../core";
@@ -49,7 +50,7 @@ export class DdbItemsService {
 
     if (!content) return item;
     this.cleanupContent(content, item);
-    item.htmlContent = content.outerHTML;
+    item.markdownContent = NodeHtmlMarkdown.translate(content.outerHTML, { blockElements: ["br"] });
     return item;
   }
 

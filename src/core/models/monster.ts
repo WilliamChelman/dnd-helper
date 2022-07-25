@@ -31,6 +31,4 @@ export interface Monster extends Entity {
   movementTypes?: string[];
   tags?: string[];
   coverLink?: string;
-  htmlContent?: string;
-  sameAs?: string[];
 }

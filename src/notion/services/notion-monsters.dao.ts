@@ -98,9 +98,8 @@ export class NotionMonstersDao extends NotionDao<Monster> {
   }
 
   protected getChildren(monster: Monster) {
-    if (!monster.htmlContent) return [];
-    const md = NodeHtmlMarkdown.translate(monster.htmlContent, { blockElements: ["br"] }, {});
-    const blocks = markdownToBlocks(md);
+    if (!monster.markdownContent) return [];
+    const blocks = markdownToBlocks(monster.markdownContent);
     if (monster.coverLink) {
       blocks.unshift({
         type: "image",

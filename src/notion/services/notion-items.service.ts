@@ -35,9 +35,8 @@ export class NotionItemsService extends NotionDbService<Item> {
   }
 
   protected getChildren(item: Item) {
-    if (!item.htmlContent) return [];
-    const md = NodeHtmlMarkdown.translate(item.htmlContent, { blockElements: ["br"] });
-    return markdownToBlocks(md);
+    if (!item.markdownContent) return [];
+    return markdownToBlocks(item.markdownContent);
   }
 
   protected getSchema(): PropertiesSchema {

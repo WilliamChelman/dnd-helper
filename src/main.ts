@@ -17,8 +17,9 @@ import {
 } from "./core";
 import { DdbHelper, DdbMonstersDao, DdbSpellsDao } from "./ddb";
 import { DdbItemsService } from "./ddb/services/ddb-items.service";
-import { NotionHelper, NotionItemsService, NotionSpellsDao, NotionSpellsService } from "./notion";
+import { NotionHelper, NotionItemsService, NotionSpellsDao } from "./notion";
 import { NotionMonstersDao } from "./notion/services/notion-monsters.dao";
+import { MarkdownYamlEntitiesDao } from "./markdown-yaml";
 
 async function main() {
   const injector = ReflectiveInjector.resolveAndCreate([
@@ -27,7 +28,6 @@ async function main() {
     AssetsService,
     HtmlElementHelper,
     NotionHelper,
-    NotionSpellsService,
     PageServiceFactory,
     NotionItemsService,
     LoggerFactory,
@@ -71,6 +71,11 @@ async function main() {
     {
       provide: EntityDao,
       useClass: FiveEDrsSpellsDao,
+      multi: true,
+    },
+    {
+      provide: EntityDao,
+      useClass: MarkdownYamlEntitiesDao,
       multi: true,
     },
   ]);

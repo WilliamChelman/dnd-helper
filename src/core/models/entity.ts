@@ -6,4 +6,5 @@ export interface Entity {
   lang: string;
   sameAs?: string[];
   altNames?: string[];
+  markdownContent?: string;
 }

@@ -16,17 +16,6 @@ export interface Config {
   };
   ddb: {
     cobaltSession: string;
-    spells?: boolean;
-    monsters?: boolean;
-    items?: boolean;
-  };
-  aidedd: {
-    spells?: boolean;
-    monsters?: boolean;
-  };
-  drs5e: {
-    spells?: boolean;
-    monsters?: boolean;
   };
 }
 

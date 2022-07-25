@@ -1,4 +1,5 @@
 import { Injectable } from "injection-js";
+import { NodeHtmlMarkdown } from "node-html-markdown";
 import { HTMLElement } from "node-html-parser";
 import { URL } from "url";
 import { parse } from "yaml";
@@ -111,7 +112,7 @@ export class FiveEDrsMonstersDao implements SourceEntityDao<Monster> {
       const hitPointsRaw = content.querySelector(".monster-hit-points")?.innerText?.match(/Points de vie (\d+)/)?.[1];
       monster.avgHitPoints = hitPointsRaw ? parseInt(hitPointsRaw) : undefined;
       this.cleanContent(content);
-      monster.htmlContent = content.outerHTML;
+      monster.markdownContent = NodeHtmlMarkdown.translate(content.outerHTML, { blockElements: ["br"] });
     }
 
     return monster;

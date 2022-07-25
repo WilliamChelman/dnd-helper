@@ -1,4 +1,5 @@
 import { Injectable } from "injection-js";
+import { NodeHtmlMarkdown } from "node-html-markdown";
 import { parse, HTMLElement } from "node-html-parser";
 import { URL } from "url";
 
@@ -122,7 +123,7 @@ export class AideDdSpellsDao implements EntityDao<Spell> {
       .filter(notNil);
 
     this.cleanContent(content);
-    spell.htmlContent = content.outerHTML;
+    spell.markdownContent = NodeHtmlMarkdown.translate(content.outerHTML, { blockElements: ["br"] });
 
     return spell;
   }

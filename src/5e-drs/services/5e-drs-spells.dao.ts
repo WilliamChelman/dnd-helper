@@ -1,4 +1,5 @@
 import { Injectable } from "injection-js";
+import { NodeHtmlMarkdown } from "node-html-markdown";
 import { HTMLElement } from "node-html-parser";
 import { URL } from "url";
 import { parse } from "yaml";
@@ -100,7 +101,7 @@ export class FiveEDrsSpellsDao implements SourceEntityDao<Spell> {
     const content = detailPage.querySelector(".page.content");
     if (content) {
       this.cleanContent(content);
-      spell.htmlContent = content.outerHTML;
+      spell.markdownContent = NodeHtmlMarkdown.translate(content.outerHTML, { blockElements: ["br"] });
     }
 
     return spell;

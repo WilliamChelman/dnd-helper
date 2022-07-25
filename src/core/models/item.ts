@@ -6,5 +6,4 @@ export interface Item extends Entity {
   weight?: string;
   tags?: string[];
   notes?: string[];
-  htmlContent?: string;
 }

@@ -14,10 +14,8 @@ export interface Spell extends Entity {
   spellLists?: string[];
   concentration?: boolean;
   ritual?: boolean;
-  htmlContent?: string;
   attackOrSave?: string;
   damageOrEffect?: string;
   tags?: string[];
-  sameAs?: string[];
   altNames?: string[];
 }

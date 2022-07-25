@@ -1,4 +1,5 @@
 import { Injectable } from "injection-js";
+import { NodeHtmlMarkdown } from "node-html-markdown";
 import { HTMLElement, parse } from "node-html-parser";
 
 import { EntityDao, LabelsHelper, LoggerFactory, Monster, notNil, PageService, PageServiceFactory } from "../../core";
@@ -173,7 +174,7 @@ export class DdbMonstersDao implements EntityDao<Monster> {
       .querySelectorAll(".mon-stat-block__description-block-heading")
       .some((heading) => heading.innerText.includes("Mythic Actions"));
     this.cleanupContent(content, monster);
-    monster.htmlContent = content.outerHTML;
+    monster.markdownContent = NodeHtmlMarkdown.translate(content.outerHTML, { blockElements: ["br"] });
     return monster;
   }
 

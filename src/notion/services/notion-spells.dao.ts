@@ -102,9 +102,8 @@ export class NotionSpellsDao extends NotionDao<Spell> {
   }
 
   protected getChildren(spell: Spell) {
-    if (!spell.htmlContent) return [];
-    const md = NodeHtmlMarkdown.translate(spell.htmlContent, { blockElements: ["br"] });
-    return markdownToBlocks(md);
+    if (!spell.markdownContent) return [];
+    return markdownToBlocks(spell.markdownContent);
   }
 
   protected getSchema(): PropertiesSchema {

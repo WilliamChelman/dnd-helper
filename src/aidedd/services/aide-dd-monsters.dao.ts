@@ -1,4 +1,5 @@
 import { Injectable } from "injection-js";
+import { NodeHtmlMarkdown } from "node-html-markdown";
 import { HTMLElement, parse } from "node-html-parser";
 import { URL } from "url";
 
@@ -136,7 +137,7 @@ export class AideDdMonstersDao implements EntityDao<Monster> {
     monster.coverLink = imgLink;
     monster.iconLink = imgLink;
     this.cleanContent(content);
-    monster.htmlContent = content.outerHTML;
+    monster.markdownContent = NodeHtmlMarkdown.translate(content.outerHTML, { blockElements: ["br"] });
 
     return monster;
   }

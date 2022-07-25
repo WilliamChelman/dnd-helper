@@ -1,4 +1,5 @@
 import { Injectable } from "injection-js";
+import { NodeHtmlMarkdown } from "node-html-markdown";
 import { HTMLElement } from "node-html-parser";
 
 import { EntityDao, HtmlElementHelper, LabelsHelper, PageService, PageServiceFactory, Spell } from "../../core";
@@ -87,6 +88,7 @@ export class DdbSpellsDao implements EntityDao<Spell> {
       const fullHref = new URL(link.getAttribute("href")!, url).toString();
       link.setAttribute("href", fullHref);
     });
+
     const spell: Spell = {
       uri: url,
       entityType: "Spell" as const,
@@ -102,7 +104,7 @@ export class DdbSpellsDao implements EntityDao<Spell> {
       school: this.htmlElementHelper.getCleanedInnerText(page, ".ddb-statblock-item-school .ddb-statblock-item-value"),
       attackOrSave: this.htmlElementHelper.getCleanedInnerText(page, ".ddb-statblock-item-attack-save .ddb-statblock-item-value"),
       damageOrEffect: this.htmlElementHelper.getCleanedInnerText(page, ".ddb-statblock-item-damage-effect .ddb-statblock-item-value"),
-      htmlContent: content?.outerHTML,
+      markdownContent: NodeHtmlMarkdown.translate(content.outerHTML, { blockElements: ["br"] }),
       spellLists: page.querySelectorAll(".tags.available-for .class-tag").map((el) => el.innerText),
       tags: page.querySelectorAll(".tags.spell-tags .spell-tag").map((el) => el.innerText),
       sourceDetails: sourceDetails.split(",").slice(1).join(","),
