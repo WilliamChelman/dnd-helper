@@ -3,18 +3,34 @@ import { HTMLElement } from "node-html-parser";
 import { URL } from "url";
 import { parse } from "yaml";
 
-import { LabelsHelper, Monster, PageService, PageServiceFactory } from "../../core";
+import { LabelsHelper, LoggerFactory, Monster, PageService, PageServiceFactory, SourceEntityDao } from "../../core";
 import { notNil } from "../../core/utils";
 
 @Injectable()
-export class DrsMonstersService {
+export class FiveEDrsMonstersDao implements SourceEntityDao<Monster> {
+  id: string = "5e-drs-monsters";
   private basePath = "https://5e-drs.fr";
   private pageService: PageService = this.pageFactoryService.create({
     cacheContext: true,
     cachePath: "./cache/5e-drs/monsters",
   });
+  private logger = this.loggerFactory.create("FiveEDrsMonstersDao");
 
-  constructor(private pageFactoryService: PageServiceFactory, private labelsHelper: LabelsHelper) {}
+  constructor(private pageFactoryService: PageServiceFactory, private labelsHelper: LabelsHelper, private loggerFactory: LoggerFactory) {}
+
+  async getAll(): Promise<Monster[]> {
+    const partialMonsters = await this.getPartialMonsters();
+    const monsters: Monster[] = [];
+    let index = 0;
+    for (let monster of partialMonsters) {
+      this.logger.info(`Processing ${index}/${partialMonsters.length - 1} - ${monster.name}`);
+      monster = await this.completeMonsterWithDetailPage(monster);
+      monsters.push(monster);
+      ++index;
+    }
+
+    return monsters;
+  }
 
   async getPartialMonsters(): Promise<Monster[]> {
     const items = [];
@@ -158,7 +174,7 @@ export class DrsMonstersService {
   }
 }
 
-export interface GithubMetadata {
+interface GithubMetadata {
   title: string;
   type: string;
   subtype: string;
@@ -183,7 +199,7 @@ export interface GithubMetadata {
   environments?: string[];
 }
 
-export interface AbilityScores {
+interface AbilityScores {
   for: number;
   dex: number;
   con: number;
@@ -192,24 +208,24 @@ export interface AbilityScores {
   cha: number;
 }
 
-export interface AC {
+interface AC {
   armorType: string;
   value: number;
 }
 
-export interface Movement {
+interface Movement {
   walk: number;
   burrow: number;
   climb: number;
   fly: number;
 }
 
-export interface Senses {
+interface Senses {
   darkvision: number;
   truesight: number;
 }
 
-export interface Skill {
+interface Skill {
   name: string;
   isExpert?: boolean;
 }

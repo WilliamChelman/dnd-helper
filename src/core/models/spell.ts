@@ -3,9 +3,6 @@ import { Entity } from "./entity";
 export interface Spell extends Entity {
   entityType: "Spell";
   id: string;
-  name: string;
-  dataSource: string;
-  lang: string;
   level?: string;
   school?: string;
   castingTime?: string;

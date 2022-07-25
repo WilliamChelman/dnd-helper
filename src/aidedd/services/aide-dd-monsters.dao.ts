@@ -2,17 +2,45 @@ import { Injectable } from "injection-js";
 import { HTMLElement, parse } from "node-html-parser";
 import { URL } from "url";
 
-import { LabelsHelper, Monster, notNil, PageService, PageServiceFactory } from "../../core";
+import { EntityDao, LabelsHelper, LoggerFactory, Monster, notNil, PageService, PageServiceFactory } from "../../core";
 
 @Injectable()
-export class AideDdMonstersService {
+export class AideDdMonstersDao implements EntityDao<Monster> {
+  id: string = "aide-dd-monsters";
   private basePath = "https://www.aidedd.org";
   private pageService: PageService = this.pageFactoryService.create({
     cacheContext: true,
     cachePath: "./cache/aidedd/monsters",
   });
+  private logger = this.loggerFactory.create("AideDdMonstersDao");
 
-  constructor(private pageFactoryService: PageServiceFactory, private labelsHelper: LabelsHelper) {}
+  constructor(private pageFactoryService: PageServiceFactory, private labelsHelper: LabelsHelper, private loggerFactory: LoggerFactory) {}
+
+  async getAll(): Promise<Monster[]> {
+    const partialMonsters = await this.getPartialMonsters();
+    const monsters: Monster[] = [];
+    let index = 0;
+    for (let monster of partialMonsters) {
+      this.logger.info(`Processing ${index}/${partialMonsters.length - 1} - ${monster.name}`);
+      monster = await this.completeMonsterWithDetailPage(monster);
+      monsters.push(monster);
+      ++index;
+    }
+
+    return monsters;
+  }
+  getByUri(uri: string): Promise<Monster> {
+    throw new Error("Method not implemented.");
+  }
+  save(entity: Monster): Promise<string> {
+    throw new Error("Method not implemented.");
+  }
+  patch(entity: Monster): Promise<string> {
+    throw new Error("Method not implemented.");
+  }
+  canHandle(entityType: string): number {
+    throw new Error("Method not implemented.");
+  }
 
   async getPartialMonsters(): Promise<Monster[]> {
     const listPageUrl = new URL("/regles/liste-monstres/", this.basePath).toString();
@@ -49,7 +77,7 @@ export class AideDdMonstersService {
       ?.querySelector(".trad")
       ?.innerText?.match(/\[([^\]]*)\]/g)
       ?.map((v) => v.replace("[", "").replace("]", "").trim())
-      .filter((altName) => altName !== monster.name);
+      .map((n) => (monster.isLegacy ? `${n} (Legacy)` : n));
     monster.altNames = altNames;
 
     const typeBlock = content.querySelector(".type")?.innerText.trim();
@@ -104,7 +132,9 @@ export class AideDdMonstersService {
       }
     });
     monster.isLegendary = content.querySelectorAll(".rub").some((rub) => rub.innerText.includes("ACTIONS LÉGENDAIRES"));
-
+    const imgLink = detailPage.querySelector(".picture img")?.getAttribute("src");
+    monster.coverLink = imgLink;
+    monster.iconLink = imgLink;
     this.cleanContent(content);
     monster.htmlContent = content.outerHTML;
 

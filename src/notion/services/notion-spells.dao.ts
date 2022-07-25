@@ -2,13 +2,16 @@ import { markdownToBlocks } from "@tryfabric/martian";
 import { Injectable } from "injection-js";
 import { NodeHtmlMarkdown } from "node-html-markdown";
 
-import { ConfigService, notNil, Spell } from "../../core";
+import { ConfigService, LoggerFactory, notNil, Spell } from "../../core";
 import { SpellProperties } from "../models";
-import { NotionDbService, PropertiesSchema } from "./notion-db.service";
+import { PropertiesSchema } from "./notion-db.service";
+import { NotionDao } from "./notion.dao";
 import { NotionHelper } from "./notion.helper";
 
 @Injectable()
-export class NotionSpellsService extends NotionDbService<Spell> {
+export class NotionSpellsDao extends NotionDao<Spell> {
+  id: string = "notion-spells";
+
   private iconMap: { [school: string]: string } = {
     Abjuration: "https://www.dndbeyond.com/attachments/2/707/abjuration.png",
     Conjuration: "https://www.dndbeyond.com/attachments/2/708/conjuration.png",
@@ -20,8 +23,12 @@ export class NotionSpellsService extends NotionDbService<Spell> {
     Transmutation: "https://www.dndbeyond.com/attachments/2/722/transmutation.png",
   };
 
-  constructor(configService: ConfigService, notionHelper: NotionHelper) {
-    super(configService, notionHelper);
+  constructor(configService: ConfigService, notionHelper: NotionHelper, loggerFactory: LoggerFactory) {
+    super(configService, notionHelper, loggerFactory.create("NotionSpellsDao"));
+  }
+
+  canHandle(entityType: string): number {
+    return entityType === "Spell" ? 10 : 0;
   }
 
   async getByNameAndDataSource(options: Pick<Spell, "name" | "dataSource">): Promise<string | undefined> {

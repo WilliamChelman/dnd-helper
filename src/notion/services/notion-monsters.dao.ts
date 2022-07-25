@@ -2,15 +2,22 @@ import { markdownToBlocks } from "@tryfabric/martian";
 import { Injectable } from "injection-js";
 import { NodeHtmlMarkdown } from "node-html-markdown";
 
-import { ConfigService, Monster, notNil } from "../../core";
+import { ConfigService, LoggerFactory, Monster, notNil } from "../../core";
 import { MonsterProperties } from "../models";
-import { NotionDbService, PropertiesSchema } from "./notion-db.service";
+import { PropertiesSchema } from "./notion-db.service";
+import { NotionDao } from "./notion.dao";
 import { NotionHelper } from "./notion.helper";
 
 @Injectable()
-export class NotionMonstersService extends NotionDbService<Monster> {
-  constructor(configService: ConfigService, notionHelper: NotionHelper) {
-    super(configService, notionHelper);
+export class NotionMonstersDao extends NotionDao<Monster> {
+  id: string = "notion-monsters";
+
+  constructor(configService: ConfigService, notionHelper: NotionHelper, loggerFactory: LoggerFactory) {
+    super(configService, notionHelper, loggerFactory.create("NotionMonsterDao"));
+  }
+
+  canHandle(entityType: string): number {
+    return entityType === "Monster" ? 10 : 0;
   }
 
   async getCurrentId(page: Monster): Promise<string | undefined> {

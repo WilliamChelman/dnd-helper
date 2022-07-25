@@ -1,3 +1,3 @@
 export * from "./ddb.helper";
-export * from "./ddb-monsters.service";
-export * from "./ddb-spells.service";
+export * from "./ddb-monsters.dao";
+export * from "./ddb-spells.dao";

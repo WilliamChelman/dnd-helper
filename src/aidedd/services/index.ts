@@ -1,2 +1,2 @@
-export * from "./aide-dd-monsters.service";
-export * from "./aide-dd-spells.service";
+export * from "./aide-dd-monsters.dao";
+export * from "./aide-dd-spells.dao";

@@ -3,18 +3,34 @@ import { HTMLElement } from "node-html-parser";
 import { URL } from "url";
 import { parse } from "yaml";
 
-import { LabelsHelper, Monster, PageService, PageServiceFactory, Spell } from "../../core";
+import { LabelsHelper, LoggerFactory, PageService, PageServiceFactory, SourceEntityDao, Spell } from "../../core";
 import { notNil } from "../../core/utils";
 
 @Injectable()
-export class DrsSpellsService {
+export class FiveEDrsSpellsDao implements SourceEntityDao<Spell> {
+  id: string = "5e-drs-spells";
   private basePath = "https://5e-drs.fr";
   private pageService: PageService = this.pageFactoryService.create({
     cacheContext: true,
     cachePath: "./cache/5e-drs/spells",
   });
+  private logger = this.loggerFactory.create("FiveEDrsSpellsDao");
 
-  constructor(private pageFactoryService: PageServiceFactory, private labelsHelper: LabelsHelper) {}
+  constructor(private pageFactoryService: PageServiceFactory, private labelsHelper: LabelsHelper, private loggerFactory: LoggerFactory) {}
+
+  async getAll(): Promise<Spell[]> {
+    const partialSpells = await this.getPartialSpells();
+    const spells: Spell[] = [];
+    let index = 0;
+    for (let spell of partialSpells) {
+      this.logger.info(`Processing ${index}/${partialSpells.length - 1} - ${spell.name}`);
+      spell = await this.completeSpellWithDetailPage(spell);
+      spells.push(spell);
+      ++index;
+    }
+
+    return spells;
+  }
 
   async getPartialSpells(): Promise<Spell[]> {
     const items = [];

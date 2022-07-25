@@ -1,11 +1,13 @@
 import { Injectable } from "injection-js";
 import { HTMLElement } from "node-html-parser";
 
-import { HtmlElementHelper, LabelsHelper, PageService, PageServiceFactory, Spell } from "../../core";
+import { EntityDao, HtmlElementHelper, LabelsHelper, PageService, PageServiceFactory, Spell } from "../../core";
 import { DdbHelper } from "./ddb.helper";
 
 @Injectable()
-export class DdbSpellsService {
+export class DdbSpellsDao implements EntityDao<Spell> {
+  id: string = "ddb-spells";
+
   private pageService: PageService;
 
   constructor(
@@ -17,7 +19,23 @@ export class DdbSpellsService {
     this.pageService = pageServiceFactory.create({ ...this.ddbHelper.getDefaultPageServiceOptions(), cachePath: "./cache/ddb/spells/" });
   }
 
-  async getSpells(options?: SpellsFilteringOptions): Promise<Spell[]> {
+  async getAll(): Promise<Spell[]> {
+    return await this.getSpells();
+  }
+  async getByUri(uri: string): Promise<Spell> {
+    throw new Error("not implemented");
+  }
+  async save(entity: Spell): Promise<string> {
+    throw new Error("not implemented");
+  }
+  async patch(entity: Spell): Promise<string> {
+    throw new Error("not implemented");
+  }
+  canHandle(entityType: string): number {
+    throw new Error("not implemented");
+  }
+
+  private async getSpells(options?: SpellsFilteringOptions): Promise<Spell[]> {
     const spells = [];
     let searchPageUrl = new URL("/spells", this.ddbHelper.basePath).toString();
     if (options?.name) {

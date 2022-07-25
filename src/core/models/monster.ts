@@ -3,9 +3,6 @@ import { Entity } from "./entity";
 export interface Monster extends Entity {
   entityType: "Monster";
   id: string;
-  name: string;
-  dataSource: string;
-  lang: string;
   altNames?: string[];
   link?: string;
   iconLink?: string;

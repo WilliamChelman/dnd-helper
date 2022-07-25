@@ -4,13 +4,16 @@ import path from "path";
 import { Injectable } from "injection-js";
 import { parse, HTMLElement } from "node-html-parser";
 import UserAgent from "user-agents";
+import { LoggerFactory } from "./logger.factory";
 
 @Injectable()
 export class PageServiceFactory {
   private services: PageService[] = [];
 
+  constructor(private loggerFactory: LoggerFactory) {}
+
   create(options: PageServiceOptions = {}) {
-    const service = new PageService(options);
+    const service = new PageService(options, this.loggerFactory);
     this.services.push(service);
     return service;
   }
@@ -27,11 +30,12 @@ export class PageService {
   private context?: playwright.BrowserContext;
   private lastUserAgent?: string;
   private failedUserAgents = new Set<string>();
+  private logger = this.loggerFactory.create("PageService");
 
-  constructor(private options: PageServiceOptions) {}
+  constructor(private options: PageServiceOptions, private loggerFactory: LoggerFactory) {}
 
   async getPageHtmlElement(url: string): Promise<HTMLElement> {
-    console.log("Fetching page", url);
+    this.logger.debug("Fetching page", { url });
     const cache = this.getFromCache(url);
     if (cache && !this.options.noCache) {
       return parse(cache);
@@ -62,7 +66,7 @@ export class PageService {
           this.failedUserAgents.add(this.lastUserAgent);
         }
         if (tryCount < 10) {
-          console.log(`Got invalid page, trying again ${tryCount + 1}/10`);
+          this.logger.warn(`Got invalid page, trying again ${tryCount + 1}/10`);
           this.reset();
           return this.getPage(url, tryCount + 1);
         } else {

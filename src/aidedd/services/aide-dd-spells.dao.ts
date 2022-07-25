@@ -2,19 +2,52 @@ import { Injectable } from "injection-js";
 import { parse, HTMLElement } from "node-html-parser";
 import { URL } from "url";
 
-import { AssetsService, LabelsHelper, notNil, PageService, PageServiceFactory, Spell } from "../../core";
+import { AssetsService, EntityDao, LabelsHelper, LoggerFactory, notNil, PageService, PageServiceFactory, Spell } from "../../core";
 
 @Injectable()
-export class AideDdSpellsService {
+export class AideDdSpellsDao implements EntityDao<Spell> {
+  id: string = "aide-dd-spells";
   private basePath = "https://www.aidedd.org";
   private pageService: PageService = this.pageFactoryService.create({
     cacheContext: true,
     cachePath: "./cache/aidedd/spells",
   });
+  private logger = this.loggerFactory.create("AideDdSpellsDao");
 
   private altNames: { [name: string]: string[] } = this.assetsService.readJson("aidedd/spells-alt-names.json");
 
-  constructor(private pageFactoryService: PageServiceFactory, private labelsHelper: LabelsHelper, private assetsService: AssetsService) {}
+  constructor(
+    private pageFactoryService: PageServiceFactory,
+    private labelsHelper: LabelsHelper,
+    private assetsService: AssetsService,
+    private loggerFactory: LoggerFactory
+  ) {}
+
+  async getAll(): Promise<Spell[]> {
+    const partialSpells = await this.getPartialSpells();
+    const spells: Spell[] = [];
+    let index = 0;
+    for (let spell of partialSpells.slice(0, 1)) {
+      this.logger.info(`Processing ${index}/${partialSpells.length - 1} - ${spell.name}`);
+      spell = await this.completeSpellWithDetailPage(spell);
+      spells.push(spell);
+      ++index;
+    }
+    return spells;
+  }
+
+  getByUri(uri: string): Promise<Spell> {
+    throw new Error("Method not implemented.");
+  }
+  save(entity: Spell): Promise<string> {
+    throw new Error("Method not implemented.");
+  }
+  patch(entity: Spell): Promise<string> {
+    throw new Error("Method not implemented.");
+  }
+  canHandle(entityType: string): number {
+    throw new Error("Method not implemented.");
+  }
 
   async getPartialSpells(): Promise<Spell[]> {
     const listPageUrl = new URL("/regles/sorts/", this.basePath).toString();

@@ -1,19 +1,50 @@
 import { Injectable } from "injection-js";
 import { HTMLElement, parse } from "node-html-parser";
 
-import { HtmlElementHelper, LabelsHelper, Monster, PageService, PageServiceFactory } from "../../core";
-import { notNil } from "../../core";
+import { EntityDao, LabelsHelper, LoggerFactory, Monster, notNil, PageService, PageServiceFactory } from "../../core";
 import { DdbHelper } from "./ddb.helper";
 
 @Injectable()
-export class DdbMonstersService {
+export class DdbMonstersDao implements EntityDao<Monster> {
+  id: string = "ddb-monsters";
   private pageService: PageService;
+  private logger = this.loggerFactory.create("DdbMonstersDao");
 
-  constructor(pageServiceFactory: PageServiceFactory, private labelsHelper: LabelsHelper, private ddbHelper: DdbHelper) {
+  constructor(
+    pageServiceFactory: PageServiceFactory,
+    private labelsHelper: LabelsHelper,
+    private ddbHelper: DdbHelper,
+    private loggerFactory: LoggerFactory
+  ) {
     this.pageService = pageServiceFactory.create({ ...this.ddbHelper.getDefaultPageServiceOptions(), cachePath: "./cache/ddb/monsters" });
   }
 
-  async getPartialMonsters(options?: MonstersFilteringOptions): Promise<Monster[]> {
+  async getAll(): Promise<Monster[]> {
+    const partialMonsters = await this.getPartialMonsters();
+    const monsters = [];
+    let index = 0;
+    for (let monster of partialMonsters) {
+      this.logger.info(`Processing ${index}/${partialMonsters.length - 1} - ${monster.name}`);
+      monsters.push(await this.completeMonsterWithDetailPage(monster));
+      ++index;
+    }
+    return monsters;
+  }
+
+  getByUri(uri: string): Promise<Monster> {
+    throw new Error("not implemented");
+  }
+  save(entity: Monster): Promise<string> {
+    throw new Error("not implemented");
+  }
+  patch(entity: Monster): Promise<string> {
+    throw new Error("not implemented");
+  }
+  canHandle(entityType: string): number {
+    throw new Error("not implemented");
+  }
+
+  private async getPartialMonsters(options?: MonstersFilteringOptions): Promise<Monster[]> {
     let searchPageUrl = new URL("/monsters", this.ddbHelper.basePath).toString();
     if (options?.name) {
       searchPageUrl += `?filter-search=${encodeURIComponent(options.name)}`;
@@ -63,7 +94,7 @@ export class DdbMonstersService {
     return style?.match(/background-image: url\('(.*)'\);/)?.[1] ?? undefined;
   }
 
-  async completeMonsterWithDetailPage(partialMonster: Monster): Promise<Monster> {
+  private async completeMonsterWithDetailPage(partialMonster: Monster): Promise<Monster> {
     const monster = { ...partialMonster };
     const page = await this.pageService.getPageHtmlElement(monster.link!);
     const content = page.querySelector(".more-info.details-more-info");

@@ -1,4 +1,4 @@
 export * from "./notion.helper";
 export * from "./notion-items.service";
-export * from "./notion-monsters.service";
-export * from "./notion-spells.service";
+export * from "./notion-monsters.dao";
+export * from "./notion-spells.dao";
