@@ -1,10 +1,13 @@
-import playwright from "playwright";
-import fs from "fs";
-import path from "path";
-import { Injectable } from "injection-js";
-import { parse, HTMLElement } from "node-html-parser";
-import UserAgent from "user-agents";
-import { LoggerFactory } from "./logger.factory";
+import fs from 'fs';
+import { Injectable } from 'injection-js';
+import { HTMLElement, parse } from 'node-html-parser';
+import path from 'path';
+import playwright from 'playwright';
+import UserAgent from 'user-agents';
+import { minify } from 'html-minifier';
+import prettier from 'prettier';
+
+import { LoggerFactory } from './logger.factory';
 
 @Injectable()
 export class PageServiceFactory {
@@ -19,7 +22,7 @@ export class PageServiceFactory {
   }
 
   closeAll(): void {
-    this.services.forEach((s) => s.closeBrowser());
+    this.services.forEach(s => s.closeBrowser());
     this.services = [];
   }
 }
@@ -30,21 +33,23 @@ export class PageService {
   private context?: playwright.BrowserContext;
   private lastUserAgent?: string;
   private failedUserAgents = new Set<string>();
-  private logger = this.loggerFactory.create("PageService");
+  private logger = this.loggerFactory.create('PageService');
 
   constructor(private options: PageServiceOptions, private loggerFactory: LoggerFactory) {}
 
   async getPageHtmlElement(url: string): Promise<HTMLElement> {
-    this.logger.debug("Fetching page", { url });
+    this.logger.debug('Fetching page', { url });
     const cache = this.getFromCache(url);
     if (cache && !this.options.noCache) {
       return parse(cache);
     }
+    if (this.lastUserAgent) {
+      this.wait(2);
+    }
     const page = await this.getPage(url);
-    const html = await page.$eval("html", (htmlElement) => htmlElement.outerHTML);
+    const html = await page.$eval('html', htmlElement => htmlElement.outerHTML);
     const el = parse(html);
-    this.options.cleaner?.(el);
-    this.setInCache(url, el.outerHTML);
+    this.setInNewCache(url, el);
     await page.close();
 
     return el;
@@ -54,21 +59,24 @@ export class PageService {
     this.browser?.close();
   }
 
-  private async getPage(url: string, tryCount: number = 0): Promise<playwright.Page> {
-    const context = await this.getContext();
+  private async getPage(url: string, tryCount: number = 0, useNewContext: boolean = false): Promise<playwright.Page> {
+    const context = await this.getContext(useNewContext);
     const page = await context.newPage();
     await page.goto(url);
     if (this.options.validator) {
       const valid = await this.options.validator(page);
       if (!valid) {
-        await page.waitForTimeout(getRandomInt(200, 1200));
         if (this.lastUserAgent) {
           this.failedUserAgents.add(this.lastUserAgent);
         }
-        if (tryCount < 10) {
-          this.logger.warn(`Got invalid page, trying again ${tryCount + 1}/10`);
+        const maxTry = 10;
+        if (tryCount < maxTry) {
+          const multiplier = 1 + (tryCount * tryCount) / maxTry;
+          const waitTime = multiplier * 60_000;
+          this.logger.warn(`Got invalid page, trying again in ${waitTime}ms (${tryCount + 1}/${maxTry})`);
+          await page.waitForTimeout(waitTime);
           this.reset();
-          return this.getPage(url, tryCount + 1);
+          return this.getPage(url, tryCount + 1, true);
         } else {
           throw Error(`Failed to get valid page ${url}`);
         }
@@ -78,25 +86,61 @@ export class PageService {
     return page;
   }
 
-  private setInCache(url: string, content: string): void {
-    const filePath = this.getCachePath(url);
+  private setInNewCache(url: string, html: HTMLElement): void {
+    this.options.cleaner?.(html);
+    let content = html.outerHTML;
+    content = prettier.format(content, { parser: 'html' });
+    content = minify(content, {
+      conservativeCollapse: true,
+    });
+    const filePath = this.getNewCachePath(url);
     const folderPath = path.dirname(filePath);
     fs.mkdirSync(folderPath, { recursive: true });
-    fs.writeFileSync(filePath, content, "utf8");
+    fs.writeFileSync(filePath, content, 'utf8');
   }
 
   private getFromCache(url: string): string | undefined {
+    const newCacheResult = this.getFromNewCache(url);
+    if (newCacheResult) {
+      return newCacheResult;
+    }
     const filePath = this.getCachePath(url);
     if (fs.existsSync(filePath)) {
-      return fs.readFileSync(filePath, "utf8");
+      const content = fs.readFileSync(filePath, 'utf8');
+      this.setInNewCache(url, parse(content));
+      return content;
+    }
+
+    return undefined;
+  }
+
+  private getFromNewCache(url: string): string | undefined {
+    const filePath = this.getNewCachePath(url);
+    if (fs.existsSync(filePath)) {
+      return fs.readFileSync(filePath, 'utf8');
     }
 
     return undefined;
   }
 
   private getCachePath(url: string): string {
-    const cachePath = this.options.cachePath ?? "./cache/";
-    return path.join(cachePath, encodeURIComponent(url) + ".html");
+    const cachePath = this.options.cachePath ?? './cache/';
+    return path.join(cachePath, encodeURIComponent(url) + '.html');
+  }
+
+  private getNewCachePath(url: string): string {
+    const cachePath = this.options.cachePath ?? './cache/';
+    const parts = url
+      .split('/')
+      .map((part, index, arr) => {
+        if (index === arr.length - 1) {
+          return encodeURIComponent(part) + '.html';
+        }
+        return part;
+      })
+      .filter(p => !!p);
+
+    return path.join(cachePath, ...parts);
   }
 
   private reset(): void {
@@ -105,25 +149,36 @@ export class PageService {
 
   private async getBrowser(): Promise<playwright.Browser> {
     if (this.browser) return this.browser;
+
     this.browser = await playwright.chromium.launch({
       headless: true,
+      devtools: false,
+      channel: 'msedge',
     });
 
     return this.browser;
   }
 
-  private async getContext(): Promise<playwright.BrowserContext> {
-    if (this.context && this.options.cacheContext) return this.context;
+  private async getContext(useNewContext: boolean): Promise<playwright.BrowserContext> {
+    if (this.context && this.options.cacheContext && !useNewContext) return this.context;
     this.context?.close();
     const browser = await this.getBrowser();
-    this.context = await browser.newContext();
+    this.context = await browser.newContext({
+      screen: {
+        width: 1920,
+        height: 1080,
+      },
+      viewport: {
+        width: 1917,
+        height: 1023,
+      },
+      userAgent: this.getUserAgent(),
+    });
+
     if (this.options.cookies) {
       this.context.addCookies(this.options.cookies);
     }
 
-    let headers = this.options.headers ?? {};
-    headers = { ...headers, "user-agent": this.getUserAgent() };
-    this.context.setExtraHTTPHeaders(headers);
     return this.context;
   }
 
@@ -140,6 +195,12 @@ export class PageService {
     this.lastUserAgent = userAgent;
     return userAgent;
   }
+
+  private async wait(factor: number = 1): Promise<void> {
+    const multiplier = 1 + factor / 10;
+    const waitTime = getRandomInt(multiplier * 200, multiplier * 1200);
+    return new Promise(resolve => setTimeout(resolve, waitTime));
+  }
 }
 
 export interface PageServiceOptions {
@@ -152,7 +213,7 @@ export interface PageServiceOptions {
   cachePath?: string;
 }
 
-export type Cookies = Parameters<playwright.BrowserContext["addCookies"]>[0];
+export type Cookies = Parameters<playwright.BrowserContext['addCookies']>[0];
 
 function getRandomInt(min: number, max: number): number {
   min = Math.ceil(min);

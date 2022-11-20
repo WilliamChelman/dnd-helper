@@ -17,6 +17,10 @@ export interface Config {
   ddb: {
     cobaltSession: string;
   };
+  markdownYaml?: {
+    distPath: string;
+    ddbVaultPath: string;
+  };
 }
 
 export interface FlowConfig {

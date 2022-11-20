@@ -5,3 +5,4 @@ export * from "./html-element.helper";
 export * from "./labels.helper";
 export * from "./logger.factory";
 export * from "./page.service";
+export * from "./prefix.service";

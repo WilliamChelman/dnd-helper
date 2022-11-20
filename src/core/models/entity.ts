@@ -5,6 +5,15 @@ export interface Entity {
   dataSource: string;
   lang: string;
   sameAs?: string[];
+  id?: string;
   altNames?: string[];
   markdownContent?: string;
+  htmlContent?: string;
+  pages?: Entity[];
+  attachments?: Attachment[];
+}
+
+export interface Attachment {
+  url: string;
+  filePath: string;
 }

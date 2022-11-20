@@ -1,0 +1,290 @@
+[
+  {
+    "label": "Acquisitions Incorporated",
+    "value": "44"
+  },
+  {
+    "label": "Against the Giants",
+    "value": "21"
+  },
+  {
+    "label": "Baldur's Gate: Descent into Avernus",
+    "value": "48"
+  },
+  {
+    "label": "Basic Rules",
+    "value": "1"
+  },
+  {
+    "label": "Candlekeep Mysteries",
+    "value": "68"
+  },
+  {
+    "label": "Critical Role",
+    "value": "31"
+  },
+  {
+    "label": "Critical Role: Call of the Netherdeep",
+    "value": "83"
+  },
+  {
+    "label": "Curse of Strahd",
+    "value": "6"
+  },
+  {
+    "label": "Curse of Strahd: Character Options",
+    "value": "26"
+  },
+  {
+    "label": "Dead in Thay",
+    "value": "20"
+  },
+  {
+    "label": "Divine Contention",
+    "value": "52"
+  },
+  {
+    "label": "Dragon of Icespire Peak",
+    "value": "41"
+  },
+  {
+    "label": "Dragons of Stormwreck Isle",
+    "value": "94"
+  },
+  {
+    "label": "Dungeon Master's Guide",
+    "value": "3"
+  },
+  {
+    "label": "Dungeons &amp; Dragons vs. Rick and Morty",
+    "value": "54"
+  },
+  {
+    "label": "Eberron: Rising from the Last War",
+    "value": "49"
+  },
+  {
+    "label": "Elemental Evil Player's Companion",
+    "value": "4"
+  },
+  {
+    "label": "Explorer's Guide to Wildemount",
+    "value": "59"
+  },
+  {
+    "label": "Fizban's Treasury of Dragons",
+    "value": "81"
+  },
+  {
+    "label": "Frozen Sick",
+    "value": "62"
+  },
+  {
+    "label": "Ghosts of Saltmarsh",
+    "value": "43"
+  },
+  {
+    "label": "Guildmasters' Guide to Ravnica",
+    "value": "38"
+  },
+  {
+    "label": "Hoard of the Dragon Queen",
+    "value": "7"
+  },
+  {
+    "label": "Hunt for the Thessalhydra",
+    "value": "47"
+  },
+  {
+    "label": "Icewind Dale: Rime of the Frostmaiden",
+    "value": "66"
+  },
+  {
+    "label": "Infernal Machine Rebuild",
+    "value": "56"
+  },
+  {
+    "label": "Journeys through the Radiant Citadel",
+    "value": "87"
+  },
+  {
+    "label": "Locathah Rising",
+    "value": "55"
+  },
+  {
+    "label": "Lost Laboratory of Kwalish",
+    "value": "40"
+  },
+  {
+    "label": "Lost Mine of Phandelver",
+    "value": "8"
+  },
+  {
+    "label": "Monster Manual",
+    "value": "5"
+  },
+  {
+    "label": "Monstrous Compendium Volume One: Spelljammer Creatures",
+    "value": "89"
+  },
+  {
+    "label": "Mordenkainen Presents: Monsters of the Multiverse",
+    "value": "85"
+  },
+  {
+    "label": "Mordenkainen’s Tome of Foes",
+    "value": "33"
+  },
+  {
+    "label": "Mordenkainen's Fiendish Folio Volume 1",
+    "value": "57"
+  },
+  {
+    "label": "Mythic Odysseys of Theros",
+    "value": "61"
+  },
+  {
+    "label": "One D&amp;D Playtest",
+    "value": "100"
+  },
+  {
+    "label": "One Grung Above",
+    "value": "60"
+  },
+  {
+    "label": "Out of the Abyss",
+    "value": "9"
+  },
+  {
+    "label": "Player's Handbook",
+    "value": "2"
+  },
+  {
+    "label": "Princes of the Apocalypse",
+    "value": "10"
+  },
+  {
+    "label": "Rise of Tiamat",
+    "value": "11"
+  },
+  {
+    "label": "Rrakkma",
+    "value": "34"
+  },
+  {
+    "label": "Sage Advice Compendium",
+    "value": "53"
+  },
+  {
+    "label": "Sapphire Dragon",
+    "value": "58"
+  },
+  {
+    "label": "Sleeping Dragon’s Wake",
+    "value": "51"
+  },
+  {
+    "label": "Spelljammer Academy",
+    "value": "93"
+  },
+  {
+    "label": "Spelljammer: Adventures in Space",
+    "value": "90"
+  },
+  {
+    "label": "Storm King's Thunder",
+    "value": "12"
+  },
+  {
+    "label": "Storm Lord’s Wrath",
+    "value": "50"
+  },
+  {
+    "label": "Strixhaven: A Curriculum of Chaos",
+    "value": "80"
+  },
+  {
+    "label": "Sword Coast Adventurer's Guide",
+    "value": "13"
+  },
+  {
+    "label": "Tactical Maps Reincarnated",
+    "value": "42"
+  },
+  {
+    "label": "Tales from the Yawning Portal",
+    "value": "14"
+  },
+  {
+    "label": "Tasha’s Cauldron of Everything",
+    "value": "67"
+  },
+  {
+    "label": "The Forge of Fury",
+    "value": "17"
+  },
+  {
+    "label": "The Hidden Shrine of Tamoachan",
+    "value": "18"
+  },
+  {
+    "label": "The Radiant Citadel",
+    "value": "92"
+  },
+  {
+    "label": "The Sunless Citadel",
+    "value": "16"
+  },
+  {
+    "label": "The Tortle Package",
+    "value": "28"
+  },
+  {
+    "label": "The Vecna Dossier",
+    "value": "91"
+  },
+  {
+    "label": "The Wild Beyond the Witchlight",
+    "value": "79"
+  },
+  {
+    "label": "Tomb of Annihilation",
+    "value": "25"
+  },
+  {
+    "label": "Tomb of Horrors",
+    "value": "22"
+  },
+  {
+    "label": "Unearthed Arcana",
+    "value": "29"
+  },
+  {
+    "label": "Van Richten’s Guide to Ravenloft",
+    "value": "69"
+  },
+  {
+    "label": "Volo's Guide to Monsters",
+    "value": "15"
+  },
+  {
+    "label": "Waterdeep: Dragon Heist",
+    "value": "35"
+  },
+  {
+    "label": "Waterdeep: Dungeon of the Mad Mage",
+    "value": "36"
+  },
+  {
+    "label": "Wayfinder's Guide to Eberron",
+    "value": "37"
+  },
+  {
+    "label": "White Plume Mountain",
+    "value": "19"
+  },
+  {
+    "label": "Xanathar's Guide to Everything",
+    "value": "27"
+  }
+]

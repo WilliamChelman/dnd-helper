@@ -1,4 +1,4 @@
-import { Entity } from "../models";
+import { Entity } from '../models';
 
 export abstract class EntityDao<T extends Entity = Entity> {
   abstract id: string;
@@ -9,5 +9,5 @@ export abstract class EntityDao<T extends Entity = Entity> {
   abstract canHandle(entityType: string): number;
 }
 
-export type SourceEntityDao<T extends Entity> = Pick<EntityDao<T>, "id" | "getAll">;
-export type DestinationEntityDao<T extends Entity> = Pick<EntityDao<T>, "id" | "save" | "patch">;
+export type SourceEntityDao<T extends Entity> = Pick<EntityDao<T>, 'id' | 'getAll'>;
+export type DestinationEntityDao<T extends Entity> = Pick<EntityDao<T>, 'id' | 'save' | 'patch'>;

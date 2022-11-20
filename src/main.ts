@@ -14,8 +14,9 @@ import {
   LabelsHelper,
   LoggerFactory,
   PageServiceFactory,
+  PrefixService,
 } from "./core";
-import { DdbHelper, DdbMonstersDao, DdbSpellsDao } from "./ddb";
+import { DdbHelper, DdbMagicItemsDao, DdbMonstersDao, DdbSourcesDao, DdbSpellsDao } from "./ddb";
 import { DdbItemsService } from "./ddb/services/ddb-items.service";
 import { NotionHelper, NotionItemsService, NotionSpellsDao } from "./notion";
 import { NotionMonstersDao } from "./notion/services/notion-monsters.dao";
@@ -33,6 +34,7 @@ async function main() {
     LoggerFactory,
     DdbItemsService,
     LabelsHelper,
+    PrefixService,
     {
       provide: EntityDao,
       useClass: DdbMonstersDao,
@@ -41,6 +43,16 @@ async function main() {
     {
       provide: EntityDao,
       useClass: DdbSpellsDao,
+      multi: true,
+    },
+    {
+      provide: EntityDao,
+      useClass: DdbSourcesDao,
+      multi: true,
+    },
+    {
+      provide: EntityDao,
+      useClass: DdbMagicItemsDao,
       multi: true,
     },
     {
@@ -108,6 +120,8 @@ class Main {
           }
         }
       }
+    } catch (err) {
+      console.error(err);
     } finally {
       pageServiceFactory.closeAll();
     }
