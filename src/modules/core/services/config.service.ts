@@ -1,11 +1,21 @@
-import { cosmiconfigSync } from "cosmiconfig";
-const explorerSync = cosmiconfigSync("dnd-parse");
+import { cosmiconfigSync } from 'cosmiconfig';
+import { join } from 'path';
+import { getBinRootPath } from '../utils';
+const explorerSync = cosmiconfigSync('dnd-parser');
 
 export class ConfigService {
-  config: Config = explorerSync.search()?.config;
+  config: Config;
+
+  constructor() {
+    this.config = explorerSync.search()?.config;
+    if (!this.config.cachePath) {
+      this.config.cachePath = join(getBinRootPath(), 'cache');
+    }
+  }
 }
 
 export interface Config {
+  cachePath: string;
   flows: FlowConfig[];
   defaultDaoConfigs?: { [daoId: string]: DaoConfig };
   notion: {

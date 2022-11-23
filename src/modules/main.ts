@@ -1,4 +1,4 @@
-import 'reflect-metadata';
+// import 'reflect-metadata';
 
 import { Injector, ReflectiveInjector } from 'injection-js';
 
@@ -22,8 +22,8 @@ import { NotionHelper, NotionItemsService, NotionSpellsDao } from './notion';
 import { NotionMonstersDao } from './notion/services/notion-monsters.dao';
 import { MarkdownYamlEntitiesDao } from './markdown-yaml';
 
-export async function main() {
-  const injector = ReflectiveInjector.resolveAndCreate([
+export function getInjector() {
+  return ReflectiveInjector.resolveAndCreate([
     ConfigService,
     DdbHelper,
     AssetsService,
@@ -35,65 +35,79 @@ export async function main() {
     DdbItemsService,
     LabelsHelper,
     PrefixService,
+    DdbMonstersDao,
     {
       provide: EntityDao,
-      useClass: DdbMonstersDao,
+      useExisting: DdbMonstersDao,
       multi: true,
     },
+    DdbSpellsDao,
     {
       provide: EntityDao,
-      useClass: DdbSpellsDao,
+      useExisting: DdbSpellsDao,
       multi: true,
     },
+    DdbSourcesDao,
     {
       provide: EntityDao,
-      useClass: DdbSourcesDao,
+      useExisting: DdbSourcesDao,
       multi: true,
     },
+    DdbMagicItemsDao,
     {
       provide: EntityDao,
-      useClass: DdbMagicItemsDao,
+      useExisting: DdbMagicItemsDao,
       multi: true,
     },
+    NotionMonstersDao,
     {
       provide: EntityDao,
-      useClass: NotionMonstersDao,
+      useExisting: NotionMonstersDao,
       multi: true,
     },
+    NotionSpellsDao,
     {
       provide: EntityDao,
-      useClass: NotionSpellsDao,
+      useExisting: NotionSpellsDao,
       multi: true,
     },
+    AideDdSpellsDao,
     {
       provide: EntityDao,
-      useClass: AideDdSpellsDao,
+      useExisting: AideDdSpellsDao,
       multi: true,
     },
+    AideDdMonstersDao,
     {
       provide: EntityDao,
-      useClass: AideDdMonstersDao,
+      useExisting: AideDdMonstersDao,
       multi: true,
     },
+    FiveEDrsMonstersDao,
     {
       provide: EntityDao,
-      useClass: FiveEDrsMonstersDao,
+      useExisting: FiveEDrsMonstersDao,
       multi: true,
     },
+    FiveEDrsSpellsDao,
     {
       provide: EntityDao,
-      useClass: FiveEDrsSpellsDao,
+      useExisting: FiveEDrsSpellsDao,
       multi: true,
     },
+    MarkdownYamlEntitiesDao,
     {
       provide: EntityDao,
-      useClass: MarkdownYamlEntitiesDao,
+      useExisting: MarkdownYamlEntitiesDao,
       multi: true,
     },
   ]);
+}
 
-  const runner = new Main(injector);
-  await runner.run();
+export async function main() {
+  console.log('yo');
+  const runner = new Main(getInjector());
+  // await runner.run();
 }
 
 class Main {

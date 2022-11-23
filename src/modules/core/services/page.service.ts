@@ -8,15 +8,16 @@ import { minify } from 'html-minifier';
 import prettier from 'prettier';
 
 import { LoggerFactory } from './logger.factory';
+import { ConfigService } from './config.service';
 
 @Injectable()
 export class PageServiceFactory {
   private services: PageService[] = [];
 
-  constructor(private loggerFactory: LoggerFactory) {}
+  constructor(private loggerFactory: LoggerFactory, private configService: ConfigService) {}
 
   create(options: PageServiceOptions = {}) {
-    const service = new PageService(options, this.loggerFactory);
+    const service = new PageService(options, this.loggerFactory, this.configService);
     this.services.push(service);
     return service;
   }
@@ -35,7 +36,7 @@ export class PageService {
   private failedUserAgents = new Set<string>();
   private logger = this.loggerFactory.create('PageService');
 
-  constructor(private options: PageServiceOptions, private loggerFactory: LoggerFactory) {}
+  constructor(private options: PageServiceOptions, private loggerFactory: LoggerFactory, private configService: ConfigService) {}
 
   async getPageHtmlElement(url: string): Promise<HTMLElement> {
     this.logger.debug('Fetching page', { url });
@@ -124,12 +125,12 @@ export class PageService {
   }
 
   private getCachePath(url: string): string {
-    const cachePath = this.options.cachePath ?? './cache/';
+    const cachePath = this.configService.config.cachePath;
     return path.join(cachePath, encodeURIComponent(url) + '.html');
   }
 
   private getNewCachePath(url: string): string {
-    const cachePath = this.options.cachePath ?? './cache/';
+    const cachePath = this.configService.config.cachePath;
     const parts = url
       .split('/')
       .map((part, index, arr) => {
@@ -210,7 +211,6 @@ export interface PageServiceOptions {
   validator?: (page: playwright.Page) => Promise<boolean>;
   cacheContext?: boolean;
   cleaner?: (el: HTMLElement) => void;
-  cachePath?: string;
 }
 
 export type Cookies = Parameters<playwright.BrowserContext['addCookies']>[0];

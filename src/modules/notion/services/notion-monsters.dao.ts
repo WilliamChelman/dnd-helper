@@ -1,23 +1,23 @@
-import { markdownToBlocks } from "@tryfabric/martian";
-import { Injectable } from "injection-js";
-import { NodeHtmlMarkdown } from "node-html-markdown";
+import { markdownToBlocks } from '@tryfabric/martian';
+import { Injectable } from 'injection-js';
+import { NodeHtmlMarkdown } from 'node-html-markdown';
 
-import { ConfigService, LoggerFactory, Monster, notNil } from "../../core";
-import { MonsterProperties } from "../models";
-import { PropertiesSchema } from "./notion-db.service";
-import { NotionDao } from "./notion.dao";
-import { NotionHelper } from "./notion.helper";
+import { ConfigService, LoggerFactory, Monster, notNil } from '../../core';
+import { MonsterProperties } from '../models';
+import { PropertiesSchema } from './notion-db.service';
+import { NotionDao } from './notion.dao';
+import { NotionHelper } from './notion.helper';
 
 @Injectable()
 export class NotionMonstersDao extends NotionDao<Monster> {
-  id: string = "notion-monsters";
+  id: string = 'notion-monsters';
 
   constructor(configService: ConfigService, notionHelper: NotionHelper, loggerFactory: LoggerFactory) {
-    super(configService, notionHelper, loggerFactory.create("NotionMonsterDao"));
+    super(configService, notionHelper, loggerFactory.create('NotionMonsterDao'));
   }
 
   canHandle(entityType: string): number {
-    return entityType === "Monster" ? 10 : 0;
+    return entityType === 'Monster' ? 10 : 0;
   }
 
   async getCurrentId(page: Monster): Promise<string | undefined> {
@@ -27,7 +27,7 @@ export class NotionMonstersDao extends NotionDao<Monster> {
       filter: {
         and: [
           {
-            property: "title",
+            property: 'title',
             rich_text: { equals: page.name! },
           },
           { property: MonsterProperties.DATA_SOURCE, select: { equals: page.dataSource! } },
@@ -102,9 +102,9 @@ export class NotionMonstersDao extends NotionDao<Monster> {
     const blocks = markdownToBlocks(monster.markdownContent);
     if (monster.coverLink) {
       blocks.unshift({
-        type: "image",
+        type: 'image',
         image: {
-          type: "external",
+          type: 'external',
           external: {
             url: monster.coverLink,
           },
@@ -150,7 +150,7 @@ export class NotionMonstersDao extends NotionDao<Monster> {
       [MonsterProperties.LANGUAGES]: { multi_select: {} },
       [MonsterProperties.MOVEMENT_TYPES]: { multi_select: {} },
       [MonsterProperties.DATA_SOURCE]: { select: {} },
-      [MonsterProperties.SAME_AS]: { relation: { database_id: this.getDbId(), single_property: {} } },
+      [MonsterProperties.SAME_AS]: { relation: { database_id: this.getDbId(), single_property: {} } } as any,
       [MonsterProperties.LANG]: { select: {} },
     };
   }

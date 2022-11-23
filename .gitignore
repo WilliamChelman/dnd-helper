@@ -9,7 +9,7 @@ node_modules
 oclif.manifest.json
 vault/
 .DS_Store
-.dnd-parserc.json
+.dnd-parserrc.json
 .tmp
 *.code-workspace
 *.log

@@ -1,10 +1,10 @@
-import { markdownToBlocks } from "@tryfabric/martian";
-import { Injectable } from "injection-js";
-import { NodeHtmlMarkdown } from "node-html-markdown";
-import { ConfigService, Item } from "../../core";
-import { ItemProperties } from "../models/item-properties";
-import { NotionDbService, PropertiesSchema } from "./notion-db.service";
-import { NotionHelper } from "./notion.helper";
+import { markdownToBlocks } from '@tryfabric/martian';
+import { Injectable } from 'injection-js';
+
+import { ConfigService, Item } from '../../core';
+import { ItemProperties } from '../models/item-properties';
+import { NotionDbService, PropertiesSchema } from './notion-db.service';
+import { NotionHelper } from './notion.helper';
 
 @Injectable()
 export class NotionItemsService extends NotionDbService<Item> {
@@ -34,7 +34,7 @@ export class NotionItemsService extends NotionDbService<Item> {
     return undefined;
   }
 
-  protected getChildren(item: Item) {
+  protected getChildren(item: Item): ReturnType<typeof markdownToBlocks> {
     if (!item.markdownContent) return [];
     return markdownToBlocks(item.markdownContent);
   }
@@ -48,7 +48,7 @@ export class NotionItemsService extends NotionDbService<Item> {
       [ItemProperties.SOURCE_DETAILS]: { rich_text: {} },
       [ItemProperties.ID]: { rich_text: {} },
       [ItemProperties.URI]: { url: {} },
-      [ItemProperties.SAME_AS]: { relation: { database_id: this.getDatabaseId(), single_property: {} } },
+      [ItemProperties.SAME_AS]: { relation: { database_id: this.getDatabaseId(), single_property: {} } } as any,
       [ItemProperties.LANG]: { select: {} },
     };
   }

@@ -17,7 +17,7 @@ export class DdbSpellsDao implements EntityDao<Spell> {
     private ddbHelper: DdbHelper,
     private labelsHelper: LabelsHelper
   ) {
-    this.pageService = pageServiceFactory.create({ ...this.ddbHelper.getDefaultPageServiceOptions(), cachePath: './cache/' });
+    this.pageService = pageServiceFactory.create({ ...this.ddbHelper.getDefaultPageServiceOptions() });
   }
 
   async getAll(): Promise<Spell[]> {

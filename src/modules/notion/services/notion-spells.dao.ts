@@ -1,37 +1,37 @@
-import { markdownToBlocks } from "@tryfabric/martian";
-import { Injectable } from "injection-js";
-import { NodeHtmlMarkdown } from "node-html-markdown";
+import { markdownToBlocks } from '@tryfabric/martian';
+import { Injectable } from 'injection-js';
+import { NodeHtmlMarkdown } from 'node-html-markdown';
 
-import { ConfigService, LoggerFactory, notNil, Spell } from "../../core";
-import { SpellProperties } from "../models";
-import { PropertiesSchema } from "./notion-db.service";
-import { NotionDao } from "./notion.dao";
-import { NotionHelper } from "./notion.helper";
+import { ConfigService, LoggerFactory, notNil, Spell } from '../../core';
+import { SpellProperties } from '../models';
+import { PropertiesSchema } from './notion-db.service';
+import { NotionDao } from './notion.dao';
+import { NotionHelper } from './notion.helper';
 
 @Injectable()
 export class NotionSpellsDao extends NotionDao<Spell> {
-  id: string = "notion-spells";
+  id: string = 'notion-spells';
 
   private iconMap: { [school: string]: string } = {
-    Abjuration: "https://www.dndbeyond.com/attachments/2/707/abjuration.png",
-    Conjuration: "https://www.dndbeyond.com/attachments/2/708/conjuration.png",
-    Divination: "https://www.dndbeyond.com/attachments/2/709/divination.png",
-    Enchantment: "https://www.dndbeyond.com/attachments/2/702/enchantment.png",
-    Evocation: "https://www.dndbeyond.com/attachments/2/703/evocation.png",
-    Illusion: "https://www.dndbeyond.com/attachments/2/704/illusion.png",
-    Necromancy: "https://www.dndbeyond.com/attachments/2/720/necromancy.png",
-    Transmutation: "https://www.dndbeyond.com/attachments/2/722/transmutation.png",
+    Abjuration: 'https://www.dndbeyond.com/attachments/2/707/abjuration.png',
+    Conjuration: 'https://www.dndbeyond.com/attachments/2/708/conjuration.png',
+    Divination: 'https://www.dndbeyond.com/attachments/2/709/divination.png',
+    Enchantment: 'https://www.dndbeyond.com/attachments/2/702/enchantment.png',
+    Evocation: 'https://www.dndbeyond.com/attachments/2/703/evocation.png',
+    Illusion: 'https://www.dndbeyond.com/attachments/2/704/illusion.png',
+    Necromancy: 'https://www.dndbeyond.com/attachments/2/720/necromancy.png',
+    Transmutation: 'https://www.dndbeyond.com/attachments/2/722/transmutation.png',
   };
 
   constructor(configService: ConfigService, notionHelper: NotionHelper, loggerFactory: LoggerFactory) {
-    super(configService, notionHelper, loggerFactory.create("NotionSpellsDao"));
+    super(configService, notionHelper, loggerFactory.create('NotionSpellsDao'));
   }
 
   canHandle(entityType: string): number {
-    return entityType === "Spell" ? 10 : 0;
+    return entityType === 'Spell' ? 10 : 0;
   }
 
-  async getByNameAndDataSource(options: Pick<Spell, "name" | "dataSource">): Promise<string | undefined> {
+  async getByNameAndDataSource(options: Pick<Spell, 'name' | 'dataSource'>): Promise<string | undefined> {
     const response = await this.notion.databases.query({
       database_id: this.getDatabaseId(),
       page_size: 1,
@@ -101,7 +101,7 @@ export class NotionSpellsDao extends NotionDao<Spell> {
     return undefined;
   }
 
-  protected getChildren(spell: Spell) {
+  protected getChildren(spell: Spell): ReturnType<typeof markdownToBlocks> {
     if (!spell.markdownContent) return [];
     return markdownToBlocks(spell.markdownContent);
   }
@@ -127,7 +127,7 @@ export class NotionSpellsDao extends NotionDao<Spell> {
       [SpellProperties.SOURCE_DETAILS]: { rich_text: {} },
       [SpellProperties.ID]: { rich_text: {} },
       [SpellProperties.URI]: { url: {} },
-      [SpellProperties.SAME_AS]: { relation: { database_id: this.getDatabaseId(), single_property: {} } },
+      [SpellProperties.SAME_AS]: { relation: { database_id: this.getDatabaseId(), single_property: {} } } as any,
       [SpellProperties.LANG]: { select: {} },
     };
   }

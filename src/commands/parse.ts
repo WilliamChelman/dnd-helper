@@ -1,7 +1,7 @@
 import { Command } from '@oclif/core';
 import { main } from '../modules/main';
 
-export default class DoStuff extends Command {
+export default class Parse extends Command {
   static description = 'Run the parser';
 
   static examples = [
@@ -15,7 +15,7 @@ hello world! (./src/commands/hello/world.ts)
   static args = [];
 
   async run(): Promise<void> {
-    main();
+    // main();
     this.log('hello world! (./src/commands/hello/world.ts)');
   }
 }

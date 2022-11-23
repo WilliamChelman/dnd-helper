@@ -17,7 +17,7 @@ export class DdbMonstersDao implements EntityDao<Monster> {
     private ddbHelper: DdbHelper,
     private loggerFactory: LoggerFactory
   ) {
-    this.pageService = pageServiceFactory.create({ ...this.ddbHelper.getDefaultPageServiceOptions(), cachePath: './cache/' });
+    this.pageService = pageServiceFactory.create({ ...this.ddbHelper.getDefaultPageServiceOptions() });
   }
 
   async getAll(): Promise<Monster[]> {

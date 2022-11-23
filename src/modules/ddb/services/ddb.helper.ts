@@ -6,7 +6,6 @@ import { ConfigService, Cookies, notNil, PageService, PageServiceOptions } from 
 @Injectable()
 export class DdbHelper {
   readonly basePath = 'https://www.dndbeyond.com';
-  readonly alternateBasePath = 'www.dndbeyond.com';
   readonly basePathMatching = /(https\:)?\/\/www\.dndbeyond\.com/;
 
   constructor(private configService: ConfigService) {}
