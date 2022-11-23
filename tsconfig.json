@@ -1,14 +1,15 @@
 {
   "compilerOptions": {
+    "declaration": true,
+    "importHelpers": true,
     "module": "commonjs",
-    "esModuleInterop": true,
-    "target": "es6",
-    "moduleResolution": "node",
-    "sourceMap": true,
     "outDir": "dist",
+    "rootDir": "src",
+    "strict": true,
+    "target": "es2019",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "strict": true
+    "esModuleInterop": true
   },
-  "lib": ["es2015"]
+  "include": ["src/**/*"]
 }

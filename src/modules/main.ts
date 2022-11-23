@@ -1,10 +1,10 @@
-import "reflect-metadata";
+import 'reflect-metadata';
 
-import { Injector, ReflectiveInjector } from "injection-js";
+import { Injector, ReflectiveInjector } from 'injection-js';
 
-import { FiveEDrsMonstersDao } from "./5e-drs";
-import { FiveEDrsSpellsDao } from "./5e-drs/services/5e-drs-spells.dao";
-import { AideDdMonstersDao, AideDdSpellsDao } from "./aidedd";
+import { FiveEDrsMonstersDao } from './5e-drs';
+import { FiveEDrsSpellsDao } from './5e-drs/services/5e-drs-spells.dao';
+import { AideDdMonstersDao, AideDdSpellsDao } from './aidedd';
 import {
   AssetsService,
   ConfigService,
@@ -15,14 +15,14 @@ import {
   LoggerFactory,
   PageServiceFactory,
   PrefixService,
-} from "./core";
-import { DdbHelper, DdbMagicItemsDao, DdbMonstersDao, DdbSourcesDao, DdbSpellsDao } from "./ddb";
-import { DdbItemsService } from "./ddb/services/ddb-items.service";
-import { NotionHelper, NotionItemsService, NotionSpellsDao } from "./notion";
-import { NotionMonstersDao } from "./notion/services/notion-monsters.dao";
-import { MarkdownYamlEntitiesDao } from "./markdown-yaml";
+} from './core';
+import { DdbHelper, DdbMagicItemsDao, DdbMonstersDao, DdbSourcesDao, DdbSpellsDao } from './ddb';
+import { DdbItemsService } from './ddb/services/ddb-items.service';
+import { NotionHelper, NotionItemsService, NotionSpellsDao } from './notion';
+import { NotionMonstersDao } from './notion/services/notion-monsters.dao';
+import { MarkdownYamlEntitiesDao } from './markdown-yaml';
 
-async function main() {
+export async function main() {
   const injector = ReflectiveInjector.resolveAndCreate([
     ConfigService,
     DdbHelper,
@@ -105,7 +105,7 @@ class Main {
     const configService = this.injector.get(ConfigService) as ConfigService;
     const pageServiceFactory = this.injector.get(PageServiceFactory) as PageServiceFactory;
     try {
-      for (const flow of configService.config.flows.filter((f) => !f.disabled)) {
+      for (const flow of configService.config.flows.filter(f => !f.disabled)) {
         for (const [sourceId, sourceConfig] of Object.entries(flow.sources)) {
           const sourceDao = this.getDao(sourceId, sourceConfig);
           if (!sourceDao) continue;
@@ -129,7 +129,7 @@ class Main {
 
   private getDao(daoId: string, daoConfig: boolean | DaoConfig): EntityDao | undefined {
     if (!daoConfig) return;
-    const dao = this.daoList.find((dao) => dao.id === daoId);
+    const dao = this.daoList.find(dao => dao.id === daoId);
     if (!dao) {
       throw new Error(`Cannot find Dao with id "${daoId}"`);
     }
@@ -137,4 +137,4 @@ class Main {
   }
 }
 
-main();
+// main();
