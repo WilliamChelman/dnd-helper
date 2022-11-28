@@ -1,5 +1,5 @@
 import { Injectable } from 'injection-js';
-import { HTMLElement } from 'node-html-parser';
+import { HTMLElement, parse } from 'node-html-parser';
 import { join } from 'path';
 import { ConfigService, Cookies, notNil, PageService, PageServiceOptions } from '../../core';
 
@@ -46,6 +46,16 @@ export class DdbHelper {
     this.fixImages(page);
   }
 
+  fixSimpleImages(content: HTMLElement): void {
+    content.querySelectorAll('a img').forEach((img, index) => {
+      if (index > 0) {
+        img.parentNode.remove();
+      } else {
+        img.parentNode.replaceWith(img);
+      }
+    });
+  }
+
   // TODO move to markdown logic
   fixLinks(page: HTMLElement): void {
     const vaultPath = this.configService.config.markdownYaml?.ddbVaultPath ?? '';
@@ -58,6 +68,11 @@ export class DdbHelper {
       }
 
       anchor.setAttribute('href', href);
+      const previousText = anchor.previousSibling?.textContent;
+      if (previousText && !previousText.endsWith('(')) {
+        const wrapper = parse(`<span> </span>${anchor.outerHTML}`);
+        anchor.replaceWith(wrapper);
+      }
     });
   }
 

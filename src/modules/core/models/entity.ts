@@ -17,3 +17,12 @@ export interface Attachment {
   url: string;
   filePath: string;
 }
+
+export interface NewEntity {
+  uri: string;
+  type: string;
+  name: string;
+  dataSource: string;
+  lang: string;
+  textContent: string;
+}

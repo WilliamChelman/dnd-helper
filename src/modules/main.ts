@@ -1,5 +1,4 @@
 // import 'reflect-metadata';
-
 import { Injector, ReflectiveInjector } from 'injection-js';
 
 import { FiveEDrsMonstersDao } from './5e-drs';
@@ -11,16 +10,30 @@ import {
   DaoConfig,
   EntityDao,
   HtmlElementHelper,
+  InputService,
   LabelsHelper,
   LoggerFactory,
+  OutputService,
   PageServiceFactory,
   PrefixService,
 } from './core';
-import { DdbHelper, DdbMagicItemsDao, DdbMonstersDao, DdbSourcesDao, DdbSpellsDao } from './ddb';
+import {
+  DdbHelper,
+  DdbMagicItemsDao,
+  DdbMagicItemsInput,
+  DdbMagicItemsMdOutput,
+  DdbMonstersDao,
+  DdbMonstersInput,
+  DdbMonstersMdOutput,
+  DdbSourcesDao,
+  DdbSpellsDao,
+  DdbSpellsInput,
+  DdbSpellsMdOutput,
+} from './ddb';
 import { DdbItemsService } from './ddb/services/ddb-items.service';
+import { DefaultMdOutput } from './markdown-yaml';
 import { NotionHelper, NotionItemsService, NotionSpellsDao } from './notion';
 import { NotionMonstersDao } from './notion/services/notion-monsters.dao';
-import { MarkdownYamlEntitiesDao } from './markdown-yaml';
 
 export function getInjector() {
   return ReflectiveInjector.resolveAndCreate([
@@ -95,10 +108,47 @@ export function getInjector() {
       useExisting: FiveEDrsSpellsDao,
       multi: true,
     },
-    MarkdownYamlEntitiesDao,
+    // New architecture
+    DefaultMdOutput,
     {
-      provide: EntityDao,
-      useExisting: MarkdownYamlEntitiesDao,
+      provide: OutputService,
+      useExisting: DefaultMdOutput,
+      multi: true,
+    },
+    DdbMagicItemsMdOutput,
+    {
+      provide: OutputService,
+      useExisting: DdbMagicItemsMdOutput,
+      multi: true,
+    },
+    DdbMagicItemsInput,
+    {
+      provide: InputService,
+      useExisting: DdbMagicItemsInput,
+      multi: true,
+    },
+    DdbSpellsMdOutput,
+    {
+      provide: OutputService,
+      useExisting: DdbSpellsMdOutput,
+      multi: true,
+    },
+    DdbSpellsInput,
+    {
+      provide: InputService,
+      useExisting: DdbSpellsInput,
+      multi: true,
+    },
+    DdbMonstersMdOutput,
+    {
+      provide: OutputService,
+      useExisting: DdbMonstersMdOutput,
+      multi: true,
+    },
+    DdbMonstersInput,
+    {
+      provide: InputService,
+      useExisting: DdbMonstersInput,
       multi: true,
     },
   ]);

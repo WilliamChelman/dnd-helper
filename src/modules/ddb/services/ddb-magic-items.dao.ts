@@ -35,6 +35,23 @@ export class DdbMagicItemsDao implements EntityDao<MagicItem> {
     });
   }
 
+  async *getAll2(): AsyncGenerator<MagicItem> {
+    let searchPageUrl = new URL('/magic-items', this.ddbHelper.basePath).toString();
+    const uris = await this.ddbHelper.crawlSearchPages<string>(
+      searchPageUrl,
+      this.getMagicItemLinksSearchPage.bind(this),
+      this.pageService
+    );
+    let index = 0;
+    for (const uri of uris) {
+      // if (!uri.includes('4699-portable-hole')) continue;
+      ++index;
+      console.info(`Parsing (${index}/${uris.length})`, uri);
+      if (this.blacklist.includes(uri)) continue;
+      yield await this.getMagicItemFromDetailPage(uri);
+    }
+  }
+
   async getAll(): Promise<MagicItem[]> {
     return await this.getMagicItems();
   }

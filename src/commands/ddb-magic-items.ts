@@ -25,10 +25,11 @@ hello world! (./src/commands/hello/world.ts)
     const ddbMagicItemsDao = getInjector().get(DdbMagicItemsDao) as DdbMagicItemsDao;
     const mdDao = getInjector().get(MarkdownYamlEntitiesDao) as MarkdownYamlEntitiesDao;
     this.log('You');
-    const items = await ddbMagicItemsDao.getAll();
-    for (const item of items) {
+    const items = ddbMagicItemsDao.getAll2();
+
+    for await (const item of items) {
       await mdDao.save(item);
     }
-    this.log(`Gotten items! ${items.length}`);
+    // this.log(`Gotten items! ${items.length}`);
   }
 }
