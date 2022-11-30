@@ -2,14 +2,14 @@ import { markdownToBlocks } from '@tryfabric/martian';
 import { Injectable } from 'injection-js';
 import { NodeHtmlMarkdown } from 'node-html-markdown';
 
-import { ConfigService, LoggerFactory, notNil, Spell } from '../../core';
+import { ConfigService, LoggerFactory, notNil, OldSpell } from '../../core';
 import { SpellProperties } from '../models';
 import { PropertiesSchema } from './notion-db.service';
 import { NotionDao } from './notion.dao';
 import { NotionHelper } from './notion.helper';
 
 @Injectable()
-export class NotionSpellsDao extends NotionDao<Spell> {
+export class NotionSpellsDao extends NotionDao<OldSpell> {
   id: string = 'notion-spells';
 
   private iconMap: { [school: string]: string } = {
@@ -31,7 +31,7 @@ export class NotionSpellsDao extends NotionDao<Spell> {
     return entityType === 'Spell' ? 10 : 0;
   }
 
-  async getByNameAndDataSource(options: Pick<Spell, 'name' | 'dataSource'>): Promise<string | undefined> {
+  async getByNameAndDataSource(options: Pick<OldSpell, 'name' | 'dataSource'>): Promise<string | undefined> {
     const response = await this.notion.databases.query({
       database_id: this.getDatabaseId(),
       page_size: 1,
@@ -49,7 +49,7 @@ export class NotionSpellsDao extends NotionDao<Spell> {
     return response.results[0]?.id;
   }
 
-  async getCurrentId(page: Spell): Promise<string | undefined> {
+  async getCurrentId(page: OldSpell): Promise<string | undefined> {
     const response = await this.notion.databases.query({
       database_id: this.getDatabaseId(),
       page_size: 1,
@@ -60,10 +60,10 @@ export class NotionSpellsDao extends NotionDao<Spell> {
   }
 
   getDatabaseId(): string {
-    return this.configService.config.notion.spellsDbId;
+    return this.configService.config.notion?.spellsDbId || '';
   }
 
-  protected getProperties(spell: Spell): any {
+  protected getProperties(spell: OldSpell): any {
     return {
       ...this.notionHelper.getTitle(SpellProperties.NAME, spell.name),
       ...this.notionHelper.getSelect(SpellProperties.LEVEL, spell.level),
@@ -88,7 +88,7 @@ export class NotionSpellsDao extends NotionDao<Spell> {
     };
   }
 
-  protected getIcon(spell: Spell) {
+  protected getIcon(spell: OldSpell) {
     if (!spell.school) return undefined;
     return {
       external: {
@@ -97,11 +97,11 @@ export class NotionSpellsDao extends NotionDao<Spell> {
     };
   }
 
-  protected getCover(spell: Spell) {
+  protected getCover(spell: OldSpell) {
     return undefined;
   }
 
-  protected getChildren(spell: Spell): ReturnType<typeof markdownToBlocks> {
+  protected getChildren(spell: OldSpell): ReturnType<typeof markdownToBlocks> {
     if (!spell.markdownContent) return [];
     return markdownToBlocks(spell.markdownContent);
   }
@@ -132,7 +132,7 @@ export class NotionSpellsDao extends NotionDao<Spell> {
     };
   }
 
-  protected getTitle(page: Spell): string {
+  protected getTitle(page: OldSpell): string {
     return page.name!;
   }
 }

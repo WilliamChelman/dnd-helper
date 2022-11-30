@@ -1,22 +1,22 @@
 import { markdownToBlocks } from '@tryfabric/martian';
 import { Injectable } from 'injection-js';
 
-import { ConfigService, Item } from '../../core';
+import { ConfigService, OldItem } from '../../core';
 import { ItemProperties } from '../models/item-properties';
 import { NotionDbService, PropertiesSchema } from './notion-db.service';
 import { NotionHelper } from './notion.helper';
 
 @Injectable()
-export class NotionItemsService extends NotionDbService<Item> {
+export class NotionItemsService extends NotionDbService<OldItem> {
   constructor(configService: ConfigService, notionHelper: NotionHelper) {
     super(configService, notionHelper);
   }
 
   getDatabaseId(): string {
-    return this.configService.config.notion.itemsDbId;
+    return this.configService.config.notion?.itemsDbId ?? '';
   }
 
-  protected getProperties(item: Item): any {
+  protected getProperties(item: OldItem): any {
     return {
       ...this.notionHelper.getTitle(ItemProperties.NAME, item.name),
       ...this.notionHelper.getMultiSelect(ItemProperties.TAGS, item.tags),
@@ -26,15 +26,15 @@ export class NotionItemsService extends NotionDbService<Item> {
     };
   }
 
-  protected getIcon(spell: Item) {
+  protected getIcon(spell: OldItem) {
     return undefined;
   }
 
-  protected getCover(spell: Item) {
+  protected getCover(spell: OldItem) {
     return undefined;
   }
 
-  protected getChildren(item: Item): ReturnType<typeof markdownToBlocks> {
+  protected getChildren(item: OldItem): ReturnType<typeof markdownToBlocks> {
     if (!item.markdownContent) return [];
     return markdownToBlocks(item.markdownContent);
   }
@@ -53,7 +53,7 @@ export class NotionItemsService extends NotionDbService<Item> {
     };
   }
 
-  protected getTitle(page: Item): string {
+  protected getTitle(page: OldItem): string {
     return page.name!;
   }
 }

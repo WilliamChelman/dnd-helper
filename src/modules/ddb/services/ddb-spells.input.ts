@@ -1,11 +1,11 @@
 import { Injectable } from 'injection-js';
 import { HTMLElement } from 'node-html-parser';
 
-import { HtmlElementHelper, InputService, LabelsHelper, NewSpell, PageService, PageServiceFactory } from '../../core';
+import { HtmlElementHelper, InputService, LabelsHelper, Spell, PageService, PageServiceFactory } from '../../core';
 import { DdbHelper } from './ddb.helper';
 
 @Injectable()
-export class DdbSpellsInput implements InputService<NewSpell> {
+export class DdbSpellsInput implements InputService<Spell> {
   sourceId: string = 'DDB';
 
   private pageService: PageService;
@@ -19,7 +19,7 @@ export class DdbSpellsInput implements InputService<NewSpell> {
     this.pageService = pageServiceFactory.create({ ...this.ddbHelper.getDefaultPageServiceOptions() });
   }
 
-  async *getAll(): AsyncGenerator<NewSpell> {
+  async *getAll(): AsyncGenerator<Spell> {
     let searchPageUrl = new URL('/spells', this.ddbHelper.basePath).toString();
 
     const links = await this.ddbHelper.crawlSearchPages<string>(searchPageUrl, this.getSpellLinksSearchPage.bind(this), this.pageService);
@@ -39,7 +39,7 @@ export class DdbSpellsInput implements InputService<NewSpell> {
     });
   }
 
-  private async getSpellFromDetailPage(url: string): Promise<NewSpell> {
+  private async getSpellFromDetailPage(url: string): Promise<Spell> {
     const page = await this.pageService.getPageHtmlElement(url);
 
     const sourceDetails = this.htmlElementHelper.getCleanedInnerText(page, '.source.spell-source');
@@ -72,7 +72,7 @@ export class DdbSpellsInput implements InputService<NewSpell> {
 
     this.ddbHelper.fixForMarkdown(content);
 
-    const spell: NewSpell = {
+    const spell: Spell = {
       uri: url,
       type: 'Spell' as const,
       name: this.labelsHelper.getName(this.htmlElementHelper.getCleanedInnerText(page, 'header .page-title'))!,

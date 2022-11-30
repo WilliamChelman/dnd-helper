@@ -1,3 +1,3 @@
-import { Entity } from "./entity";
+import { OldEntity } from './entity';
 
-export interface SourcePage extends Entity {}
+export interface OldSourcePage extends OldEntity {}

@@ -1,11 +1,11 @@
 import { Injectable } from 'injection-js';
 import { HTMLElement } from 'node-html-parser';
 
-import { InputService, LabelsHelper, LoggerFactory, NewMonster, notNil, PageService, PageServiceFactory } from '../../core';
+import { InputService, LabelsHelper, LoggerFactory, Monster, notNil, PageService, PageServiceFactory } from '../../core';
 import { DdbHelper } from './ddb.helper';
 
 @Injectable()
-export class DdbMonstersInput implements InputService<NewMonster> {
+export class DdbMonstersInput implements InputService<Monster> {
   sourceId: string = 'DDB';
 
   private pageService: PageService;
@@ -20,7 +20,7 @@ export class DdbMonstersInput implements InputService<NewMonster> {
     this.pageService = pageServiceFactory.create({ ...this.ddbHelper.getDefaultPageServiceOptions() });
   }
 
-  async *getAll(): AsyncGenerator<NewMonster> {
+  async *getAll(): AsyncGenerator<Monster> {
     const partialMonsters = await this.getPartialMonsters();
     let index = 0;
     for (let monster of partialMonsters) {
@@ -77,8 +77,8 @@ export class DdbMonstersInput implements InputService<NewMonster> {
       .filter(notNil);
   }
 
-  private async completeMonsterWithDetailPage(partialMonster: PartialMonster): Promise<NewMonster> {
-    const monster = { ...partialMonster } as NewMonster;
+  private async completeMonsterWithDetailPage(partialMonster: PartialMonster): Promise<Monster> {
+    const monster = { ...partialMonster } as Monster;
     const page = await this.pageService.getPageHtmlElement(monster.uri);
     const content = page.querySelector('.more-info.details-more-info');
 
@@ -178,7 +178,7 @@ function capitalizeFirstLetter(v: string) {
 }
 
 type PartialMonster = Pick<
-  NewMonster,
+  Monster,
   | 'name'
   | 'isLegacy'
   | 'uri'

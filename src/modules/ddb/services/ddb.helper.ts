@@ -58,10 +58,12 @@ export class DdbHelper {
 
   // TODO move to markdown logic
   fixLinks(page: HTMLElement): void {
-    const vaultPath = this.configService.config.markdownYaml?.ddbVaultPath ?? '';
+    const vaultPath = this.configService.config.markdownYaml?.ddbVaultPath;
+    if (!vaultPath) return;
     page.querySelectorAll('a[href]').forEach(anchor => {
       let href = anchor.getAttribute('href');
       if (!href) return;
+
       href = href.replace(this.basePathMatching, '');
       if (!href?.startsWith('http')) {
         href = join(vaultPath, href);
@@ -69,7 +71,7 @@ export class DdbHelper {
 
       anchor.setAttribute('href', href);
       const previousText = anchor.previousSibling?.textContent;
-      if (previousText && !previousText.endsWith('(')) {
+      if (!previousText || previousText.match(/\w$/)) {
         const wrapper = parse(`<span> </span>${anchor.outerHTML}`);
         anchor.replaceWith(wrapper);
       }
@@ -96,7 +98,7 @@ export class DdbHelper {
         secure: true,
         domain: '.dndbeyond.com',
         path: '/',
-        value: this.configService.config.ddb.cobaltSession,
+        value: this.configService.config.ddb?.cobaltSession ?? '',
       },
     ];
   }

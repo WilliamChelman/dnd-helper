@@ -3,10 +3,10 @@ import { NodeHtmlMarkdown } from 'node-html-markdown';
 import { parse, HTMLElement } from 'node-html-parser';
 import { URL } from 'url';
 
-import { AssetsService, EntityDao, LabelsHelper, LoggerFactory, notNil, PageService, PageServiceFactory, Spell } from '../../core';
+import { AssetsService, EntityDao, LabelsHelper, LoggerFactory, notNil, PageService, PageServiceFactory, OldSpell } from '../../core';
 
 @Injectable()
-export class AideDdSpellsDao implements EntityDao<Spell> {
+export class AideDdSpellsDao implements EntityDao<OldSpell> {
   id: string = 'aide-dd-spells';
   private basePath = 'https://www.aidedd.org';
   private pageService: PageService = this.pageFactoryService.create({
@@ -23,9 +23,9 @@ export class AideDdSpellsDao implements EntityDao<Spell> {
     private loggerFactory: LoggerFactory
   ) {}
 
-  async getAll(): Promise<Spell[]> {
+  async getAll(): Promise<OldSpell[]> {
     const partialSpells = await this.getPartialSpells();
-    const spells: Spell[] = [];
+    const spells: OldSpell[] = [];
     let index = 0;
     for (let spell of partialSpells.slice(0, 1)) {
       this.logger.info(`Processing ${index}/${partialSpells.length - 1} - ${spell.name}`);
@@ -36,20 +36,20 @@ export class AideDdSpellsDao implements EntityDao<Spell> {
     return spells;
   }
 
-  getByUri(uri: string): Promise<Spell> {
+  getByUri(uri: string): Promise<OldSpell> {
     throw new Error('Method not implemented.');
   }
-  save(entity: Spell): Promise<string> {
+  save(entity: OldSpell): Promise<string> {
     throw new Error('Method not implemented.');
   }
-  patch(entity: Spell): Promise<string> {
+  patch(entity: OldSpell): Promise<string> {
     throw new Error('Method not implemented.');
   }
   canHandle(entityType: string): number {
     throw new Error('Method not implemented.');
   }
 
-  async getPartialSpells(): Promise<Spell[]> {
+  async getPartialSpells(): Promise<OldSpell[]> {
     const listPageUrl = new URL('/regles/sorts/', this.basePath).toString();
     const listPage = await this.pageService.getPageHtmlElement(listPageUrl);
     const anchors = listPage.querySelectorAll('.content .liste a');
@@ -69,7 +69,7 @@ export class AideDdSpellsDao implements EntityDao<Spell> {
     });
   }
 
-  async completeSpellWithDetailPage(partialMonster: Spell): Promise<Spell> {
+  async completeSpellWithDetailPage(partialMonster: OldSpell): Promise<OldSpell> {
     const spell = { ...partialMonster };
     const detailPage = await this.pageService.getPageHtmlElement(partialMonster.uri);
     const content = detailPage.querySelector('.bloc');

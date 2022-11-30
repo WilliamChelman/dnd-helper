@@ -4,14 +4,13 @@ import { NodeHtmlMarkdown } from 'node-html-markdown';
 import path from 'path';
 import prettier from 'prettier';
 import yaml from 'yaml';
+import consola from 'consola';
 
-import { ConfigService, LoggerFactory, NewEntity, OutputService, PrefixService } from '../../core';
+import { ConfigService, LoggerFactory, Entity, OutputService, PrefixService } from '../../core';
 
 @Injectable()
-export class DefaultMdOutput<T extends NewEntity = NewEntity> implements OutputService<T> {
+export class DefaultMdOutput<T extends Entity = Entity> implements OutputService<T> {
   format: string = 'md';
-
-  protected logger = this.loggerFactory.create('MarkdownYamlEntitiesDao');
 
   constructor(protected loggerFactory: LoggerFactory, protected prefixService: PrefixService, protected configService: ConfigService) {}
 
@@ -28,10 +27,8 @@ export class DefaultMdOutput<T extends NewEntity = NewEntity> implements OutputS
   }
 
   protected async saveOne(entity: T): Promise<string> {
-    const config = this.configService.config;
-    const basePath = path.join(process.cwd(), config.markdownYaml?.distPath ?? '', config.markdownYaml?.ddbVaultPath ?? '');
+    const basePath = this.getBasePath();
 
-    this.logger.info(`Writing ${entity.name}`);
     const yamlPart = yaml.stringify({
       ...entity,
       textContent: undefined,
@@ -42,11 +39,27 @@ export class DefaultMdOutput<T extends NewEntity = NewEntity> implements OutputS
     let filePath = path.join(basePath, this.prefixService.toFileName(entity.uri));
     filePath += '.md';
 
+    consola.log(`Writing ${entity.name} in ${filePath}`);
     const folderPath = path.dirname(filePath);
     fs.mkdirSync(folderPath, { recursive: true });
     fs.writeFileSync(filePath, content, 'utf8');
 
     return filePath;
+  }
+
+  protected getFilePath(entity: T, basePath: string): string {
+    let filePath = path.join(basePath, this.prefixService.toFileName(entity.uri));
+    filePath += '.md';
+    return filePath;
+  }
+
+  protected getBasePath(): string {
+    const config = this.configService.config;
+    let basePath = path.join(config.markdownYaml?.distPath ?? '', config.markdownYaml?.ddbVaultPath ?? '');
+    if (basePath.startsWith('.')) {
+      basePath = path.join(process.cwd(), basePath);
+    }
+    return basePath;
   }
 
   protected getMarkdownContent(entity: T): string {

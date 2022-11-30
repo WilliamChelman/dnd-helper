@@ -1,7 +1,7 @@
-import { Entity, NewEntity } from './entity';
+import { OldEntity, Entity } from './entity';
 
-export interface MagicItem extends Entity {}
+export interface OldMagicItem extends OldEntity {}
 
-export interface NewMagicItem extends NewEntity {
+export interface MagicItem extends Entity {
   type: 'MagicItem';
 }

@@ -4,20 +4,20 @@ import { HTMLElement } from 'node-html-parser';
 import { join } from 'path';
 
 import {
-  Attachment,
+  OldAttachment,
   ConfigService,
   EntityDao,
   HtmlElementHelper,
   LabelsHelper,
-  MagicItem,
+  OldMagicItem,
   PageService,
   PageServiceFactory,
-  Spell,
+  OldSpell,
 } from '../../core';
 import { DdbHelper } from './ddb.helper';
 
 @Injectable()
-export class DdbMagicItemsDao implements EntityDao<MagicItem> {
+export class DdbMagicItemsDao implements EntityDao<OldMagicItem> {
   id: string = 'ddb-magic-items';
 
   private pageService: PageService;
@@ -35,23 +35,23 @@ export class DdbMagicItemsDao implements EntityDao<MagicItem> {
     });
   }
 
-  async getAll(): Promise<MagicItem[]> {
+  async getAll(): Promise<OldMagicItem[]> {
     return await this.getMagicItems();
   }
-  async getByUri(uri: string): Promise<Spell> {
+  async getByUri(uri: string): Promise<OldSpell> {
     throw new Error('not implemented');
   }
-  async save(entity: Spell): Promise<string> {
+  async save(entity: OldSpell): Promise<string> {
     throw new Error('not implemented');
   }
-  async patch(entity: Spell): Promise<string> {
+  async patch(entity: OldSpell): Promise<string> {
     throw new Error('not implemented');
   }
   canHandle(entityType: string): number {
     throw new Error('not implemented');
   }
 
-  private async getMagicItems(): Promise<MagicItem[]> {
+  private async getMagicItems(): Promise<OldMagicItem[]> {
     const spells = [];
     let searchPageUrl = new URL('/magic-items', this.ddbHelper.basePath).toString();
     const uris = await this.ddbHelper.crawlSearchPages<string>(
@@ -82,7 +82,7 @@ export class DdbMagicItemsDao implements EntityDao<MagicItem> {
       .filter(v => v != null) as string[];
   }
 
-  private async getMagicItemFromDetailPage(url: string): Promise<MagicItem> {
+  private async getMagicItemFromDetailPage(url: string): Promise<OldMagicItem> {
     const page = await this.pageService.getPageHtmlElement(url);
 
     const content = page.querySelector('.more-info');
@@ -91,7 +91,7 @@ export class DdbMagicItemsDao implements EntityDao<MagicItem> {
       throw new Error('Failed to get magic item content');
     }
 
-    const spell: MagicItem = {
+    const spell: OldMagicItem = {
       uri: url,
       entityType: 'MagicItem' as const,
       id: url.split('/').pop()!,
@@ -105,10 +105,10 @@ export class DdbMagicItemsDao implements EntityDao<MagicItem> {
     return spell;
   }
 
-  private toMarkdown(content: HTMLElement): { markdownContent: string; attachments: Attachment[] } {
+  private toMarkdown(content: HTMLElement): { markdownContent: string; attachments: OldAttachment[] } {
     content = content.clone() as HTMLElement;
     this.ddbHelper.fixForMarkdown(content);
-    const attachments: Attachment[] = [];
+    const attachments: OldAttachment[] = [];
     content.querySelectorAll('a img').forEach((img, index) => {
       if (index > 0) {
         img.parentNode.remove();

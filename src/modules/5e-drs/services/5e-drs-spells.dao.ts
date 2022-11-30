@@ -4,11 +4,11 @@ import { HTMLElement } from 'node-html-parser';
 import { URL } from 'url';
 import { parse } from 'yaml';
 
-import { LabelsHelper, LoggerFactory, PageService, PageServiceFactory, SourceEntityDao, Spell } from '../../core';
+import { LabelsHelper, LoggerFactory, PageService, PageServiceFactory, SourceEntityDao, OldSpell } from '../../core';
 import { notNil } from '../../core/utils';
 
 @Injectable()
-export class FiveEDrsSpellsDao implements SourceEntityDao<Spell> {
+export class FiveEDrsSpellsDao implements SourceEntityDao<OldSpell> {
   id: string = '5e-drs-spells';
   private basePath = 'https://5e-drs.fr';
   private pageService: PageService = this.pageFactoryService.create({
@@ -18,9 +18,9 @@ export class FiveEDrsSpellsDao implements SourceEntityDao<Spell> {
 
   constructor(private pageFactoryService: PageServiceFactory, private labelsHelper: LabelsHelper, private loggerFactory: LoggerFactory) {}
 
-  async getAll(): Promise<Spell[]> {
+  async getAll(): Promise<OldSpell[]> {
     const partialSpells = await this.getPartialSpells();
-    const spells: Spell[] = [];
+    const spells: OldSpell[] = [];
     let index = 0;
     for (let spell of partialSpells) {
       this.logger.info(`Processing ${index}/${partialSpells.length - 1} - ${spell.name}`);
@@ -32,7 +32,7 @@ export class FiveEDrsSpellsDao implements SourceEntityDao<Spell> {
     return spells;
   }
 
-  async getPartialSpells(): Promise<Spell[]> {
+  async getPartialSpells(): Promise<OldSpell[]> {
     const items = [];
     let nextPage = new URL('/grimoire/', this.basePath).toString();
     let listPage = await this.pageService.getPageHtmlElement(nextPage);
@@ -49,7 +49,7 @@ export class FiveEDrsSpellsDao implements SourceEntityDao<Spell> {
     return items;
   }
 
-  private getPartialSpellsFromOneSearchPage(searchPage: HTMLElement): Spell[] {
+  private getPartialSpellsFromOneSearchPage(searchPage: HTMLElement): OldSpell[] {
     const rows = searchPage.querySelectorAll('.v-data-table__wrapper tbody tr');
     return rows
       .map(row => {
@@ -72,7 +72,7 @@ export class FiveEDrsSpellsDao implements SourceEntityDao<Spell> {
       .filter(notNil);
   }
 
-  async completeSpellWithDetailPage(partialSpell: Spell): Promise<Spell> {
+  async completeSpellWithDetailPage(partialSpell: OldSpell): Promise<OldSpell> {
     const spell = { ...partialSpell };
     const detailPage = await this.pageService.getPageHtmlElement(partialSpell.uri);
 

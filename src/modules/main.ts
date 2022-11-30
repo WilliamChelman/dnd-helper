@@ -19,14 +19,13 @@ import {
 } from './core';
 import {
   DdbHelper,
-  DdbMagicItemsDao,
   DdbMagicItemsInput,
   DdbMagicItemsMdOutput,
-  DdbMonstersDao,
+  DdbMdHelper,
   DdbMonstersInput,
   DdbMonstersMdOutput,
-  DdbSourcesDao,
-  DdbSpellsDao,
+  DdbSourcesInput,
+  DdbSourcesMdOutput,
   DdbSpellsInput,
   DdbSpellsMdOutput,
 } from './ddb';
@@ -48,30 +47,7 @@ export function getInjector() {
     DdbItemsService,
     LabelsHelper,
     PrefixService,
-    DdbMonstersDao,
-    {
-      provide: EntityDao,
-      useExisting: DdbMonstersDao,
-      multi: true,
-    },
-    DdbSpellsDao,
-    {
-      provide: EntityDao,
-      useExisting: DdbSpellsDao,
-      multi: true,
-    },
-    DdbSourcesDao,
-    {
-      provide: EntityDao,
-      useExisting: DdbSourcesDao,
-      multi: true,
-    },
-    DdbMagicItemsDao,
-    {
-      provide: EntityDao,
-      useExisting: DdbMagicItemsDao,
-      multi: true,
-    },
+
     NotionMonstersDao,
     {
       provide: EntityDao,
@@ -151,13 +127,20 @@ export function getInjector() {
       useExisting: DdbMonstersInput,
       multi: true,
     },
+    DdbSourcesMdOutput,
+    {
+      provide: OutputService,
+      useExisting: DdbSourcesMdOutput,
+      multi: true,
+    },
+    DdbSourcesInput,
+    {
+      provide: InputService,
+      useExisting: DdbSourcesInput,
+      multi: true,
+    },
+    DdbMdHelper,
   ]);
-}
-
-export async function main() {
-  console.log('yo');
-  const runner = new Main(getInjector());
-  // await runner.run();
 }
 
 class Main {
@@ -169,7 +152,7 @@ class Main {
     const configService = this.injector.get(ConfigService) as ConfigService;
     const pageServiceFactory = this.injector.get(PageServiceFactory) as PageServiceFactory;
     try {
-      for (const flow of configService.config.flows.filter(f => !f.disabled)) {
+      for (const flow of configService.config.flows?.filter(f => !f.disabled) ?? []) {
         for (const [sourceId, sourceConfig] of Object.entries(flow.sources)) {
           const sourceDao = this.getDao(sourceId, sourceConfig);
           if (!sourceDao) continue;

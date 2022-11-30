@@ -1,5 +1,5 @@
-import { Item } from "./item";
+import { OldItem } from './item';
 
-export interface Armor extends Item {
-  entityType: "Armor";
+export interface OldArmor extends OldItem {
+  entityType: 'Armor';
 }

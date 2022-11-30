@@ -1,31 +1,39 @@
 import { cosmiconfigSync } from 'cosmiconfig';
-import { join } from 'path';
+import path from 'path';
+import { defu } from 'defu';
 import { getBinRootPath } from '../utils';
 const explorerSync = cosmiconfigSync('dnd-parser');
 
 export class ConfigService {
   config: Config;
 
+  private readonly defaultConfig: Config = {
+    cachePath: path.join(getBinRootPath(), 'cache'),
+    markdownYaml: {
+      distPath: path.join(process.cwd(), 'vault'),
+      ddbVaultPath: 'ddb',
+    },
+  };
+
   constructor() {
-    this.config = explorerSync.search()?.config;
-    if (!this.config.cachePath) {
-      this.config.cachePath = join(getBinRootPath(), 'cache');
-    }
+    this.config = defu(explorerSync.search()?.config, this.defaultConfig);
   }
 }
 
 export interface Config {
   cachePath: string;
-  flows: FlowConfig[];
+  flows?: FlowConfig[];
   defaultDaoConfigs?: { [daoId: string]: DaoConfig };
-  notion: {
+  notion?: {
     auth: string;
     spellsDbId: string;
     monstersDbId: string;
     itemsDbId: string;
   };
-  ddb: {
-    cobaltSession: string;
+  ddb?: {
+    cobaltSession?: string;
+    types?: string[];
+    name?: string;
   };
   markdownYaml?: {
     distPath: string;

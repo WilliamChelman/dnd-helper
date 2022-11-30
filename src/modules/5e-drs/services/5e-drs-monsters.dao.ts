@@ -4,11 +4,11 @@ import { HTMLElement } from 'node-html-parser';
 import { URL } from 'url';
 import { parse } from 'yaml';
 
-import { LabelsHelper, LoggerFactory, Monster, PageService, PageServiceFactory, SourceEntityDao } from '../../core';
+import { LabelsHelper, LoggerFactory, OldMonster, PageService, PageServiceFactory, SourceEntityDao } from '../../core';
 import { notNil } from '../../core/utils';
 
 @Injectable()
-export class FiveEDrsMonstersDao implements SourceEntityDao<Monster> {
+export class FiveEDrsMonstersDao implements SourceEntityDao<OldMonster> {
   id: string = '5e-drs-monsters';
   private basePath = 'https://5e-drs.fr';
   private pageService: PageService = this.pageFactoryService.create({
@@ -18,9 +18,9 @@ export class FiveEDrsMonstersDao implements SourceEntityDao<Monster> {
 
   constructor(private pageFactoryService: PageServiceFactory, private labelsHelper: LabelsHelper, private loggerFactory: LoggerFactory) {}
 
-  async getAll(): Promise<Monster[]> {
+  async getAll(): Promise<OldMonster[]> {
     const partialMonsters = await this.getPartialMonsters();
-    const monsters: Monster[] = [];
+    const monsters: OldMonster[] = [];
     let index = 0;
     for (let monster of partialMonsters) {
       this.logger.info(`Processing ${index}/${partialMonsters.length - 1} - ${monster.name}`);
@@ -32,7 +32,7 @@ export class FiveEDrsMonstersDao implements SourceEntityDao<Monster> {
     return monsters;
   }
 
-  async getPartialMonsters(): Promise<Monster[]> {
+  async getPartialMonsters(): Promise<OldMonster[]> {
     const items = [];
     let nextPage = new URL('/bestiaire/', this.basePath).toString();
     let listPage = await this.pageService.getPageHtmlElement(nextPage);
@@ -49,7 +49,7 @@ export class FiveEDrsMonstersDao implements SourceEntityDao<Monster> {
     return items;
   }
 
-  private getPartialMonstersFromOneSearchPage(searchPage: HTMLElement): Monster[] {
+  private getPartialMonstersFromOneSearchPage(searchPage: HTMLElement): OldMonster[] {
     const rows = searchPage.querySelectorAll('.v-data-table__wrapper tbody tr');
     return rows
       .map(row => {
@@ -72,7 +72,7 @@ export class FiveEDrsMonstersDao implements SourceEntityDao<Monster> {
       .filter(notNil);
   }
 
-  async completeMonsterWithDetailPage(partialMonster: Monster): Promise<Monster> {
+  async completeMonsterWithDetailPage(partialMonster: OldMonster): Promise<OldMonster> {
     const monster = { ...partialMonster };
     const detailPage = await this.pageService.getPageHtmlElement(partialMonster.link as string);
 

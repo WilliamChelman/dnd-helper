@@ -1,5 +1,4 @@
 import { Command } from '@oclif/core';
-import { main } from '../modules/main';
 
 export default class Parse extends Command {
   static description = 'Run the parser';

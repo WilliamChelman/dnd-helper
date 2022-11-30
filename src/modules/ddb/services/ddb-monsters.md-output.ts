@@ -1,12 +1,12 @@
 import { Injectable } from 'injection-js';
 import { parse } from 'node-html-parser';
 
-import { ConfigService, LoggerFactory, NewMagicItem, NewMonster, PrefixService } from '../../core';
+import { ConfigService, LoggerFactory, MagicItem, Monster, PrefixService } from '../../core';
 import { DefaultMdOutput } from '../../markdown-yaml';
 import { DdbHelper } from './ddb.helper';
 
 @Injectable()
-export class DdbMonstersMdOutput extends DefaultMdOutput<NewMonster> {
+export class DdbMonstersMdOutput extends DefaultMdOutput<Monster> {
   constructor(
     protected loggerFactory: LoggerFactory,
     protected prefixService: PrefixService,
@@ -16,11 +16,11 @@ export class DdbMonstersMdOutput extends DefaultMdOutput<NewMonster> {
     super(loggerFactory, prefixService, configService);
   }
 
-  canHandle(entity: NewMonster): number | undefined {
+  canHandle(entity: Monster): number | undefined {
     return entity.type === 'Monster' ? 10 : undefined;
   }
 
-  protected getMarkdownContent(entity: NewMonster): string {
+  protected getMarkdownContent(entity: Monster): string {
     const content = parse(entity.textContent);
 
     const links = content.querySelectorAll('a[href]');

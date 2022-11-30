@@ -1,4 +1,4 @@
-export interface Entity {
+export interface OldEntity {
   uri: string;
   entityType: string;
   name: string;
@@ -9,16 +9,16 @@ export interface Entity {
   altNames?: string[];
   markdownContent?: string;
   htmlContent?: string;
-  pages?: Entity[];
-  attachments?: Attachment[];
+  pages?: OldEntity[];
+  attachments?: OldAttachment[];
 }
 
-export interface Attachment {
+export interface OldAttachment {
   url: string;
   filePath: string;
 }
 
-export interface NewEntity {
+export interface Entity {
   uri: string;
   type: string;
   name: string;

@@ -1,19 +1,19 @@
-import { Client } from "@notionhq/client";
+import { Client } from '@notionhq/client';
 import {
   CreatePageParameters,
   GetPageResponse,
   QueryDatabaseResponse,
   UpdateDatabaseParameters,
-} from "@notionhq/client/build/src/api-endpoints";
-import { Injectable } from "injection-js";
+} from '@notionhq/client/build/src/api-endpoints';
+import { Injectable } from 'injection-js';
 
-import { ConfigService, Entity } from "../../core";
-import { NotionHelper } from "./notion.helper";
+import { ConfigService, OldEntity } from '../../core';
+import { NotionHelper } from './notion.helper';
 
 @Injectable()
-export abstract class NotionDbService<T extends Entity> {
+export abstract class NotionDbService<T extends OldEntity> {
   notion = new Client({
-    auth: this.configService.config.notion.auth,
+    auth: this.configService.config.notion?.auth,
   });
 
   constructor(protected configService: ConfigService, protected notionHelper: NotionHelper) {}
@@ -21,7 +21,7 @@ export abstract class NotionDbService<T extends Entity> {
   async initSchema(): Promise<void> {
     const db = await this.notion.databases.retrieve({ database_id: this.getDatabaseId() });
     const schema = { ...this.getSchema() };
-    Object.keys(db.properties).forEach((propertyKey) => delete schema[propertyKey]);
+    Object.keys(db.properties).forEach(propertyKey => delete schema[propertyKey]);
     if (Object.keys(schema).length === 0) return;
     await this.notion.databases.update({
       database_id: this.getDatabaseId(),
@@ -32,8 +32,8 @@ export abstract class NotionDbService<T extends Entity> {
   async cleanSelect(propertyName: string): Promise<void> {
     const db = await this.notion.databases.retrieve({ database_id: this.getDatabaseId() });
     const property = db.properties[propertyName];
-    if (property.type !== "select") return;
-    console.log("schema", property);
+    if (property.type !== 'select') return;
+    console.log('schema', property);
     const keptOptions: typeof property.select.options = [];
     for (const option of property.select.options) {
       const response = await this.notion.databases.query({
@@ -65,10 +65,10 @@ export abstract class NotionDbService<T extends Entity> {
   }
 
   async cleanMultiSelect(propertyName: string): Promise<void> {
-    console.log("Cleaning property", propertyName);
+    console.log('Cleaning property', propertyName);
     const db = await this.notion.databases.retrieve({ database_id: this.getDatabaseId() });
     const property = db.properties[propertyName];
-    if (property.type !== "multi_select") return;
+    if (property.type !== 'multi_select') return;
     const keptOptions: typeof property.multi_select.options = [];
     for (const option of property.multi_select.options) {
       const response = await this.notion.databases.query({
@@ -114,7 +114,7 @@ export abstract class NotionDbService<T extends Entity> {
       database_id: this.getDatabaseId(),
       page_size: 1,
       filter: {
-        property: "title",
+        property: 'title',
         rich_text: { equals: title },
       },
     });
@@ -137,7 +137,7 @@ export abstract class NotionDbService<T extends Entity> {
     const response = await this.notion.databases.query({
       database_id: this.getDatabaseId(),
       page_size: 1,
-      filter: { property: "URI", url: { equals: page.uri } },
+      filter: { property: 'URI', url: { equals: page.uri } },
     });
 
     return response.results[0]?.id;
@@ -154,7 +154,7 @@ export abstract class NotionDbService<T extends Entity> {
     const currentId = await this.getCurrentId(page);
 
     if (currentId) {
-      console.log("Updating", title);
+      console.log('Updating', title);
       // await this.deleteChildren(currentId);
       // const newChildren = this.getChildren(page);
       // await this.notion.blocks.children.append({ block_id: currentId, children: newChildren ?? [] });
@@ -167,10 +167,10 @@ export abstract class NotionDbService<T extends Entity> {
         })
       ).id;
     } else {
-      console.log("Creating", title);
+      console.log('Creating', title);
       return (
         await this.notion.pages.create({
-          parent: { type: "database_id", database_id: this.getDatabaseId() },
+          parent: { type: 'database_id', database_id: this.getDatabaseId() },
           properties,
           icon: this.getIcon(page),
           cover: this.getCover(page),
@@ -207,12 +207,12 @@ export abstract class NotionDbService<T extends Entity> {
   }
 
   protected abstract getProperties(page: Partial<T>): any;
-  protected abstract getChildren(page: T): CreatePageParameters["children"];
-  protected abstract getIcon(page: T): CreatePageParameters["icon"] | undefined;
-  protected abstract getCover(page: T): CreatePageParameters["cover"] | undefined;
+  protected abstract getChildren(page: T): CreatePageParameters['children'];
+  protected abstract getIcon(page: T): CreatePageParameters['icon'] | undefined;
+  protected abstract getCover(page: T): CreatePageParameters['cover'] | undefined;
   protected abstract getDatabaseId(): string;
-  protected abstract getSchema(): UpdateDatabaseParameters["properties"];
+  protected abstract getSchema(): UpdateDatabaseParameters['properties'];
   protected abstract getTitle(page: T): string;
 }
 
-export type PropertiesSchema = UpdateDatabaseParameters["properties"];
+export type PropertiesSchema = UpdateDatabaseParameters['properties'];

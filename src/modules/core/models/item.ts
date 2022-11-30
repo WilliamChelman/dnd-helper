@@ -1,6 +1,6 @@
-import { Entity } from "./entity";
+import { OldEntity } from './entity';
 
-export interface Item extends Entity {
+export interface OldItem extends OldEntity {
   type?: string;
   cost?: string;
   weight?: string;

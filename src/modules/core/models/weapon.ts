@@ -1,6 +1,6 @@
-import { Item } from "./item";
+import { OldItem } from './item';
 
-export interface Weapon extends Item {
+export interface OldWeapon extends OldItem {
   damages?: string;
   damageType?: string;
   properties?: string[];

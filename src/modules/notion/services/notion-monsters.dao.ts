@@ -2,14 +2,14 @@ import { markdownToBlocks } from '@tryfabric/martian';
 import { Injectable } from 'injection-js';
 import { NodeHtmlMarkdown } from 'node-html-markdown';
 
-import { ConfigService, LoggerFactory, Monster, notNil } from '../../core';
+import { ConfigService, LoggerFactory, OldMonster, notNil } from '../../core';
 import { MonsterProperties } from '../models';
 import { PropertiesSchema } from './notion-db.service';
 import { NotionDao } from './notion.dao';
 import { NotionHelper } from './notion.helper';
 
 @Injectable()
-export class NotionMonstersDao extends NotionDao<Monster> {
+export class NotionMonstersDao extends NotionDao<OldMonster> {
   id: string = 'notion-monsters';
 
   constructor(configService: ConfigService, notionHelper: NotionHelper, loggerFactory: LoggerFactory) {
@@ -20,7 +20,7 @@ export class NotionMonstersDao extends NotionDao<Monster> {
     return entityType === 'Monster' ? 10 : 0;
   }
 
-  async getCurrentId(page: Monster): Promise<string | undefined> {
+  async getCurrentId(page: OldMonster): Promise<string | undefined> {
     const response = await this.notion.databases.query({
       database_id: this.getDatabaseId(),
       page_size: 1,
@@ -39,10 +39,10 @@ export class NotionMonstersDao extends NotionDao<Monster> {
   }
 
   getDatabaseId(): string {
-    return this.configService.config.notion.monstersDbId;
+    return this.configService.config.notion?.monstersDbId || '';
   }
 
-  protected getProperties(monster: Monster): any {
+  protected getProperties(monster: OldMonster): any {
     return {
       ...this.notionHelper.getTitle(MonsterProperties.NAME, monster.name),
       ...this.notionHelper.getSelect(MonsterProperties.SOURCE, monster.source),
@@ -79,7 +79,7 @@ export class NotionMonstersDao extends NotionDao<Monster> {
     };
   }
 
-  protected getIcon(monster: Monster) {
+  protected getIcon(monster: OldMonster) {
     if (!monster.iconLink) return undefined;
     return {
       external: {
@@ -88,7 +88,7 @@ export class NotionMonstersDao extends NotionDao<Monster> {
     };
   }
 
-  protected getCover(monster: Monster) {
+  protected getCover(monster: OldMonster) {
     if (!monster.coverLink) return undefined;
     return {
       external: {
@@ -97,7 +97,7 @@ export class NotionMonstersDao extends NotionDao<Monster> {
     };
   }
 
-  protected getChildren(monster: Monster) {
+  protected getChildren(monster: OldMonster) {
     if (!monster.markdownContent) return [];
     const blocks = markdownToBlocks(monster.markdownContent);
     if (monster.coverLink) {
@@ -115,7 +115,7 @@ export class NotionMonstersDao extends NotionDao<Monster> {
   }
 
   protected getDbId(): string {
-    return this.configService.config.notion.monstersDbId;
+    return this.configService.config.notion?.monstersDbId || '';
   }
 
   protected getSchema(): PropertiesSchema {
@@ -155,7 +155,7 @@ export class NotionMonstersDao extends NotionDao<Monster> {
     };
   }
 
-  protected getTitle(page: Monster): string {
+  protected getTitle(page: OldMonster): string {
     return page.name!;
   }
 }

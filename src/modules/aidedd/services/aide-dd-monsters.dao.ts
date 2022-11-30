@@ -3,10 +3,10 @@ import { NodeHtmlMarkdown } from 'node-html-markdown';
 import { HTMLElement, parse } from 'node-html-parser';
 import { URL } from 'url';
 
-import { EntityDao, LabelsHelper, LoggerFactory, Monster, notNil, PageService, PageServiceFactory } from '../../core';
+import { EntityDao, LabelsHelper, LoggerFactory, OldMonster, notNil, PageService, PageServiceFactory } from '../../core';
 
 @Injectable()
-export class AideDdMonstersDao implements EntityDao<Monster> {
+export class AideDdMonstersDao implements EntityDao<OldMonster> {
   id: string = 'aide-dd-monsters';
   private basePath = 'https://www.aidedd.org';
   private pageService: PageService = this.pageFactoryService.create({
@@ -16,9 +16,9 @@ export class AideDdMonstersDao implements EntityDao<Monster> {
 
   constructor(private pageFactoryService: PageServiceFactory, private labelsHelper: LabelsHelper, private loggerFactory: LoggerFactory) {}
 
-  async getAll(): Promise<Monster[]> {
+  async getAll(): Promise<OldMonster[]> {
     const partialMonsters = await this.getPartialMonsters();
-    const monsters: Monster[] = [];
+    const monsters: OldMonster[] = [];
     let index = 0;
     for (let monster of partialMonsters) {
       this.logger.info(`Processing ${index}/${partialMonsters.length - 1} - ${monster.name}`);
@@ -29,20 +29,20 @@ export class AideDdMonstersDao implements EntityDao<Monster> {
 
     return monsters;
   }
-  getByUri(uri: string): Promise<Monster> {
+  getByUri(uri: string): Promise<OldMonster> {
     throw new Error('Method not implemented.');
   }
-  save(entity: Monster): Promise<string> {
+  save(entity: OldMonster): Promise<string> {
     throw new Error('Method not implemented.');
   }
-  patch(entity: Monster): Promise<string> {
+  patch(entity: OldMonster): Promise<string> {
     throw new Error('Method not implemented.');
   }
   canHandle(entityType: string): number {
     throw new Error('Method not implemented.');
   }
 
-  async getPartialMonsters(): Promise<Monster[]> {
+  async getPartialMonsters(): Promise<OldMonster[]> {
     const listPageUrl = new URL('/regles/liste-monstres/', this.basePath).toString();
     const listPage = await this.pageService.getPageHtmlElement(listPageUrl);
     const anchors = listPage.querySelectorAll('.content .liste a');
@@ -63,7 +63,7 @@ export class AideDdMonstersDao implements EntityDao<Monster> {
     });
   }
 
-  async completeMonsterWithDetailPage(partialMonster: Monster): Promise<Monster> {
+  async completeMonsterWithDetailPage(partialMonster: OldMonster): Promise<OldMonster> {
     const monster = { ...partialMonster };
     const detailPage = await this.pageService.getPageHtmlElement(partialMonster.link!);
     const content = detailPage.querySelector('.bloc .jaune');

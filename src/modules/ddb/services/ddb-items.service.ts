@@ -2,7 +2,7 @@ import { Injectable } from 'injection-js';
 import { NodeHtmlMarkdown } from 'node-html-markdown';
 import { HTMLElement } from 'node-html-parser';
 
-import { Item, LabelsHelper, notNil, PageService, PageServiceFactory } from '../../core';
+import { OldItem, LabelsHelper, notNil, PageService, PageServiceFactory } from '../../core';
 import { DdbHelper } from './ddb.helper';
 
 @Injectable()
@@ -13,15 +13,15 @@ export class DdbItemsService {
     this.pageService = pageServiceFactory.create({ ...this.ddbHelper.getDefaultPageServiceOptions() });
   }
 
-  async getPartialItems(options?: MonstersFilteringOptions): Promise<Item[]> {
+  async getPartialItems(options?: MonstersFilteringOptions): Promise<OldItem[]> {
     let searchPageUrl = new URL('/equipment', this.ddbHelper.basePath).toString();
     if (options?.name) {
       searchPageUrl += `?filter-search=${encodeURIComponent(options.name)}`;
     }
-    return await this.ddbHelper.crawlSearchPages<Item>(searchPageUrl, this.getItemsFromSearchPage.bind(this), this.pageService);
+    return await this.ddbHelper.crawlSearchPages<OldItem>(searchPageUrl, this.getItemsFromSearchPage.bind(this), this.pageService);
   }
 
-  private getItemsFromSearchPage(page: HTMLElement): Item[] {
+  private getItemsFromSearchPage(page: HTMLElement): OldItem[] {
     const monsterBlocks = page.querySelectorAll('ul.listing li');
     return monsterBlocks
       .map(block => {
@@ -43,7 +43,7 @@ export class DdbItemsService {
       .filter(notNil);
   }
 
-  async completeItemWithDetailPage(partialItem: Item): Promise<Item> {
+  async completeItemWithDetailPage(partialItem: OldItem): Promise<OldItem> {
     const item = { ...partialItem };
     const page = await this.pageService.getPageHtmlElement(item.uri);
     const content = page.querySelector('.more-info.details-more-info');
@@ -54,7 +54,7 @@ export class DdbItemsService {
     return item;
   }
 
-  private cleanupContent(content: HTMLElement, monster: Item) {
+  private cleanupContent(content: HTMLElement, monster: OldItem) {
     const links = content.querySelectorAll('a[href]');
     links.forEach(link => {
       const fullHref = new URL(link.getAttribute('href')!, monster.uri).toString();

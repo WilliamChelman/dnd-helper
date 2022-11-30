@@ -1,6 +1,6 @@
-import { Entity, NewEntity } from './entity';
+import { OldEntity, Entity } from './entity';
 
-export interface Monster extends Entity {
+export interface OldMonster extends OldEntity {
   entityType: 'Monster';
   id: string;
   altNames?: string[];
@@ -33,7 +33,7 @@ export interface Monster extends Entity {
   coverLink?: string;
 }
 
-export interface NewMonster extends NewEntity {
+export interface Monster extends Entity {
   type: 'Monster';
   altNames?: string[];
   challenge?: string;

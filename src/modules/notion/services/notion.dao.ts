@@ -1,21 +1,21 @@
-import { Client } from "@notionhq/client";
+import { Client } from '@notionhq/client';
 import {
   CreatePageParameters,
   GetPageResponse,
   QueryDatabaseResponse,
   UpdateDatabaseParameters,
-} from "@notionhq/client/build/src/api-endpoints";
-import { Injectable } from "injection-js";
-import { Logger } from "winston";
-import { produce } from "immer";
+} from '@notionhq/client/build/src/api-endpoints';
+import { Injectable } from 'injection-js';
+import { Logger } from 'winston';
+import { produce } from 'immer';
 
-import { ConfigService, Entity, EntityDao, LoggerFactory } from "../../core";
-import { NotionHelper } from "./notion.helper";
+import { ConfigService, OldEntity, EntityDao, LoggerFactory } from '../../core';
+import { NotionHelper } from './notion.helper';
 
 @Injectable()
-export abstract class NotionDao<T extends Entity> implements EntityDao<T> {
+export abstract class NotionDao<T extends OldEntity> implements EntityDao<T> {
   notion = new Client({
-    auth: this.configService.config.notion.auth,
+    auth: this.configService.config.notion?.auth,
   });
 
   abstract id: string;
@@ -24,12 +24,12 @@ export abstract class NotionDao<T extends Entity> implements EntityDao<T> {
   constructor(protected configService: ConfigService, protected notionHelper: NotionHelper, protected logger: Logger) {}
 
   getAll(): Promise<T[]> {
-    throw new Error("not implemented");
+    throw new Error('not implemented');
   }
 
   getByUri(uri: string): Promise<T> {
     // TODO
-    throw new Error("not implemented");
+    throw new Error('not implemented');
   }
 
   async save(entity: T): Promise<string> {
@@ -42,7 +42,7 @@ export abstract class NotionDao<T extends Entity> implements EntityDao<T> {
     const response = await this.notion.databases.query({
       database_id: this.getDatabaseId(),
       page_size: 1,
-      filter: { property: "URI", url: { equals: entity.uri } },
+      filter: { property: 'URI', url: { equals: entity.uri } },
     });
 
     const pageId = response.results[0]?.id;
@@ -62,7 +62,7 @@ export abstract class NotionDao<T extends Entity> implements EntityDao<T> {
     if (this.isInitialized) return;
     const db = await this.notion.databases.retrieve({ database_id: this.getDatabaseId() });
     const schema = { ...this.getSchema() };
-    Object.keys(db.properties).forEach((propertyKey) => delete schema[propertyKey]);
+    Object.keys(db.properties).forEach(propertyKey => delete schema[propertyKey]);
     if (Object.keys(schema).length === 0) return;
     await this.notion.databases.update({
       database_id: this.getDatabaseId(),
@@ -74,7 +74,7 @@ export abstract class NotionDao<T extends Entity> implements EntityDao<T> {
   async cleanSelect(propertyName: string): Promise<void> {
     const db = await this.notion.databases.retrieve({ database_id: this.getDatabaseId() });
     const property = db.properties[propertyName];
-    if (property.type !== "select") return;
+    if (property.type !== 'select') return;
     const keptOptions: typeof property.select.options = [];
     for (const option of property.select.options) {
       const response = await this.notion.databases.query({
@@ -106,10 +106,10 @@ export abstract class NotionDao<T extends Entity> implements EntityDao<T> {
   }
 
   async cleanMultiSelect(propertyName: string): Promise<void> {
-    this.logger.info("Cleaning property", propertyName);
+    this.logger.info('Cleaning property', propertyName);
     const db = await this.notion.databases.retrieve({ database_id: this.getDatabaseId() });
     const property = db.properties[propertyName];
-    if (property.type !== "multi_select") return;
+    if (property.type !== 'multi_select') return;
     const keptOptions: typeof property.multi_select.options = [];
     for (const option of property.multi_select.options) {
       const response = await this.notion.databases.query({
@@ -155,7 +155,7 @@ export abstract class NotionDao<T extends Entity> implements EntityDao<T> {
       database_id: this.getDatabaseId(),
       page_size: 1,
       filter: {
-        property: "title",
+        property: 'title',
         rich_text: { equals: title },
       },
     });
@@ -167,7 +167,7 @@ export abstract class NotionDao<T extends Entity> implements EntityDao<T> {
     const response = await this.notion.databases.query({
       database_id: this.getDatabaseId(),
       page_size: 1,
-      filter: { property: "URI", url: { equals: page.uri } },
+      filter: { property: 'URI', url: { equals: page.uri } },
     });
 
     return response.results[0]?.id;
@@ -185,7 +185,7 @@ export abstract class NotionDao<T extends Entity> implements EntityDao<T> {
     const properties = this.getProperties(entity);
 
     if (pageId) {
-      this.logger.info("Updating", entity.uri);
+      this.logger.info('Updating', entity.uri);
       // await this.deleteChildren(currentId);
       // const newChildren = this.getChildren(page);
       // await this.notion.blocks.children.append({ block_id: currentId, children: newChildren ?? [] });
@@ -198,13 +198,13 @@ export abstract class NotionDao<T extends Entity> implements EntityDao<T> {
     } else {
       const alreadyExists = await this.alreadyExistsFromOtherDataSource(entity);
       if (alreadyExists) {
-        this.logger.info("Entity already exists, skipping", { pageId: alreadyExists });
+        this.logger.info('Entity already exists, skipping', { pageId: alreadyExists });
         return alreadyExists;
       }
-      this.logger.info("Creating", entity.uri);
+      this.logger.info('Creating', entity.uri);
       pageId = (
         await this.notion.pages.create({
-          parent: { type: "database_id", database_id: this.getDatabaseId() },
+          parent: { type: 'database_id', database_id: this.getDatabaseId() },
           properties,
           icon: this.getIcon(entity),
           cover: this.getCover(entity),
@@ -249,16 +249,16 @@ export abstract class NotionDao<T extends Entity> implements EntityDao<T> {
       page_size: 1,
       filter: {
         and: [
-          { property: "URI", url: { does_not_equal: entity.uri } },
-          { property: "Lang", select: { equals: entity.lang } },
+          { property: 'URI', url: { does_not_equal: entity.uri } },
+          { property: 'Lang', select: { equals: entity.lang } },
           {
             or: [
               {
-                property: "Name",
+                property: 'Name',
                 rich_text: { equals: entity.name! },
               },
               {
-                property: "Alt Names",
+                property: 'Alt Names',
                 rich_text: { contains: entity.name! },
               },
             ],
@@ -277,10 +277,10 @@ export abstract class NotionDao<T extends Entity> implements EntityDao<T> {
         filter: {
           and: [
             // TODO get property keys from config
-            { property: "URI", url: { does_not_equal: entity.uri } },
-            { property: "Lang", select: { does_not_equal: entity.lang } },
+            { property: 'URI', url: { does_not_equal: entity.uri } },
+            { property: 'Lang', select: { does_not_equal: entity.lang } },
             {
-              property: "Name",
+              property: 'Name',
               rich_text: { equals: altName },
             },
           ],
@@ -289,16 +289,16 @@ export abstract class NotionDao<T extends Entity> implements EntityDao<T> {
       const otherPageId = response.results[0]?.id;
       if (otherPageId) {
         this.logger.info(`${entity.name} is same as ${otherPageId}`);
-        entity = produce(entity, (draft) => {
-          draft.altNames = draft.altNames?.filter((n) => n !== altName);
+        entity = produce(entity, draft => {
+          draft.altNames = draft.altNames?.filter(n => n !== altName);
           draft.sameAs = Array.from(new Set([otherPageId, ...(draft.sameAs ?? [])]));
         });
         break;
       }
     }
 
-    return produce(entity, (draft) => {
-      draft.altNames = draft.altNames?.filter((n) => n !== draft.name);
+    return produce(entity, draft => {
+      draft.altNames = draft.altNames?.filter(n => n !== draft.name);
     });
   }
 
@@ -311,12 +311,12 @@ export abstract class NotionDao<T extends Entity> implements EntityDao<T> {
   }
 
   protected abstract getProperties(page: Partial<T>): any;
-  protected abstract getChildren(page: T): CreatePageParameters["children"];
-  protected abstract getIcon(page: T): CreatePageParameters["icon"] | undefined;
-  protected abstract getCover(page: T): CreatePageParameters["cover"] | undefined;
+  protected abstract getChildren(page: T): CreatePageParameters['children'];
+  protected abstract getIcon(page: T): CreatePageParameters['icon'] | undefined;
+  protected abstract getCover(page: T): CreatePageParameters['cover'] | undefined;
   protected abstract getDatabaseId(): string;
-  protected abstract getSchema(): UpdateDatabaseParameters["properties"];
+  protected abstract getSchema(): UpdateDatabaseParameters['properties'];
   protected abstract getTitle(page: T): string;
 }
 
-export type PropertiesSchema = UpdateDatabaseParameters["properties"];
+export type PropertiesSchema = UpdateDatabaseParameters['properties'];

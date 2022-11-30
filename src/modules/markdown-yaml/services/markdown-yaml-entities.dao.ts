@@ -4,7 +4,7 @@ import https from 'https';
 import http from 'http';
 import yaml from 'yaml';
 import prettier from 'prettier';
-import { Attachment, ConfigService, Entity, EntityDao, LoggerFactory, PrefixService } from '../../core';
+import { OldAttachment, ConfigService, OldEntity, EntityDao, LoggerFactory, PrefixService } from '../../core';
 import { Injectable } from 'injection-js';
 
 @Injectable()
@@ -14,21 +14,21 @@ export class MarkdownYamlEntitiesDao implements EntityDao {
 
   constructor(private loggerFactory: LoggerFactory, private prefixService: PrefixService, private configService: ConfigService) {}
 
-  getAll(): Promise<Entity[]> {
+  getAll(): Promise<OldEntity[]> {
     throw new Error('Method not implemented.');
   }
 
-  getByUri(uri: string): Promise<Entity> {
+  getByUri(uri: string): Promise<OldEntity> {
     throw new Error('Method not implemented.');
   }
 
-  async save(entity: Entity): Promise<string> {
+  async save(entity: OldEntity): Promise<string> {
     const config = this.configService.config;
     const basePath = path.join(process.cwd(), config.markdownYaml?.distPath ?? '', config.markdownYaml?.ddbVaultPath ?? '');
     return await this.saveEntity(entity, basePath);
   }
 
-  private async saveEntity(entity: Entity, basePath: string): Promise<string> {
+  private async saveEntity(entity: OldEntity, basePath: string): Promise<string> {
     this.logger.info(`Writing ${entity.name}`);
     const yamlPart = yaml.stringify({
       ...entity,
@@ -63,7 +63,7 @@ export class MarkdownYamlEntitiesDao implements EntityDao {
     return filePath;
   }
 
-  patch(entity: Entity): Promise<string> {
+  patch(entity: OldEntity): Promise<string> {
     throw new Error('Method not implemented.');
   }
 
@@ -71,7 +71,7 @@ export class MarkdownYamlEntitiesDao implements EntityDao {
     return 10;
   }
 
-  private async downloadAttachment(attachment: Attachment): Promise<void> {
+  private async downloadAttachment(attachment: OldAttachment): Promise<void> {
     const destPath = join(process.cwd(), this.configService.config.markdownYaml?.distPath ?? '', attachment.filePath);
     console.log('🚀 ~ MarkdownYamlEntitiesDao ~ destPath', destPath);
     if (existsSync(destPath)) return;

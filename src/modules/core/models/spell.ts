@@ -1,6 +1,6 @@
-import { Entity, NewEntity } from './entity';
+import { OldEntity, Entity } from './entity';
 
-export interface Spell extends Entity {
+export interface OldSpell extends OldEntity {
   entityType: 'Spell';
   id: string;
   level?: string;
@@ -20,7 +20,7 @@ export interface Spell extends Entity {
   altNames?: string[];
 }
 
-export interface NewSpell extends NewEntity {
+export interface Spell extends Entity {
   type: 'Spell';
   level?: string;
   school?: string;
