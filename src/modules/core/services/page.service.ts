@@ -1,23 +1,23 @@
-import fs from 'fs';
+import consola from 'consola';
+import { existsSync, promises as fs } from 'fs';
+import { minify } from 'html-minifier';
 import { Injectable } from 'injection-js';
 import { HTMLElement, parse } from 'node-html-parser';
 import path from 'path';
 import playwright from 'playwright';
-import UserAgent from 'user-agents';
-import { minify } from 'html-minifier';
 import prettier from 'prettier';
+import UserAgent from 'user-agents';
 
-import { LoggerFactory } from './logger.factory';
 import { ConfigService } from './config.service';
 
 @Injectable()
 export class PageServiceFactory {
   private services: PageService[] = [];
 
-  constructor(private loggerFactory: LoggerFactory, private configService: ConfigService) {}
+  constructor(private configService: ConfigService) {}
 
   create(options: PageServiceOptions = {}) {
-    const service = new PageService(options, this.loggerFactory, this.configService);
+    const service = new PageService(options, this.configService);
     this.services.push(service);
     return service;
   }
@@ -34,23 +34,22 @@ export class PageService {
   private context?: playwright.BrowserContext;
   private lastUserAgent?: string;
   private failedUserAgents = new Set<string>();
-  private logger = this.loggerFactory.create('PageService');
 
-  constructor(private options: PageServiceOptions, private loggerFactory: LoggerFactory, private configService: ConfigService) {}
+  constructor(private options: PageServiceOptions, private configService: ConfigService) {}
 
   async getPageHtmlElement(url: string): Promise<HTMLElement> {
-    this.logger.debug('Fetching page', { url });
-    const cache = this.getFromCache(url);
+    const cache = await this.getFromCache(url);
     if (cache && !this.options.noCache) {
       return parse(cache);
     }
+    consola.log(`Fetching live page ${url}`);
     if (this.lastUserAgent) {
-      this.wait(2);
+      await this.wait(2);
     }
     const page = await this.getPage(url);
     const html = await page.$eval('html', htmlElement => htmlElement.outerHTML);
     const el = parse(html);
-    this.setInNewCache(url, el);
+    this.setInCache(url, el);
     await page.close();
 
     return el;
@@ -72,9 +71,9 @@ export class PageService {
         }
         const maxTry = 10;
         if (tryCount < maxTry) {
-          const multiplier = 1 + (tryCount * tryCount) / maxTry;
+          const multiplier = 5 + (tryCount * tryCount) / maxTry;
           const waitTime = multiplier * 60_000;
-          this.logger.warn(`Got invalid page, trying again in ${waitTime}ms (${tryCount + 1}/${maxTry})`);
+          consola.warn(`Got invalid page trying to reach ${url}, trying again in ${waitTime}ms (${tryCount + 1}/${maxTry})`);
           await page.waitForTimeout(waitTime);
           this.reset();
           return this.getPage(url, tryCount + 1, true);
@@ -87,49 +86,30 @@ export class PageService {
     return page;
   }
 
-  private setInNewCache(url: string, html: HTMLElement): void {
+  private async setInCache(url: string, html: HTMLElement): Promise<void> {
     this.options.cleaner?.(html);
     let content = html.outerHTML;
     content = prettier.format(content, { parser: 'html' });
     content = minify(content, {
       conservativeCollapse: true,
     });
-    const filePath = this.getNewCachePath(url);
-    const folderPath = path.dirname(filePath);
-    fs.mkdirSync(folderPath, { recursive: true });
-    fs.writeFileSync(filePath, content, 'utf8');
-  }
-
-  private getFromCache(url: string): string | undefined {
-    const newCacheResult = this.getFromNewCache(url);
-    if (newCacheResult) {
-      return newCacheResult;
-    }
     const filePath = this.getCachePath(url);
-    if (fs.existsSync(filePath)) {
-      const content = fs.readFileSync(filePath, 'utf8');
-      this.setInNewCache(url, parse(content));
-      return content;
-    }
-
-    return undefined;
+    const folderPath = path.dirname(filePath);
+    await fs.mkdir(folderPath, { recursive: true });
+    await fs.writeFile(filePath, content, 'utf8');
   }
 
-  private getFromNewCache(url: string): string | undefined {
-    const filePath = this.getNewCachePath(url);
-    if (fs.existsSync(filePath)) {
-      return fs.readFileSync(filePath, 'utf8');
+  private async getFromCache(url: string): Promise<string | undefined> {
+    url = url.split('#')[0];
+    const filePath = this.getCachePath(url);
+    if (existsSync(filePath)) {
+      return fs.readFile(filePath, 'utf8');
     }
 
     return undefined;
   }
 
   private getCachePath(url: string): string {
-    const cachePath = this.configService.config.cachePath;
-    return path.join(cachePath, encodeURIComponent(url) + '.html');
-  }
-
-  private getNewCachePath(url: string): string {
     const cachePath = this.configService.config.cachePath;
     const parts = url
       .split('/')
@@ -154,7 +134,7 @@ export class PageService {
     this.browser = await playwright.chromium.launch({
       headless: true,
       devtools: false,
-      channel: 'msedge',
+      channel: getRandomInArray(['msedge', 'chrome']),
     });
 
     return this.browser;
@@ -170,8 +150,8 @@ export class PageService {
         height: 1080,
       },
       viewport: {
-        width: 1917,
-        height: 1023,
+        width: getRandomInt(1920 / 2, 1920),
+        height: getRandomInt(1080 / 2, 1080),
       },
       userAgent: this.getUserAgent(),
     });
@@ -219,4 +199,8 @@ function getRandomInt(min: number, max: number): number {
   min = Math.ceil(min);
   max = Math.floor(max);
   return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function getRandomInArray<T>(arr: T[]): T {
+  return arr[getRandomInt(0, arr.length - 1)];
 }

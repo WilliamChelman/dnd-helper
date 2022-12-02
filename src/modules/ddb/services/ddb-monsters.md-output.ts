@@ -1,5 +1,6 @@
 import { Injectable } from 'injection-js';
 import { parse } from 'node-html-parser';
+import path from 'path';
 
 import { ConfigService, LoggerFactory, Monster, PrefixService } from '../../core';
 import { DefaultMdOutput } from '../../markdown-yaml';
@@ -20,7 +21,7 @@ export class DdbMonstersMdOutput extends DefaultMdOutput<Monster> {
     return entity.type === 'Monster' ? 10 : undefined;
   }
 
-  protected getMarkdownContent(entity: Monster): string {
+  protected async getMarkdownContent(entity: Monster): Promise<string> {
     const content = parse(entity.textContent);
 
     const links = content.querySelectorAll('a[href]');
@@ -70,8 +71,12 @@ export class DdbMonstersMdOutput extends DefaultMdOutput<Monster> {
 
     this.ddbMdHelper.keepOnlyFirstImage(content);
     this.ddbMdHelper.fixImages(content);
-    this.ddbMdHelper.adaptLinks(content, entity.uri);
+    await this.ddbMdHelper.adaptLinks(content, entity.uri);
 
     return super.getMarkdownContent({ ...entity, textContent: content.outerHTML });
+  }
+
+  protected async getFilePath(entity: Monster, basePath: string): Promise<string> {
+    return path.join(basePath, await this.ddbMdHelper.urlToMdUrl(entity.uri, entity.uri)) + '.md';
   }
 }

@@ -1,5 +1,6 @@
 import { Injectable } from 'injection-js';
 import { parse } from 'node-html-parser';
+import path from 'path';
 
 import { ConfigService, LoggerFactory, MagicItem, PrefixService } from '../../core';
 import { DefaultMdOutput } from '../../markdown-yaml';
@@ -20,13 +21,17 @@ export class DdbMagicItemsMdOutput extends DefaultMdOutput<MagicItem> {
     return entity.type === 'MagicItem' ? 10 : undefined;
   }
 
-  protected getMarkdownContent(entity: MagicItem): string {
+  protected async getMarkdownContent(entity: MagicItem): Promise<string> {
     const content = parse(entity.textContent);
 
     this.ddbMdHelper.keepOnlyFirstImage(content);
     this.ddbMdHelper.fixImages(content);
-    this.ddbMdHelper.adaptLinks(content, entity.uri);
+    await this.ddbMdHelper.adaptLinks(content, entity.uri);
 
     return super.getMarkdownContent({ ...entity, textContent: content.outerHTML });
+  }
+
+  protected async getFilePath(entity: MagicItem, basePath: string): Promise<string> {
+    return path.join(basePath, await this.ddbMdHelper.urlToMdUrl(entity.uri, entity.uri)) + '.md';
   }
 }

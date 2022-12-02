@@ -1,5 +1,6 @@
 import { Injectable } from 'injection-js';
 import { parse } from 'node-html-parser';
+import path from 'path';
 
 import { ConfigService, LoggerFactory, PrefixService, Spell } from '../../core';
 import { DefaultMdOutput } from '../../markdown-yaml';
@@ -11,7 +12,7 @@ export class DdbSpellsMdOutput extends DefaultMdOutput<Spell> {
     protected loggerFactory: LoggerFactory,
     protected prefixService: PrefixService,
     protected configService: ConfigService,
-    protected ddbHelper: DdbMdHelper
+    protected ddbMdHelper: DdbMdHelper
   ) {
     super(loggerFactory, prefixService, configService);
   }
@@ -20,12 +21,12 @@ export class DdbSpellsMdOutput extends DefaultMdOutput<Spell> {
     return entity.type === 'Spell' ? 10 : undefined;
   }
 
-  protected getMarkdownContent(entity: Spell): string {
+  protected async getMarkdownContent(entity: Spell): Promise<string> {
     const content = parse(entity.textContent);
 
-    this.ddbHelper.keepOnlyFirstImage(content);
-    this.ddbHelper.fixImages(content);
-    this.ddbHelper.adaptLinks(content, entity.uri);
+    this.ddbMdHelper.keepOnlyFirstImage(content);
+    this.ddbMdHelper.fixImages(content);
+    await this.ddbMdHelper.adaptLinks(content, entity.uri);
 
     const stats = content.querySelectorAll('.ddb-statblock-spell .ddb-statblock-item-value');
 
@@ -48,5 +49,9 @@ export class DdbSpellsMdOutput extends DefaultMdOutput<Spell> {
 `)
     );
     return super.getMarkdownContent({ ...entity, textContent: content.outerHTML });
+  }
+
+  protected async getFilePath(entity: Spell, basePath: string): Promise<string> {
+    return path.join(basePath, await this.ddbMdHelper.urlToMdUrl(entity.uri, entity.uri)) + '.md';
   }
 }

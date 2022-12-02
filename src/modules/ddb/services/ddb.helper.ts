@@ -1,7 +1,7 @@
 import { Injectable } from 'injection-js';
 import { HTMLElement } from 'node-html-parser';
 
-import { ConfigService, Cookies, PageService, PageServiceOptions } from '../../core';
+import { ConfigService, Cookies, EntityType, PageService, PageServiceOptions } from '../../core';
 
 @Injectable()
 export class DdbHelper {
@@ -39,6 +39,15 @@ export class DdbHelper {
         ).forEach(e => e.remove());
       },
     };
+  }
+
+  getType(uri: string): EntityType {
+    if (uri.includes('/magic-items/')) return 'MagicItem';
+    if (uri.includes('/spells/')) return 'Spell';
+    if (uri.includes('/monsters/')) return 'Monster';
+    if (uri.match(/\/sources\/[\w-]+$/)) return 'Source';
+
+    return 'SourcePage';
   }
 
   private getCookies(): Cookies {

@@ -33,11 +33,10 @@ export class DefaultMdOutput<T extends Entity = Entity> implements OutputService
       ...entity,
       textContent: undefined,
     });
-    const lines = ['---', yamlPart, '---', this.getMarkdownContent(entity)];
+    const lines = ['---', yamlPart, '---', await this.getMarkdownContent(entity)];
 
     const content = prettier.format(lines.join('\n'), { parser: 'markdown' });
-    let filePath = path.join(basePath, this.prefixService.toFileName(entity.uri));
-    filePath += '.md';
+    const filePath = await this.getFilePath(entity, basePath);
 
     consola.log(`Writing ${entity.name} in ${filePath}`);
     const folderPath = path.dirname(filePath);
@@ -47,7 +46,7 @@ export class DefaultMdOutput<T extends Entity = Entity> implements OutputService
     return filePath;
   }
 
-  protected getFilePath(entity: T, basePath: string): string {
+  protected async getFilePath(entity: T, basePath: string): Promise<string> {
     let filePath = path.join(basePath, this.prefixService.toFileName(entity.uri));
     filePath += '.md';
     return filePath;
@@ -62,7 +61,7 @@ export class DefaultMdOutput<T extends Entity = Entity> implements OutputService
     return basePath;
   }
 
-  protected getMarkdownContent(entity: T): string {
+  protected async getMarkdownContent(entity: T): Promise<string> {
     return NodeHtmlMarkdown.translate(entity.textContent, { blockElements: ['br'] });
   }
 }

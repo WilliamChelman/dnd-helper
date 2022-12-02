@@ -32,14 +32,14 @@ export class DdbSourcesMdOutput extends DefaultMdOutput<Source | SourcePage> {
     return super.saveOne(entity);
   }
 
-  protected getMarkdownContent(entity: Source | SourcePage): string {
+  protected async getMarkdownContent(entity: Source | SourcePage): Promise<string> {
     let content = parse(entity.textContent);
     const isToc = !!content.querySelector('.compendium-toc-full-text');
 
     //need to do it before fixing links
     const coverArt = content.querySelector('.view-cover-art a')?.getAttribute('href');
     this.ddbMdHelper.fixImages(content);
-    this.ddbMdHelper.adaptLinks(content, entity.uri);
+    await this.ddbMdHelper.adaptLinks(content, entity.uri);
 
     if (isToc) {
       content.querySelectorAll('header.no-sub.no-nav').forEach(el => el.remove());

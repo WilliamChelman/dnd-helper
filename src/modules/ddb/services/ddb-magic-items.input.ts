@@ -36,6 +36,7 @@ export class DdbMagicItemsInput implements InputService<MagicItem> {
       ++index;
       console.info(`Parsing (${index}/${uris.length})`, uri);
       if (this.blacklist.includes(uri)) continue;
+      // TODO include variants
       yield await this.getMagicItemFromDetailPage(uri);
     }
   }

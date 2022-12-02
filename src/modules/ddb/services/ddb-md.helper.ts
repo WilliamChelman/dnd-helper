@@ -1,15 +1,23 @@
 import { Injectable } from 'injection-js';
 import { HTMLElement, parse } from 'node-html-parser';
-import { join } from 'path';
+import path, { join } from 'path';
+import ufo from 'ufo';
+import sanitize from 'sanitize-filename';
 
-import { ConfigService } from '../../core';
+import { ConfigService, Entity, EntityType, PageService, PageServiceFactory } from '../../core';
+import { DdbHelper } from './ddb.helper';
 
 @Injectable()
 export class DdbMdHelper {
-  readonly basePath = 'https://www.dndbeyond.com';
-  readonly basePathMatching = /(https\:)?\/\/www\.dndbeyond\.com/;
+  private readonly folderMap: { [entityType: string]: string } = {
+    MagicItem: 'Magic Items',
+    Spell: 'Spells',
+    Monster: 'Monsters',
+  };
 
-  constructor(private configService: ConfigService) {}
+  private readonly pageService: PageService = this.pageServiceFactory.create(this.ddbHelper.getDefaultPageServiceOptions());
+
+  constructor(private configService: ConfigService, private ddbHelper: DdbHelper, private pageServiceFactory: PageServiceFactory) {}
 
   keepOnlyFirstImage(content: HTMLElement): void {
     content.querySelectorAll('a img').forEach((img, index) => {
@@ -21,19 +29,19 @@ export class DdbMdHelper {
     });
   }
 
-  adaptLinks(page: HTMLElement, currentPageUrl: string): void {
+  async adaptLinks(page: HTMLElement, currentPageUrl: string): Promise<void> {
     const vaultPath = this.configService.config.markdownYaml?.ddbVaultPath;
     if (!vaultPath) return;
-    page.querySelectorAll('a').forEach(anchor => {
+    for (const anchor of page.querySelectorAll('a')) {
       if (!anchor.text.trim()) {
         anchor.remove();
-        return;
+        continue;
       }
 
       let href = anchor.getAttribute('href');
       if (href) {
-        href = this.urlToMdUrl(href, currentPageUrl);
-        href = href.replace(/#.+/, `#${encodeURIComponent(anchor.textContent.trim())}`);
+        href = await this.urlToMdUrl(href, currentPageUrl);
+        href = encodeURI(href);
         anchor.setAttribute('href', href);
       }
 
@@ -42,23 +50,21 @@ export class DdbMdHelper {
         const wrapper = parse(`<span> </span>${anchor.outerHTML}`);
         anchor.replaceWith(wrapper);
       }
-    });
+    }
   }
 
-  urlToMdUrl(url: string, currentPageUrl: string): string {
+  async urlToMdUrl(url: string, currentPageUrl: string): Promise<string> {
     const vaultPath = this.configService.config.markdownYaml?.ddbVaultPath;
     if (!vaultPath) return url;
-
-    url = url.replace(this.basePathMatching, '');
-    if (url.startsWith('#')) {
-      url = join(this.urlToMdUrl(currentPageUrl, currentPageUrl), url).replace('/#', '#');
-    } else if (url.startsWith('./')) {
-      url = join(this.urlToMdUrl(currentPageUrl, currentPageUrl), '..', url);
-    } else if (!url?.startsWith('http')) {
-      url = join(vaultPath, url);
+    const fullUrl = this.getAbsoluteUrl(url, currentPageUrl);
+    const type = this.ddbHelper.getType(fullUrl);
+    const folder = this.folderMap[type];
+    if (folder) {
+      const content = await this.pageService.getPageHtmlElement(fullUrl);
+      const name = content.querySelector('.page-title')?.innerText.trim();
+      return path.join(folder, sanitize(name ?? ''));
     }
-
-    return url.replace(/\/$/, '');
+    return this.getAbsoluteUrl(url, currentPageUrl, vaultPath);
   }
 
   fixImages(page: HTMLElement): void {
@@ -73,5 +79,20 @@ export class DdbMdHelper {
       const parentAnchor = img.closest('a');
       parentAnchor?.replaceWith(img);
     });
+  }
+
+  private getAbsoluteUrl(url: string, currentPageUrl: string, replaceHost?: string): string {
+    if (url.startsWith('//www')) url += 'https:' + url;
+
+    if (url.startsWith('./')) {
+      url = ufo.joinURL(currentPageUrl, '..', url);
+    } else if (url.startsWith('/')) {
+      url = ufo.stringifyParsedURL({ ...ufo.parseURL(currentPageUrl), pathname: url });
+    }
+    if (replaceHost) {
+      const parsedReplacement = ufo.parseURL(replaceHost);
+      url = ufo.stringifyParsedURL({ ...ufo.parseURL(url), host: parsedReplacement.host, protocol: parsedReplacement.protocol });
+    }
+    return url.replace(/\/$/, '');
   }
 }

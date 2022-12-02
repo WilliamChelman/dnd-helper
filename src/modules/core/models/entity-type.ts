@@ -1,1 +1,1 @@
-export enum EntityType {}
+export type EntityType = 'MagicItem' | 'Spell' | 'Monster' | 'Source' | 'SourcePage';
