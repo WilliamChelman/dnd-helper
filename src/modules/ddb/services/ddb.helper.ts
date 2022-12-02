@@ -1,7 +1,7 @@
 import { Injectable } from 'injection-js';
-import { HTMLElement, parse } from 'node-html-parser';
-import { join } from 'path';
-import { ConfigService, Cookies, notNil, PageService, PageServiceOptions } from '../../core';
+import { HTMLElement } from 'node-html-parser';
+
+import { ConfigService, Cookies, PageService, PageServiceOptions } from '../../core';
 
 @Injectable()
 export class DdbHelper {
@@ -39,55 +39,6 @@ export class DdbHelper {
         ).forEach(e => e.remove());
       },
     };
-  }
-
-  fixForMarkdown(page: HTMLElement): void {
-    this.fixLinks(page);
-    this.fixImages(page);
-  }
-
-  fixSimpleImages(content: HTMLElement): void {
-    content.querySelectorAll('a img').forEach((img, index) => {
-      if (index > 0) {
-        img.parentNode.remove();
-      } else {
-        img.parentNode.replaceWith(img);
-      }
-    });
-  }
-
-  // TODO move to markdown logic
-  fixLinks(page: HTMLElement): void {
-    const vaultPath = this.configService.config.markdownYaml?.ddbVaultPath;
-    if (!vaultPath) return;
-    page.querySelectorAll('a[href]').forEach(anchor => {
-      let href = anchor.getAttribute('href');
-      if (!href) return;
-
-      href = href.replace(this.basePathMatching, '');
-      if (!href?.startsWith('http')) {
-        href = join(vaultPath, href);
-      }
-
-      anchor.setAttribute('href', href);
-      const previousText = anchor.previousSibling?.textContent;
-      if (!previousText || previousText.match(/\w$/)) {
-        const wrapper = parse(`<span> </span>${anchor.outerHTML}`);
-        anchor.replaceWith(wrapper);
-      }
-    });
-  }
-
-  fixImages(page: HTMLElement): void {
-    page.querySelectorAll('img[src]').forEach(img => {
-      let src = img.getAttribute('src');
-      if (!src) return;
-      if (src.startsWith('//')) {
-        src = 'https:' + src;
-      }
-
-      img.setAttribute('src', src);
-    });
   }
 
   private getCookies(): Cookies {

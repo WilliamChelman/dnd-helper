@@ -1,7 +1,8 @@
 import { Injectable } from 'injection-js';
 import { HTMLElement, parse } from 'node-html-parser';
 import { join } from 'path';
-import { ConfigService, Cookies, notNil, PageService, PageServiceOptions } from '../../core';
+
+import { ConfigService } from '../../core';
 
 @Injectable()
 export class DdbMdHelper {
@@ -10,7 +11,7 @@ export class DdbMdHelper {
 
   constructor(private configService: ConfigService) {}
 
-  fixSimpleImages(content: HTMLElement): void {
+  keepOnlyFirstImage(content: HTMLElement): void {
     content.querySelectorAll('a img').forEach((img, index) => {
       if (index > 0) {
         img.parentNode.remove();
@@ -20,7 +21,7 @@ export class DdbMdHelper {
     });
   }
 
-  fixLinks(page: HTMLElement, currentPageUrl: string): void {
+  adaptLinks(page: HTMLElement, currentPageUrl: string): void {
     const vaultPath = this.configService.config.markdownYaml?.ddbVaultPath;
     if (!vaultPath) return;
     page.querySelectorAll('a').forEach(anchor => {

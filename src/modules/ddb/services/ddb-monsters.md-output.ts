@@ -1,9 +1,9 @@
 import { Injectable } from 'injection-js';
 import { parse } from 'node-html-parser';
 
-import { ConfigService, LoggerFactory, MagicItem, Monster, PrefixService } from '../../core';
+import { ConfigService, LoggerFactory, Monster, PrefixService } from '../../core';
 import { DefaultMdOutput } from '../../markdown-yaml';
-import { DdbHelper } from './ddb.helper';
+import { DdbMdHelper } from './ddb-md.helper';
 
 @Injectable()
 export class DdbMonstersMdOutput extends DefaultMdOutput<Monster> {
@@ -11,7 +11,7 @@ export class DdbMonstersMdOutput extends DefaultMdOutput<Monster> {
     protected loggerFactory: LoggerFactory,
     protected prefixService: PrefixService,
     protected configService: ConfigService,
-    protected ddbHelper: DdbHelper
+    protected ddbMdHelper: DdbMdHelper
   ) {
     super(loggerFactory, prefixService, configService);
   }
@@ -68,9 +68,9 @@ export class DdbMonstersMdOutput extends DefaultMdOutput<Monster> {
       complexBlockquote.replaceWith(parse(`<div>${complexBlockquote.innerHTML}</div>`));
     }
 
-    this.ddbHelper.fixLinks(content);
-    this.ddbHelper.fixSimpleImages(content);
-    this.ddbHelper.fixImages(content);
+    this.ddbMdHelper.keepOnlyFirstImage(content);
+    this.ddbMdHelper.fixImages(content);
+    this.ddbMdHelper.adaptLinks(content, entity.uri);
 
     return super.getMarkdownContent({ ...entity, textContent: content.outerHTML });
   }

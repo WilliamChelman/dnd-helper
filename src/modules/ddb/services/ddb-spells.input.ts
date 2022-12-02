@@ -1,7 +1,7 @@
 import { Injectable } from 'injection-js';
 import { HTMLElement } from 'node-html-parser';
 
-import { HtmlElementHelper, InputService, LabelsHelper, Spell, PageService, PageServiceFactory } from '../../core';
+import { HtmlElementHelper, InputService, LabelsHelper, Spell, PageService, PageServiceFactory, ConfigService } from '../../core';
 import { DdbHelper } from './ddb.helper';
 
 @Injectable()
@@ -14,15 +14,20 @@ export class DdbSpellsInput implements InputService<Spell> {
     pageServiceFactory: PageServiceFactory,
     private htmlElementHelper: HtmlElementHelper,
     private ddbHelper: DdbHelper,
-    private labelsHelper: LabelsHelper
+    private labelsHelper: LabelsHelper,
+    private configService: ConfigService
   ) {
     this.pageService = pageServiceFactory.create({ ...this.ddbHelper.getDefaultPageServiceOptions() });
   }
 
   async *getAll(): AsyncGenerator<Spell> {
-    let searchPageUrl = new URL('/spells', this.ddbHelper.basePath).toString();
+    const { config } = this.configService;
+    let pageUrl = new URL('/spells', this.ddbHelper.basePath).toString();
+    if (config.ddb?.name) {
+      pageUrl += `?filter-search=${encodeURIComponent(config.ddb?.name)}`;
+    }
 
-    const links = await this.ddbHelper.crawlSearchPages<string>(searchPageUrl, this.getSpellLinksSearchPage.bind(this), this.pageService);
+    const links = await this.ddbHelper.crawlSearchPages<string>(pageUrl, this.getSpellLinksSearchPage.bind(this), this.pageService);
 
     for (const link of links) {
       yield this.getSpellFromDetailPage(link);
@@ -70,8 +75,6 @@ export class DdbSpellsInput implements InputService<Spell> {
       link.setAttribute('href', fullHref);
     });
 
-    this.ddbHelper.fixForMarkdown(content);
-
     const spell: Spell = {
       uri: url,
       type: 'Spell' as const,
@@ -89,7 +92,7 @@ export class DdbSpellsInput implements InputService<Spell> {
       textContent: content.outerHTML,
       spellLists: page.querySelectorAll('.tags.available-for .class-tag').map(el => el.innerText),
       tags: page.querySelectorAll('.tags.spell-tags .spell-tag').map(el => el.innerText),
-      sourceDetails: sourceDetails.split(',').slice(1).join(','),
+      sourceDetails: sourceDetails.split(',').slice(1).join(',').trim(),
       source: this.labelsHelper.getSource(sourceDetails.split(',')[0].trim()),
       ritual,
       concentration,

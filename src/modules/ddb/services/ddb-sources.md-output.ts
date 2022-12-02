@@ -39,7 +39,7 @@ export class DdbSourcesMdOutput extends DefaultMdOutput<Source | SourcePage> {
     //need to do it before fixing links
     const coverArt = content.querySelector('.view-cover-art a')?.getAttribute('href');
     this.ddbMdHelper.fixImages(content);
-    this.ddbMdHelper.fixLinks(content, entity.uri);
+    this.ddbMdHelper.adaptLinks(content, entity.uri);
 
     if (isToc) {
       content.querySelectorAll('header.no-sub.no-nav').forEach(el => el.remove());

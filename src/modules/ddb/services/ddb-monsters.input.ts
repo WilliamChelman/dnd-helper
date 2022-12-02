@@ -1,7 +1,7 @@
 import { Injectable } from 'injection-js';
 import { HTMLElement } from 'node-html-parser';
 
-import { InputService, LabelsHelper, LoggerFactory, Monster, notNil, PageService, PageServiceFactory } from '../../core';
+import { ConfigService, InputService, LabelsHelper, LoggerFactory, Monster, notNil, PageService, PageServiceFactory } from '../../core';
 import { DdbHelper } from './ddb.helper';
 
 @Injectable()
@@ -15,7 +15,8 @@ export class DdbMonstersInput implements InputService<Monster> {
     pageServiceFactory: PageServiceFactory,
     private labelsHelper: LabelsHelper,
     private ddbHelper: DdbHelper,
-    private loggerFactory: LoggerFactory
+    private loggerFactory: LoggerFactory,
+    private configService: ConfigService
   ) {
     this.pageService = pageServiceFactory.create({ ...this.ddbHelper.getDefaultPageServiceOptions() });
   }
@@ -35,12 +36,12 @@ export class DdbMonstersInput implements InputService<Monster> {
   }
 
   private async getPartialMonsters(): Promise<PartialMonster[]> {
-    let searchPageUrl = new URL('/monsters', this.ddbHelper.basePath).toString();
-    return await this.ddbHelper.crawlSearchPages<PartialMonster>(
-      searchPageUrl,
-      this.getMonstersFromSearchPage.bind(this),
-      this.pageService
-    );
+    const { config } = this.configService;
+    let pageUrl = new URL('/monsters', this.ddbHelper.basePath).toString();
+    if (config.ddb?.name) {
+      pageUrl += `?filter-search=${encodeURIComponent(config.ddb?.name)}`;
+    }
+    return await this.ddbHelper.crawlSearchPages<PartialMonster>(pageUrl, this.getMonstersFromSearchPage.bind(this), this.pageService);
   }
 
   private getMonstersFromSearchPage(page: HTMLElement): PartialMonster[] {

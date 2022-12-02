@@ -24,12 +24,13 @@ export class DdbMagicItemsInput implements InputService<MagicItem> {
   }
 
   async *getAll(): AsyncGenerator<MagicItem> {
-    let searchPageUrl = new URL('/magic-items', this.ddbHelper.basePath).toString();
-    const uris = await this.ddbHelper.crawlSearchPages<string>(
-      searchPageUrl,
-      this.getMagicItemLinksSearchPage.bind(this),
-      this.pageService
-    );
+    const { config } = this.configService;
+    let pageUrl = new URL('/magic-items', this.ddbHelper.basePath).toString();
+    if (config.ddb?.name) {
+      pageUrl += `?filter-search=${encodeURIComponent(config.ddb?.name)}`;
+    }
+
+    const uris = await this.ddbHelper.crawlSearchPages<string>(pageUrl, this.getMagicItemLinksSearchPage.bind(this), this.pageService);
     let index = 0;
     for (const uri of uris) {
       ++index;

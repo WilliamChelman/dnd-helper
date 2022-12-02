@@ -1,4 +1,4 @@
-import fs from 'fs';
+import { promises as fs } from 'fs';
 import { Injectable } from 'injection-js';
 import { NodeHtmlMarkdown } from 'node-html-markdown';
 import path from 'path';
@@ -41,8 +41,8 @@ export class DefaultMdOutput<T extends Entity = Entity> implements OutputService
 
     consola.log(`Writing ${entity.name} in ${filePath}`);
     const folderPath = path.dirname(filePath);
-    fs.mkdirSync(folderPath, { recursive: true });
-    fs.writeFileSync(filePath, content, 'utf8');
+    await fs.mkdir(folderPath, { recursive: true });
+    await fs.writeFile(filePath, content, 'utf8');
 
     return filePath;
   }

@@ -1,8 +1,8 @@
+import consola from 'consola';
 import { Injectable } from 'injection-js';
 import { HTMLElement } from 'node-html-parser';
-import consola from 'consola';
 
-import { HtmlElementHelper, InputService, LabelsHelper, PageService, PageServiceFactory, Source, SourcePage } from '../../core';
+import { ConfigService, HtmlElementHelper, InputService, PageService, PageServiceFactory, Source, SourcePage } from '../../core';
 import { DdbHelper } from './ddb.helper';
 
 @Injectable()
@@ -16,15 +16,22 @@ export class DdbSourcesInput implements InputService<Source> {
     pageServiceFactory: PageServiceFactory,
     private htmlElementHelper: HtmlElementHelper,
     private ddbHelper: DdbHelper,
-    private labelsHelper: LabelsHelper
+    private configService: ConfigService
   ) {
     this.pageService = pageServiceFactory.create({ ...this.ddbHelper.getDefaultPageServiceOptions() });
   }
 
   async *getAll(): AsyncGenerator<Source> {
-    const pageUrl = new URL('/sources', this.ddbHelper.basePath).toString();
+    let pageUrl = new URL('/sources', this.ddbHelper.basePath).toString();
+    const name = this.configService.config.ddb?.name?.toLowerCase();
     const listPage = await this.pageService.getPageHtmlElement(pageUrl);
-    const uris = listPage.querySelectorAll('.sources-listing--item').map(anchor => this.getLink(anchor));
+    const uris = listPage
+      .querySelectorAll('.sources-listing--item')
+      .filter(anchor => {
+        if (!name) return true;
+        return anchor.innerText.toLowerCase().includes(name);
+      })
+      .map(anchor => this.getLink(anchor));
 
     let index = 0;
     for (const uri of uris) {
