@@ -2,6 +2,7 @@ import { cosmiconfigSync } from 'cosmiconfig';
 import path from 'path';
 import { defu } from 'defu';
 import { getBinRootPath } from '../utils';
+import { EntityType } from '../models';
 const explorerSync = cosmiconfigSync('dnd-parser');
 
 export class ConfigService {
@@ -9,9 +10,18 @@ export class ConfigService {
 
   private readonly defaultConfig: Config = {
     cachePath: path.join(getBinRootPath(), 'cache'),
+    ddb: {
+      includeSourcePages: true,
+    },
     markdownYaml: {
       distPath: path.join(process.cwd(), 'vault'),
-      ddbVaultPath: 'ddb',
+      folderEntityTypeMap: {
+        MagicItem: 'Magic Items',
+        Monster: 'Monsters',
+        Source: 'Books',
+        SourcePage: undefined,
+        Spell: 'Spells',
+      },
     },
   };
 
@@ -22,6 +32,8 @@ export class ConfigService {
 
 export interface Config {
   cachePath: string;
+  noCache?: boolean;
+  force?: boolean;
   flows?: FlowConfig[];
   defaultDaoConfigs?: { [daoId: string]: DaoConfig };
   notion?: {
@@ -34,10 +46,14 @@ export interface Config {
     cobaltSession?: string;
     types?: string[];
     name?: string;
+    includeSourcePages?: boolean;
+  };
+  webScrapper?: {
+    pathToChromeBinary?: string;
   };
   markdownYaml?: {
     distPath: string;
-    ddbVaultPath: string;
+    folderEntityTypeMap: { [key in EntityType]: string | undefined };
   };
 }
 

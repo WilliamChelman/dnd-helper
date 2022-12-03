@@ -1,5 +1,6 @@
 import { Injectable } from 'injection-js';
 import { parse } from 'node-html-parser';
+import path from 'path';
 
 import { ConfigService, LoggerFactory, PrefixService, Source, SourcePage } from '../../core';
 import { DefaultMdOutput } from '../../markdown-yaml';
@@ -87,5 +88,9 @@ export class DdbSourcesMdOutput extends DefaultMdOutput<Source | SourcePage> {
     }
 
     return super.getMarkdownContent({ ...entity, textContent: content.outerHTML });
+  }
+
+  protected async getFilePath(entity: Source | SourcePage, basePath: string): Promise<string> {
+    return path.join(basePath, await this.ddbMdHelper.urlToMdUrl(entity.uri, entity.uri)) + '.md';
   }
 }

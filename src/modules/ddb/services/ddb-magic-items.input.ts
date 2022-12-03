@@ -1,27 +1,23 @@
+import consola from 'consola';
 import { Injectable } from 'injection-js';
 import { HTMLElement } from 'node-html-parser';
 
-import { ConfigService, HtmlElementHelper, InputService, LabelsHelper, MagicItem, PageService, PageServiceFactory } from '../../core';
+import { ConfigService, HtmlElementHelper, InputService, LabelsHelper, MagicItem, NewPageService } from '../../core';
 import { DdbHelper } from './ddb.helper';
 
 @Injectable()
 export class DdbMagicItemsInput implements InputService<MagicItem> {
   sourceId: string = 'DDB';
 
-  private pageService: PageService;
   private blacklist: string[] = ['https://www.dndbeyond.com/legacy'];
 
   constructor(
-    pageServiceFactory: PageServiceFactory,
+    private pageService: NewPageService,
     private htmlElementHelper: HtmlElementHelper,
     private ddbHelper: DdbHelper,
     private labelsHelper: LabelsHelper,
     private configService: ConfigService
-  ) {
-    this.pageService = pageServiceFactory.create({
-      ...this.ddbHelper.getDefaultPageServiceOptions(),
-    });
-  }
+  ) {}
 
   async *getAll(): AsyncGenerator<MagicItem> {
     const { config } = this.configService;
@@ -30,7 +26,11 @@ export class DdbMagicItemsInput implements InputService<MagicItem> {
       pageUrl += `?filter-search=${encodeURIComponent(config.ddb?.name)}`;
     }
 
-    const uris = await this.ddbHelper.crawlSearchPages<string>(pageUrl, this.getMagicItemLinksSearchPage.bind(this), this.pageService);
+    const uris = await this.ddbHelper.newCrawlSearchPages<string>(
+      pageUrl,
+      this.getMagicItemLinksSearchPage.bind(this),
+      this.ddbHelper.getDefaultPageServiceOptions()
+    );
     let index = 0;
     for (const uri of uris) {
       ++index;
@@ -57,11 +57,11 @@ export class DdbMagicItemsInput implements InputService<MagicItem> {
   }
 
   private async getMagicItemFromDetailPage(url: string): Promise<MagicItem> {
-    const page = await this.pageService.getPageHtmlElement(url);
+    const page = await this.pageService.getPageHtmlElement(url, this.ddbHelper.getDefaultPageServiceOptions());
 
     const content = page.querySelector('.more-info');
     if (!content) {
-      console.log(url);
+      consola.error(url);
       throw new Error('Failed to get magic item content');
     }
 

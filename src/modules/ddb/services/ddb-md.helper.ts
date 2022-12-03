@@ -1,23 +1,23 @@
 import { Injectable } from 'injection-js';
 import { HTMLElement, parse } from 'node-html-parser';
-import path, { join } from 'path';
-import ufo from 'ufo';
+import path from 'path';
 import sanitize from 'sanitize-filename';
 
-import { ConfigService, Entity, EntityType, PageService, PageServiceFactory } from '../../core';
+import { ConfigService, HtmlElementHelper, NewPageService } from '../../core';
+import { DdbLinkHelper } from './ddb-link.helper';
+import { DdbSourcesHelper } from './ddb-sources.helper';
 import { DdbHelper } from './ddb.helper';
 
 @Injectable()
 export class DdbMdHelper {
-  private readonly folderMap: { [entityType: string]: string } = {
-    MagicItem: 'Magic Items',
-    Spell: 'Spells',
-    Monster: 'Monsters',
-  };
-
-  private readonly pageService: PageService = this.pageServiceFactory.create(this.ddbHelper.getDefaultPageServiceOptions());
-
-  constructor(private configService: ConfigService, private ddbHelper: DdbHelper, private pageServiceFactory: PageServiceFactory) {}
+  constructor(
+    private pageService: NewPageService,
+    private configService: ConfigService,
+    private ddbHelper: DdbHelper,
+    private ddbLinkHelper: DdbLinkHelper,
+    private ddbSourcesHelper: DdbSourcesHelper,
+    private htmlElementHelper: HtmlElementHelper
+  ) {}
 
   keepOnlyFirstImage(content: HTMLElement): void {
     content.querySelectorAll('a img').forEach((img, index) => {
@@ -30,8 +30,6 @@ export class DdbMdHelper {
   }
 
   async adaptLinks(page: HTMLElement, currentPageUrl: string): Promise<void> {
-    const vaultPath = this.configService.config.markdownYaml?.ddbVaultPath;
-    if (!vaultPath) return;
     for (const anchor of page.querySelectorAll('a')) {
       if (!anchor.text.trim()) {
         anchor.remove();
@@ -53,18 +51,53 @@ export class DdbMdHelper {
     }
   }
 
-  async urlToMdUrl(url: string, currentPageUrl: string): Promise<string> {
-    const vaultPath = this.configService.config.markdownYaml?.ddbVaultPath;
-    if (!vaultPath) return url;
-    const fullUrl = this.getAbsoluteUrl(url, currentPageUrl);
+  async urlToMdUrl(url: string, currentPageUrl: string = url): Promise<string> {
+    const fullUrl = this.ddbLinkHelper.getAbsoluteUrl(url, currentPageUrl);
     const type = this.ddbHelper.getType(fullUrl);
-    const folder = this.folderMap[type];
-    if (folder) {
-      const content = await this.pageService.getPageHtmlElement(fullUrl);
-      const name = content.querySelector('.page-title')?.innerText.trim();
-      return path.join(folder, sanitize(name ?? ''));
+
+    if (type) {
+      const content = await this.pageService.getPageHtmlElement(fullUrl, this.ddbHelper.getDefaultPageServiceOptions());
+
+      let name = this.htmlElementHelper.getCleanedInnerText(content, '.page-title') ?? fullUrl;
+      if (
+        type === 'Monster' &&
+        content.querySelectorAll('header.page-header .badge-label').some(el => el.innerText.toLowerCase().includes('legacy'))
+      ) {
+        name = `${name} (Legacy)`;
+      }
+      name = sanitize(name);
+
+      if (type === 'SourcePage') {
+        const breadcrumbs = content.querySelectorAll('.b-breadcrumb.b-breadcrumb-a a');
+        let sourceUri = breadcrumbs[breadcrumbs.length - 2]?.getAttribute('href')!;
+        if (sourceUri) {
+          sourceUri = this.ddbLinkHelper.getAbsoluteUrl(sourceUri, fullUrl);
+          const sourceContent = await this.pageService.getPageHtmlElement(sourceUri, this.ddbHelper.getDefaultPageServiceOptions());
+          const index = this.ddbSourcesHelper.getSourcePageLinks(sourceUri, sourceContent).findIndex(url => url === fullUrl.split('#')[0]);
+          if (index >= 0) {
+            name = `${(index + 1).toString().padStart(2, '0')} ${name}`;
+          }
+          if (fullUrl.includes('#')) {
+            const id = fullUrl.split('#')[1];
+            const headingTitle = content.getElementById(id)?.innerText.trim();
+            name = `${name}#${headingTitle}`;
+          }
+          const sourcePath = await this.urlToMdUrl(sourceUri);
+          return path.join(sourcePath, '..', name);
+        }
+      } else {
+        const folder = this.configService.config.markdownYaml?.folderEntityTypeMap[type];
+        if (folder) {
+          if (type === 'Source') {
+            return path.join(folder, name, `00 Index`);
+          }
+          return path.join(folder, name);
+        }
+      }
     }
-    return this.getAbsoluteUrl(url, currentPageUrl, vaultPath);
+
+    url = this.ddbLinkHelper.getAbsoluteUrl(url, currentPageUrl);
+    return this.ddbLinkHelper.replaceHost(url, '');
   }
 
   fixImages(page: HTMLElement): void {
@@ -79,20 +112,5 @@ export class DdbMdHelper {
       const parentAnchor = img.closest('a');
       parentAnchor?.replaceWith(img);
     });
-  }
-
-  private getAbsoluteUrl(url: string, currentPageUrl: string, replaceHost?: string): string {
-    if (url.startsWith('//www')) url += 'https:' + url;
-
-    if (url.startsWith('./')) {
-      url = ufo.joinURL(currentPageUrl, '..', url);
-    } else if (url.startsWith('/')) {
-      url = ufo.stringifyParsedURL({ ...ufo.parseURL(currentPageUrl), pathname: url });
-    }
-    if (replaceHost) {
-      const parsedReplacement = ufo.parseURL(replaceHost);
-      url = ufo.stringifyParsedURL({ ...ufo.parseURL(url), host: parsedReplacement.host, protocol: parsedReplacement.protocol });
-    }
-    return url.replace(/\/$/, '');
   }
 }

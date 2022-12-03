@@ -2,7 +2,7 @@ import 'reflect-metadata';
 
 import { Command } from '@oclif/core';
 
-import { ConfigService, InputService, OutputService, PageServiceFactory } from '../modules/core';
+import { ConfigService, InputService, NewPageService, OutputService, PageServiceFactory } from '../modules/core';
 import { getInjector } from '../modules/main';
 
 export default class Ddb extends Command {
@@ -26,21 +26,25 @@ hello world! (./src/commands/hello/world.ts)
     const inputs = injector.get(InputService) as InputService[];
     const outputs = injector.get(OutputService) as OutputService[];
     const pageServiceFactory = injector.get(PageServiceFactory) as PageServiceFactory;
+    const newPageService = injector.get(NewPageService) as NewPageService;
 
-    for (const input of inputs) {
-      if (input.sourceId !== sourceId || !config.ddb?.types?.some(type => input.canHandle(type))) {
-        continue;
-      }
-      for await (const entity of input.getAll()) {
-        for (const output of outputs) {
-          if (output.format !== outputFormat || !output.canHandle(entity)) {
-            continue;
+    try {
+      for (const input of inputs) {
+        if (input.sourceId !== sourceId || !config.ddb?.types?.some(type => input.canHandle(type))) {
+          continue;
+        }
+        for await (const entity of input.getAll()) {
+          for (const output of outputs) {
+            if (output.format !== outputFormat || !output.canHandle(entity)) {
+              continue;
+            }
+            await output.export([entity]);
           }
-          await output.export([entity]);
         }
       }
+    } finally {
+      pageServiceFactory.closeAll();
+      newPageService.close();
     }
-
-    pageServiceFactory.closeAll();
   }
 }

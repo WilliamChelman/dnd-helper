@@ -38,6 +38,7 @@ export class PageService {
   constructor(private options: PageServiceOptions, private configService: ConfigService) {}
 
   async getPageHtmlElement(url: string): Promise<HTMLElement> {
+    url = url.split('#')[0];
     const cache = await this.getFromCache(url);
     if (cache && !this.options.noCache) {
       return parse(cache);
@@ -64,7 +65,9 @@ export class PageService {
     const page = await context.newPage();
     await page.goto(url);
     if (this.options.validator) {
-      const valid = await this.options.validator(page);
+      const html = await page.$eval('html', htmlElement => htmlElement.outerHTML);
+      const el = parse(html);
+      const valid = await this.options.validator(el);
       if (!valid) {
         if (this.lastUserAgent) {
           this.failedUserAgents.add(this.lastUserAgent);
@@ -100,7 +103,6 @@ export class PageService {
   }
 
   private async getFromCache(url: string): Promise<string | undefined> {
-    url = url.split('#')[0];
     const filePath = this.getCachePath(url);
     if (existsSync(filePath)) {
       return fs.readFile(filePath, 'utf8');
@@ -186,14 +188,14 @@ export class PageService {
 
 export interface PageServiceOptions {
   noCache?: boolean;
-  cookies?: Cookies;
+  cookies?: PageCookies;
   headers?: { [key: string]: string };
-  validator?: (page: playwright.Page) => Promise<boolean>;
+  validator?: (page: HTMLElement) => Promise<boolean>;
   cacheContext?: boolean;
   cleaner?: (el: HTMLElement) => void;
 }
 
-export type Cookies = Parameters<playwright.BrowserContext['addCookies']>[0];
+export type PageCookies = Parameters<playwright.BrowserContext['addCookies']>[0];
 
 function getRandomInt(min: number, max: number): number {
   min = Math.ceil(min);

@@ -13,17 +13,20 @@ import {
   InputService,
   LabelsHelper,
   LoggerFactory,
+  NewPageService,
   OutputService,
   PageServiceFactory,
   PrefixService,
 } from './core';
 import {
   DdbHelper,
+  DdbLinkHelper,
   DdbMagicItemsInput,
   DdbMagicItemsMdOutput,
   DdbMdHelper,
   DdbMonstersInput,
   DdbMonstersMdOutput,
+  DdbSourcesHelper,
   DdbSourcesInput,
   DdbSourcesMdOutput,
   DdbSpellsInput,
@@ -140,6 +143,9 @@ export function getInjector() {
       multi: true,
     },
     DdbMdHelper,
+    DdbLinkHelper,
+    DdbSourcesHelper,
+    NewPageService,
   ]);
 }
 

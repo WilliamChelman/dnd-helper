@@ -1,31 +1,26 @@
+import consola from 'consola';
 import { Injectable } from 'injection-js';
 import { HTMLElement } from 'node-html-parser';
 
-import { ConfigService, InputService, LabelsHelper, LoggerFactory, Monster, notNil, PageService, PageServiceFactory } from '../../core';
+import { ConfigService, InputService, LabelsHelper, Monster, NewPageService, notNil } from '../../core';
 import { DdbHelper } from './ddb.helper';
 
 @Injectable()
 export class DdbMonstersInput implements InputService<Monster> {
   sourceId: string = 'DDB';
 
-  private pageService: PageService;
-  private logger = this.loggerFactory.create('DdbMonstersDao');
-
   constructor(
-    pageServiceFactory: PageServiceFactory,
+    private pageService: NewPageService,
     private labelsHelper: LabelsHelper,
     private ddbHelper: DdbHelper,
-    private loggerFactory: LoggerFactory,
     private configService: ConfigService
-  ) {
-    this.pageService = pageServiceFactory.create({ ...this.ddbHelper.getDefaultPageServiceOptions() });
-  }
+  ) {}
 
   async *getAll(): AsyncGenerator<Monster> {
     const partialMonsters = await this.getPartialMonsters();
     let index = 0;
     for (let monster of partialMonsters) {
-      this.logger.info(`Processing ${index}/${partialMonsters.length - 1} - ${monster.name}`);
+      consola.log(`Processing ${index}/${partialMonsters.length - 1} - ${monster.name}`);
       yield await this.completeMonsterWithDetailPage(monster);
       ++index;
     }
@@ -41,7 +36,11 @@ export class DdbMonstersInput implements InputService<Monster> {
     if (config.ddb?.name) {
       pageUrl += `?filter-search=${encodeURIComponent(config.ddb?.name)}`;
     }
-    return await this.ddbHelper.crawlSearchPages<PartialMonster>(pageUrl, this.getMonstersFromSearchPage.bind(this), this.pageService);
+    return await this.ddbHelper.newCrawlSearchPages<PartialMonster>(
+      pageUrl,
+      this.getMonstersFromSearchPage.bind(this),
+      this.ddbHelper.getDefaultPageServiceOptions()
+    );
   }
 
   private getMonstersFromSearchPage(page: HTMLElement): PartialMonster[] {
@@ -80,11 +79,11 @@ export class DdbMonstersInput implements InputService<Monster> {
 
   private async completeMonsterWithDetailPage(partialMonster: PartialMonster): Promise<Monster> {
     const monster = { ...partialMonster } as Monster;
-    const page = await this.pageService.getPageHtmlElement(monster.uri);
+    const page = await this.pageService.getPageHtmlElement(monster.uri, this.ddbHelper.getDefaultPageServiceOptions());
     const content = page.querySelector('.more-info.details-more-info');
 
     if (!content) {
-      console.log(partialMonster.uri);
+      consola.log(partialMonster.uri);
       throw new Error('Failed to find monster content');
     }
     monster.textContent = content.outerHTML;

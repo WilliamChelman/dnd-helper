@@ -1,37 +1,37 @@
 import consola from 'consola';
 import { Injectable } from 'injection-js';
-import { HTMLElement } from 'node-html-parser';
 
-import { ConfigService, HtmlElementHelper, InputService, PageService, PageServiceFactory, Source, SourcePage } from '../../core';
+import { ConfigService, HtmlElementHelper, InputService, NewPageService, Source, SourcePage } from '../../core';
+import { DdbLinkHelper } from './ddb-link.helper';
+import { DdbSourcesHelper } from './ddb-sources.helper';
 import { DdbHelper } from './ddb.helper';
 
 @Injectable()
 export class DdbSourcesInput implements InputService<Source> {
   sourceId: string = 'DDB';
 
-  private pageService: PageService;
   private blacklist: string[] = ['https://www.dndbeyond.com/sources/one-dnd', 'https://www.dndbeyond.com/sources/it/phb'];
 
   constructor(
-    pageServiceFactory: PageServiceFactory,
+    private pageService: NewPageService,
     private htmlElementHelper: HtmlElementHelper,
     private ddbHelper: DdbHelper,
-    private configService: ConfigService
-  ) {
-    this.pageService = pageServiceFactory.create({ ...this.ddbHelper.getDefaultPageServiceOptions() });
-  }
+    private configService: ConfigService,
+    private ddbLinkHelper: DdbLinkHelper,
+    private ddbSourcesHelper: DdbSourcesHelper
+  ) {}
 
   async *getAll(): AsyncGenerator<Source> {
     let pageUrl = new URL('/sources', this.ddbHelper.basePath).toString();
     const name = this.configService.config.ddb?.name?.toLowerCase();
-    const listPage = await this.pageService.getPageHtmlElement(pageUrl);
+    const listPage = await this.pageService.getPageHtmlElement(pageUrl, this.ddbHelper.getDefaultPageServiceOptions());
     const uris = listPage
       .querySelectorAll('.sources-listing--item')
       .filter(anchor => {
         if (!name) return true;
         return anchor.innerText.toLowerCase().includes(name);
       })
-      .map(anchor => this.getLink(anchor));
+      .map(anchor => this.ddbLinkHelper.getAbsoluteUrl(anchor.getAttribute('href')!, pageUrl));
 
     let index = 0;
     for (const uri of uris) {
@@ -47,7 +47,7 @@ export class DdbSourcesInput implements InputService<Source> {
   }
 
   private async getSource(url: string): Promise<Source> {
-    const page = await this.pageService.getPageHtmlElement(url);
+    const page = await this.pageService.getPageHtmlElement(url, this.ddbHelper.getDefaultPageServiceOptions());
     const toc = page.querySelector('.compendium-toc-full-text');
     let content = page.querySelector('.compendium-toc-full-text');
     if (toc) {
@@ -56,24 +56,19 @@ export class DdbSourcesInput implements InputService<Source> {
     if (!content) {
       const singlePageSource = { ...(await this.getSubPage(url)), type: 'Source' as const };
       if (!singlePageSource) {
-        console.log(url);
+        consola.error(url);
         throw new Error('Failed to get source content');
       }
       return singlePageSource;
     }
 
     const pages: SourcePage[] = [];
+    if (this.configService.config.ddb?.includeSourcePages) {
+      const subUris = this.ddbSourcesHelper.getSourcePageLinks(url, page);
 
-    const subUris = toc
-      ?.querySelectorAll('a')
-      .map(anchor => this.getLink(anchor))
-      .filter(link => !link.includes('#'))
-      .filter(link => !link.endsWith('.jpg'))
-      .filter(link => !link.endsWith('.png'))
-      .filter(link => !this.blacklist.includes(link));
-
-    for (const subUri of subUris ?? []) {
-      pages.push(await this.getSubPage(subUri));
+      for (const subUri of subUris ?? []) {
+        pages.push(await this.getSubPage(subUri));
+      }
     }
 
     const source: Source = {
@@ -89,16 +84,12 @@ export class DdbSourcesInput implements InputService<Source> {
     return source;
   }
 
-  getLink(el: HTMLElement): string {
-    return new URL(el.getAttribute('href')!, this.ddbHelper.basePath).toString();
-  }
-
   private async getSubPage(url: string): Promise<SourcePage> {
-    const page = await this.pageService.getPageHtmlElement(url);
+    const page = await this.pageService.getPageHtmlElement(url, this.ddbHelper.getDefaultPageServiceOptions());
 
     const content = page.querySelector('article.p-article');
     if (!content) {
-      console.log(url);
+      consola.error(url);
       throw new Error('Failed to get source content');
     }
 

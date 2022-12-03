@@ -1,24 +1,20 @@
 import { Injectable } from 'injection-js';
 import { HTMLElement } from 'node-html-parser';
 
-import { HtmlElementHelper, InputService, LabelsHelper, Spell, PageService, PageServiceFactory, ConfigService } from '../../core';
+import { ConfigService, HtmlElementHelper, InputService, LabelsHelper, NewPageService, Spell } from '../../core';
 import { DdbHelper } from './ddb.helper';
 
 @Injectable()
 export class DdbSpellsInput implements InputService<Spell> {
   sourceId: string = 'DDB';
 
-  private pageService: PageService;
-
   constructor(
-    pageServiceFactory: PageServiceFactory,
+    private pageService: NewPageService,
     private htmlElementHelper: HtmlElementHelper,
     private ddbHelper: DdbHelper,
     private labelsHelper: LabelsHelper,
     private configService: ConfigService
-  ) {
-    this.pageService = pageServiceFactory.create({ ...this.ddbHelper.getDefaultPageServiceOptions() });
-  }
+  ) {}
 
   async *getAll(): AsyncGenerator<Spell> {
     const { config } = this.configService;
@@ -27,7 +23,11 @@ export class DdbSpellsInput implements InputService<Spell> {
       pageUrl += `?filter-search=${encodeURIComponent(config.ddb?.name)}`;
     }
 
-    const links = await this.ddbHelper.crawlSearchPages<string>(pageUrl, this.getSpellLinksSearchPage.bind(this), this.pageService);
+    const links = await this.ddbHelper.newCrawlSearchPages<string>(
+      pageUrl,
+      this.getSpellLinksSearchPage.bind(this),
+      this.ddbHelper.getDefaultPageServiceOptions()
+    );
 
     for (const link of links) {
       yield this.getSpellFromDetailPage(link);
@@ -45,7 +45,7 @@ export class DdbSpellsInput implements InputService<Spell> {
   }
 
   private async getSpellFromDetailPage(url: string): Promise<Spell> {
-    const page = await this.pageService.getPageHtmlElement(url);
+    const page = await this.pageService.getPageHtmlElement(url, this.ddbHelper.getDefaultPageServiceOptions());
 
     const sourceDetails = this.htmlElementHelper.getCleanedInnerText(page, '.source.spell-source');
     let castingTime = this.htmlElementHelper.getCleanedInnerText(page, '.ddb-statblock-item-casting-time .ddb-statblock-item-value');

@@ -24,7 +24,7 @@ export class MarkdownYamlEntitiesDao implements EntityDao {
 
   async save(entity: OldEntity): Promise<string> {
     const config = this.configService.config;
-    const basePath = path.join(process.cwd(), config.markdownYaml?.distPath ?? '', config.markdownYaml?.ddbVaultPath ?? '');
+    const basePath = path.join(process.cwd(), config.markdownYaml?.distPath ?? '');
     return await this.saveEntity(entity, basePath);
   }
 
@@ -73,9 +73,7 @@ export class MarkdownYamlEntitiesDao implements EntityDao {
 
   private async downloadAttachment(attachment: OldAttachment): Promise<void> {
     const destPath = join(process.cwd(), this.configService.config.markdownYaml?.distPath ?? '', attachment.filePath);
-    console.log('🚀 ~ MarkdownYamlEntitiesDao ~ destPath', destPath);
     if (existsSync(destPath)) return;
-    console.log('doznloading');
     const folderPath = path.dirname(destPath);
     fs.mkdirSync(folderPath, { recursive: true });
     return new Promise(resolve => {
