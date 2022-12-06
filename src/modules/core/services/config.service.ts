@@ -21,6 +21,8 @@ export class ConfigService {
         Source: 'Books',
         SourcePage: undefined,
         Spell: 'Spells',
+        Item: 'Items',
+        Feat: 'Feats',
       },
     },
   };
@@ -46,6 +48,7 @@ export interface Config {
     cobaltSession?: string;
     types?: string[];
     name?: string;
+    sourceName?: string;
     includeSourcePages?: boolean;
   };
   webScrapper?: {

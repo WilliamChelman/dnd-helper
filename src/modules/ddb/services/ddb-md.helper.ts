@@ -1,7 +1,9 @@
 import { Injectable } from 'injection-js';
 import { HTMLElement, parse } from 'node-html-parser';
 import path from 'path';
+import defu from 'defu';
 import sanitize from 'sanitize-filename';
+import { memoize } from 'lodash';
 
 import { ConfigService, HtmlElementHelper, NewPageService } from '../../core';
 import { DdbLinkHelper } from './ddb-link.helper';
@@ -17,14 +19,23 @@ export class DdbMdHelper {
     private ddbLinkHelper: DdbLinkHelper,
     private ddbSourcesHelper: DdbSourcesHelper,
     private htmlElementHelper: HtmlElementHelper
-  ) {}
+  ) {
+    this.urlToMdUrl = memoize(this.urlToMdUrl.bind(this), (url, currentUrl) => [url, currentUrl].join('@@'));
+  }
 
-  keepOnlyFirstImage(content: HTMLElement): void {
-    content.querySelectorAll('a img').forEach((img, index) => {
-      if (index > 0) {
+  async applyFixes(options: DdbMdFixes): Promise<void> {
+    options = defu(options, { adaptLinks: true, fixImages: true, keepOneImage: 'first' } as Partial<DdbMdFixes>);
+    if (options.keepOneImage) this.keepOnlyOneImage(options.content, options.keepOneImage);
+    if (options.fixImages) this.fixImages(options.content);
+    if (options.adaptLinks) await this.adaptLinks(options.content, options.currentPageUrl);
+  }
+
+  keepOnlyOneImage(content: HTMLElement, type: 'first' | 'last'): void {
+    content.querySelectorAll('img').forEach((img, index, arr) => {
+      if (type === 'first' && index > 0) {
         img.parentNode.remove();
-      } else {
-        img.parentNode.replaceWith(img);
+      } else if (type === 'last' && index < arr.length - 1) {
+        img.parentNode.remove();
       }
     });
   }
@@ -96,8 +107,7 @@ export class DdbMdHelper {
       }
     }
 
-    url = this.ddbLinkHelper.getAbsoluteUrl(url, currentPageUrl);
-    return this.ddbLinkHelper.replaceHost(url, '');
+    return this.ddbLinkHelper.replaceHost(fullUrl, '');
   }
 
   fixImages(page: HTMLElement): void {
@@ -113,4 +123,12 @@ export class DdbMdHelper {
       parentAnchor?.replaceWith(img);
     });
   }
+}
+
+export interface DdbMdFixes {
+  currentPageUrl: string;
+  content: HTMLElement;
+  fixImages?: boolean;
+  adaptLinks?: boolean;
+  keepOneImage?: 'first' | 'last';
 }

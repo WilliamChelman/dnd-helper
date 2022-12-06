@@ -19,7 +19,11 @@ import {
   PrefixService,
 } from './core';
 import {
+  DdbFeatsInput,
+  DdbFeatsMdOutput,
   DdbHelper,
+  DdbItemsInput,
+  DdbItemsMdOutput,
   DdbLinkHelper,
   DdbMagicItemsInput,
   DdbMagicItemsMdOutput,
@@ -32,8 +36,6 @@ import {
   DdbSpellsInput,
   DdbSpellsMdOutput,
 } from './ddb';
-import { DdbItemsService } from './ddb/services/ddb-items.service';
-import { DefaultMdOutput } from './markdown-yaml';
 import { NotionHelper, NotionItemsService, NotionSpellsDao } from './notion';
 import { NotionMonstersDao } from './notion/services/notion-monsters.dao';
 
@@ -47,10 +49,8 @@ export function getInjector() {
     PageServiceFactory,
     NotionItemsService,
     LoggerFactory,
-    DdbItemsService,
     LabelsHelper,
     PrefixService,
-
     NotionMonstersDao,
     {
       provide: EntityDao,
@@ -88,12 +88,6 @@ export function getInjector() {
       multi: true,
     },
     // New architecture
-    DefaultMdOutput,
-    {
-      provide: OutputService,
-      useExisting: DefaultMdOutput,
-      multi: true,
-    },
     DdbMagicItemsMdOutput,
     {
       provide: OutputService,
@@ -104,6 +98,18 @@ export function getInjector() {
     {
       provide: InputService,
       useExisting: DdbMagicItemsInput,
+      multi: true,
+    },
+    DdbItemsMdOutput,
+    {
+      provide: OutputService,
+      useExisting: DdbItemsMdOutput,
+      multi: true,
+    },
+    DdbItemsInput,
+    {
+      provide: InputService,
+      useExisting: DdbItemsInput,
       multi: true,
     },
     DdbSpellsMdOutput,
@@ -140,6 +146,18 @@ export function getInjector() {
     {
       provide: InputService,
       useExisting: DdbSourcesInput,
+      multi: true,
+    },
+    DdbFeatsMdOutput,
+    {
+      provide: OutputService,
+      useExisting: DdbFeatsMdOutput,
+      multi: true,
+    },
+    DdbFeatsInput,
+    {
+      provide: InputService,
+      useExisting: DdbFeatsInput,
       multi: true,
     },
     DdbMdHelper,

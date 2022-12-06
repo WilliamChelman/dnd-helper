@@ -19,8 +19,8 @@ export class NewPageService {
   constructor(private configService: ConfigService) {}
 
   async getPageHtmlElement(url: string, options: NewPageServiceOptions): Promise<HTMLElement> {
-    url = url.split('#')[0];
-    if (!this.configService.config.noCache) {
+    url = url.split('#')[0].trim();
+    if (!this.configService.config.noCache && !options.noCache) {
       const cache = await this.getFromCache(url);
       if (cache) {
         return parse(cache);
@@ -30,7 +30,7 @@ export class NewPageService {
 
     const page = await this.getPage(url, options);
 
-    this.setInCache(url, page, options);
+    await this.setInCache(url, page, options);
 
     return page;
   }

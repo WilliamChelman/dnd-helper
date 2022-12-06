@@ -1,5 +1,6 @@
 export * from './entity-type';
 export * from './entity';
+export * from './feat';
 export * from './item';
 export * from './magic-item';
 export * from './monster';

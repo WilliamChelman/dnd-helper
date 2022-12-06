@@ -1,52 +1,23 @@
 import { Injectable } from 'injection-js';
 import { HTMLElement } from 'node-html-parser';
 
-import { ConfigService, HtmlElementHelper, InputService, LabelsHelper, NewPageService, Spell } from '../../core';
+import { EntityType, HtmlElementHelper, LabelsHelper, NewPageService, Spell } from '../../core';
+import { DdbSearchableEntityInput } from './ddb-searchable-entity.input';
 import { DdbHelper } from './ddb.helper';
 
 @Injectable()
-export class DdbSpellsInput implements InputService<Spell> {
+export class DdbSpellsInput extends DdbSearchableEntityInput<Spell> {
   sourceId: string = 'DDB';
 
-  constructor(
-    private pageService: NewPageService,
-    private htmlElementHelper: HtmlElementHelper,
-    private ddbHelper: DdbHelper,
-    private labelsHelper: LabelsHelper,
-    private configService: ConfigService
-  ) {}
+  protected entityType: EntityType = 'Spell';
+  protected searchPagePath: string = 'spells';
+  protected linkSelector: string = 'ul.rpgspell-listing > div a';
 
-  async *getAll(): AsyncGenerator<Spell> {
-    const { config } = this.configService;
-    let pageUrl = new URL('/spells', this.ddbHelper.basePath).toString();
-    if (config.ddb?.name) {
-      pageUrl += `?filter-search=${encodeURIComponent(config.ddb?.name)}`;
-    }
-
-    const links = await this.ddbHelper.newCrawlSearchPages<string>(
-      pageUrl,
-      this.getSpellLinksSearchPage.bind(this),
-      this.ddbHelper.getDefaultPageServiceOptions()
-    );
-
-    for (const link of links) {
-      yield this.getSpellFromDetailPage(link);
-    }
-  }
-  canHandle(entityType: string): number | undefined {
-    return entityType === 'Spell' ? 10 : undefined;
+  constructor(pageService: NewPageService, htmlElementHelper: HtmlElementHelper, ddbHelper: DdbHelper, labelsHelper: LabelsHelper) {
+    super(pageService, htmlElementHelper, ddbHelper, labelsHelper);
   }
 
-  private getSpellLinksSearchPage(page: HTMLElement): string[] {
-    const links = page.querySelectorAll('ul.rpgspell-listing > div a');
-    return links.map(link => {
-      return new URL(link.getAttribute('href')!, this.ddbHelper.basePath).toString();
-    });
-  }
-
-  private async getSpellFromDetailPage(url: string): Promise<Spell> {
-    const page = await this.pageService.getPageHtmlElement(url, this.ddbHelper.getDefaultPageServiceOptions());
-
+  protected async getEntityFromDetailPage(uri: string, page: HTMLElement): Promise<Spell> {
     const sourceDetails = this.htmlElementHelper.getCleanedInnerText(page, '.source.spell-source');
     let castingTime = this.htmlElementHelper.getCleanedInnerText(page, '.ddb-statblock-item-casting-time .ddb-statblock-item-value');
     const ritual = castingTime.endsWith('Ritual');
@@ -71,12 +42,12 @@ export class DdbSpellsInput implements InputService<Spell> {
     }
     const links = content.querySelectorAll('a[href]');
     links.forEach(link => {
-      const fullHref = new URL(link.getAttribute('href')!, url).toString();
+      const fullHref = new URL(link.getAttribute('href')!, uri).toString();
       link.setAttribute('href', fullHref);
     });
 
     const spell: Spell = {
-      uri: url,
+      uri,
       type: 'Spell' as const,
       name: this.labelsHelper.getName(this.htmlElementHelper.getCleanedInnerText(page, 'header .page-title'))!,
       level: this.labelsHelper.getLevel(

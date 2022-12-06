@@ -1,3 +1,7 @@
+export * from './ddb-feats.input';
+export * from './ddb-feats.md-output';
+export * from './ddb-items.input';
+export * from './ddb-items.md-output';
 export * from './ddb-link.helper';
 export * from './ddb-magic-items.input';
 export * from './ddb-magic-items.md-output';

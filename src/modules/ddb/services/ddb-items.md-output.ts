@@ -1,22 +1,22 @@
 import { Injectable } from 'injection-js';
 import { parse } from 'node-html-parser';
 
-import { ConfigService, EntityType, MagicItem } from '../../core';
+import { ConfigService, EntityType, Item } from '../../core';
 import { DdbEntityMdOutput } from './ddb-entity.md-output';
 import { DdbMdHelper } from './ddb-md.helper';
 
 @Injectable()
-export class DdbMagicItemsMdOutput extends DdbEntityMdOutput<MagicItem> {
-  protected entityType: EntityType = 'MagicItem';
+export class DdbItemsMdOutput extends DdbEntityMdOutput<Item> {
+  protected entityType: EntityType = 'Item';
 
   constructor(configService: ConfigService, ddbMdHelper: DdbMdHelper) {
     super(configService, ddbMdHelper);
   }
 
-  protected async getMarkdownContent(entity: MagicItem): Promise<string> {
+  protected async getMarkdownContent(entity: Item): Promise<string> {
     const content = parse(entity.textContent);
 
-    await this.ddbMdHelper.applyFixes({ content, currentPageUrl: entity.uri });
+    await this.ddbMdHelper.applyFixes({ content, currentPageUrl: entity.uri, keepOneImage: 'last' });
 
     return super.getMarkdownContent({ ...entity, textContent: content.outerHTML });
   }

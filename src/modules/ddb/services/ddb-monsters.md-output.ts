@@ -1,24 +1,16 @@
 import { Injectable } from 'injection-js';
 import { parse } from 'node-html-parser';
-import path from 'path';
 
-import { ConfigService, LoggerFactory, Monster, PrefixService } from '../../core';
-import { DefaultMdOutput } from '../../markdown-yaml';
+import { ConfigService, EntityType, Monster } from '../../core';
+import { DdbEntityMdOutput } from './ddb-entity.md-output';
 import { DdbMdHelper } from './ddb-md.helper';
 
 @Injectable()
-export class DdbMonstersMdOutput extends DefaultMdOutput<Monster> {
-  constructor(
-    protected loggerFactory: LoggerFactory,
-    protected prefixService: PrefixService,
-    protected configService: ConfigService,
-    protected ddbMdHelper: DdbMdHelper
-  ) {
-    super(loggerFactory, prefixService, configService);
-  }
+export class DdbMonstersMdOutput extends DdbEntityMdOutput<Monster> {
+  protected entityType: EntityType = 'Monster';
 
-  canHandle(entity: Monster): number | undefined {
-    return entity.type === 'Monster' ? 10 : undefined;
+  constructor(protected configService: ConfigService, protected ddbMdHelper: DdbMdHelper) {
+    super(configService, ddbMdHelper);
   }
 
   protected async getMarkdownContent(entity: Monster): Promise<string> {
@@ -69,14 +61,8 @@ export class DdbMonstersMdOutput extends DefaultMdOutput<Monster> {
       complexBlockquote.replaceWith(parse(`<div>${complexBlockquote.innerHTML}</div>`));
     }
 
-    this.ddbMdHelper.keepOnlyFirstImage(content);
-    this.ddbMdHelper.fixImages(content);
-    await this.ddbMdHelper.adaptLinks(content, entity.uri);
+    await this.ddbMdHelper.applyFixes({ content, currentPageUrl: entity.uri });
 
     return super.getMarkdownContent({ ...entity, textContent: content.outerHTML });
-  }
-
-  protected async getFilePath(entity: Monster, basePath: string): Promise<string> {
-    return path.join(basePath, await this.ddbMdHelper.urlToMdUrl(entity.uri, entity.uri)) + '.md';
   }
 }

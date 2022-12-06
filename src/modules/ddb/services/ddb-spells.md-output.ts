@@ -1,32 +1,22 @@
 import { Injectable } from 'injection-js';
 import { parse } from 'node-html-parser';
-import path from 'path';
 
-import { ConfigService, LoggerFactory, PrefixService, Spell } from '../../core';
-import { DefaultMdOutput } from '../../markdown-yaml';
+import { ConfigService, EntityType, Spell } from '../../core';
+import { DdbEntityMdOutput } from './ddb-entity.md-output';
 import { DdbMdHelper } from './ddb-md.helper';
 
 @Injectable()
-export class DdbSpellsMdOutput extends DefaultMdOutput<Spell> {
-  constructor(
-    protected loggerFactory: LoggerFactory,
-    protected prefixService: PrefixService,
-    protected configService: ConfigService,
-    protected ddbMdHelper: DdbMdHelper
-  ) {
-    super(loggerFactory, prefixService, configService);
-  }
+export class DdbSpellsMdOutput extends DdbEntityMdOutput<Spell> {
+  protected entityType: EntityType = 'Spell';
 
-  canHandle(entity: Spell): number | undefined {
-    return entity.type === 'Spell' ? 10 : undefined;
+  constructor(configService: ConfigService, ddbMdHelper: DdbMdHelper) {
+    super(configService, ddbMdHelper);
   }
 
   protected async getMarkdownContent(entity: Spell): Promise<string> {
     const content = parse(entity.textContent);
 
-    this.ddbMdHelper.keepOnlyFirstImage(content);
-    this.ddbMdHelper.fixImages(content);
-    await this.ddbMdHelper.adaptLinks(content, entity.uri);
+    await this.ddbMdHelper.applyFixes({ content, currentPageUrl: entity.uri });
 
     const stats = content.querySelectorAll('.ddb-statblock-spell .ddb-statblock-item-value');
 
@@ -49,9 +39,5 @@ export class DdbSpellsMdOutput extends DefaultMdOutput<Spell> {
 `)
     );
     return super.getMarkdownContent({ ...entity, textContent: content.outerHTML });
-  }
-
-  protected async getFilePath(entity: Spell, basePath: string): Promise<string> {
-    return path.join(basePath, await this.ddbMdHelper.urlToMdUrl(entity.uri, entity.uri)) + '.md';
   }
 }

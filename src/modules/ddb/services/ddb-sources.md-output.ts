@@ -1,24 +1,21 @@
 import { Injectable } from 'injection-js';
 import { parse } from 'node-html-parser';
-import path from 'path';
 
-import { ConfigService, LoggerFactory, PrefixService, Source, SourcePage } from '../../core';
-import { DefaultMdOutput } from '../../markdown-yaml';
+import { ConfigService, EntityType, Source, SourcePage } from '../../core';
+import { DdbEntityMdOutput } from './ddb-entity.md-output';
+import { DdbLinkHelper } from './ddb-link.helper';
 import { DdbMdHelper } from './ddb-md.helper';
 
 @Injectable()
-export class DdbSourcesMdOutput extends DefaultMdOutput<Source | SourcePage> {
-  constructor(
-    protected loggerFactory: LoggerFactory,
-    protected prefixService: PrefixService,
-    protected configService: ConfigService,
-    protected ddbMdHelper: DdbMdHelper
-  ) {
-    super(loggerFactory, prefixService, configService);
+export class DdbSourcesMdOutput extends DdbEntityMdOutput<Source | SourcePage> {
+  protected entityType: EntityType = 'Source';
+
+  constructor(protected configService: ConfigService, protected ddbMdHelper: DdbMdHelper, private ddbLinkHelper: DdbLinkHelper) {
+    super(configService, ddbMdHelper);
   }
 
   canHandle(entity: Source | SourcePage): number | undefined {
-    return entity.type === 'Source' ? 10 : undefined;
+    return entity.type === 'Source' || entity.type === 'SourcePage' ? 10 : undefined;
   }
 
   protected async saveOne(entity: Source | SourcePage): Promise<string> {
@@ -38,9 +35,12 @@ export class DdbSourcesMdOutput extends DefaultMdOutput<Source | SourcePage> {
     const isToc = !!content.querySelector('.compendium-toc-full-text');
 
     //need to do it before fixing links
-    const coverArt = content.querySelector('.view-cover-art a')?.getAttribute('href');
-    this.ddbMdHelper.fixImages(content);
-    await this.ddbMdHelper.adaptLinks(content, entity.uri);
+    let coverArt = content.querySelector('.view-cover-art a')?.getAttribute('href');
+    if (coverArt) {
+      coverArt = this.ddbLinkHelper.getAbsoluteUrl(coverArt, entity.uri);
+    }
+
+    await this.ddbMdHelper.applyFixes({ content, currentPageUrl: entity.uri, keepOneImage: undefined });
 
     if (isToc) {
       content.querySelectorAll('header.no-sub.no-nav').forEach(el => el.remove());
@@ -88,9 +88,5 @@ export class DdbSourcesMdOutput extends DefaultMdOutput<Source | SourcePage> {
     }
 
     return super.getMarkdownContent({ ...entity, textContent: content.outerHTML });
-  }
-
-  protected async getFilePath(entity: Source | SourcePage, basePath: string): Promise<string> {
-    return path.join(basePath, await this.ddbMdHelper.urlToMdUrl(entity.uri, entity.uri)) + '.md';
   }
 }

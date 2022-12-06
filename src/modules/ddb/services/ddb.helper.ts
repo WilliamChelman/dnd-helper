@@ -1,7 +1,9 @@
 import { Injectable } from 'injection-js';
 import { HTMLElement } from 'node-html-parser';
+import ufo from 'ufo';
 
 import { ConfigService, PageCookies, EntityType, PageService, PageServiceOptions, NewPageService, NewPageServiceOptions } from '../../core';
+import { DdbMetaSource } from '../models';
 
 @Injectable()
 export class DdbHelper {
@@ -10,26 +12,9 @@ export class DdbHelper {
 
   constructor(private configService: ConfigService, private pageService: NewPageService) {}
 
-  async crawlSearchPages<T>(firstPageUrl: string, parser: (page: HTMLElement) => T[], pageService: PageService): Promise<T[]> {
+  async crawlSearchPages<T>(path: string, parser: (page: HTMLElement) => T[], options: NewPageServiceOptions): Promise<T[]> {
     const items = [];
-    let nextPageUrl: string = firstPageUrl;
-    while (true) {
-      const listPage = await pageService.getPageHtmlElement(nextPageUrl);
-      items.push(...parser(listPage));
-      const nextHref = listPage.querySelector('.b-pagination-item-next a')?.getAttribute('href');
-      if (nextHref) {
-        nextPageUrl = new URL(nextHref, nextPageUrl).toString();
-      } else {
-        break;
-      }
-    }
-
-    return items;
-  }
-
-  async newCrawlSearchPages<T>(firstPageUrl: string, parser: (page: HTMLElement) => T[], options: NewPageServiceOptions): Promise<T[]> {
-    const items = [];
-    let nextPageUrl: string = firstPageUrl;
+    let nextPageUrl = await this.getBaseSearchPage(path);
     while (true) {
       const listPage = await this.pageService.getPageHtmlElement(nextPageUrl, options);
       items.push(...parser(listPage));
@@ -42,6 +27,37 @@ export class DdbHelper {
     }
 
     return items;
+  }
+
+  private async getBaseSearchPage(path: string): Promise<string> {
+    const { config } = this.configService;
+
+    let pageUrl = ufo.resolveURL(this.basePath, path);
+
+    if (config.ddb?.name) {
+      pageUrl = ufo.withQuery(pageUrl, { 'filter-search': config.ddb?.name });
+    }
+
+    if (config.ddb?.sourceName) {
+      const sources = (await this.getMetaSources())
+        .filter(source => source.label.toLowerCase().includes(config.ddb?.sourceName ?? ''))
+        .map(source => source.id);
+      if (sources.length) {
+        pageUrl = ufo.withQuery(pageUrl, { 'filter-source': sources });
+      }
+    }
+
+    return pageUrl;
+  }
+
+  async getMetaSources(): Promise<DdbMetaSource[]> {
+    const content = await this.pageService.getPageHtmlElement('https://www.dndbeyond.com/spells', {
+      ...this.getDefaultPageServiceOptions(),
+      noCache: true,
+    });
+    return content
+      .querySelectorAll('#filter-source option')
+      .map(option => ({ label: option.innerText.trim(), id: option.getAttribute('value')! }));
   }
 
   getDefaultPageServiceOptions(): PageServiceOptions {
@@ -65,6 +81,8 @@ export class DdbHelper {
     if (uri.includes('/monsters/')) return 'Monster';
     if (uri.match(/\/sources\/[\w-]+$/)) return 'Source';
     if (uri.match(/\/sources\//)) return 'SourcePage';
+    if (uri.match(/\/equipment\//)) return 'Item';
+    if (uri.match(/\/feats\//)) return 'Feat';
 
     return undefined;
   }

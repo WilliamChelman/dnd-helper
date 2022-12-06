@@ -2,19 +2,14 @@ import consola from 'consola';
 import { Injectable } from 'injection-js';
 import { HTMLElement } from 'node-html-parser';
 
-import { ConfigService, InputService, LabelsHelper, Monster, NewPageService, notNil } from '../../core';
+import { InputService, LabelsHelper, Monster, NewPageService, notNil } from '../../core';
 import { DdbHelper } from './ddb.helper';
 
 @Injectable()
 export class DdbMonstersInput implements InputService<Monster> {
   sourceId: string = 'DDB';
 
-  constructor(
-    private pageService: NewPageService,
-    private labelsHelper: LabelsHelper,
-    private ddbHelper: DdbHelper,
-    private configService: ConfigService
-  ) {}
+  constructor(private pageService: NewPageService, private labelsHelper: LabelsHelper, private ddbHelper: DdbHelper) {}
 
   async *getAll(): AsyncGenerator<Monster> {
     const partialMonsters = await this.getPartialMonsters();
@@ -31,13 +26,8 @@ export class DdbMonstersInput implements InputService<Monster> {
   }
 
   private async getPartialMonsters(): Promise<PartialMonster[]> {
-    const { config } = this.configService;
-    let pageUrl = new URL('/monsters', this.ddbHelper.basePath).toString();
-    if (config.ddb?.name) {
-      pageUrl += `?filter-search=${encodeURIComponent(config.ddb?.name)}`;
-    }
-    return await this.ddbHelper.newCrawlSearchPages<PartialMonster>(
-      pageUrl,
+    return await this.ddbHelper.crawlSearchPages<PartialMonster>(
+      'monsters',
       this.getMonstersFromSearchPage.bind(this),
       this.ddbHelper.getDefaultPageServiceOptions()
     );

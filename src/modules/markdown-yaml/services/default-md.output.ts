@@ -1,18 +1,18 @@
+import consola from 'consola';
 import { existsSync, promises as fs } from 'fs';
 import { Injectable } from 'injection-js';
 import { NodeHtmlMarkdown } from 'node-html-markdown';
 import path from 'path';
 import prettier from 'prettier';
 import yaml from 'yaml';
-import consola from 'consola';
 
-import { ConfigService, LoggerFactory, Entity, OutputService, PrefixService } from '../../core';
+import { ConfigService, Entity, OutputService } from '../../core';
 
 @Injectable()
-export class DefaultMdOutput<T extends Entity = Entity> implements OutputService<T> {
+export abstract class DefaultMdOutput<T extends Entity = Entity> implements OutputService<T> {
   format: string = 'md';
 
-  constructor(protected loggerFactory: LoggerFactory, protected prefixService: PrefixService, protected configService: ConfigService) {}
+  constructor(protected configService: ConfigService) {}
 
   async export(entities: T[]): Promise<string[]> {
     const result: string[] = [];
@@ -22,9 +22,7 @@ export class DefaultMdOutput<T extends Entity = Entity> implements OutputService
     return result;
   }
 
-  canHandle(entity: T): number | undefined {
-    return 0;
-  }
+  abstract canHandle(entity: T): number | undefined;
 
   protected async saveOne(entity: T): Promise<string> {
     const basePath = this.getBasePath();
@@ -50,11 +48,7 @@ export class DefaultMdOutput<T extends Entity = Entity> implements OutputService
     return filePath;
   }
 
-  protected async getFilePath(entity: T, basePath: string): Promise<string> {
-    let filePath = path.join(basePath, this.prefixService.toFileName(entity.uri));
-    filePath += '.md';
-    return filePath;
-  }
+  protected abstract getFilePath(entity: T, basePath: string): Promise<string>;
 
   protected getBasePath(): string {
     const config = this.configService.config;
