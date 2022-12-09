@@ -29,4 +29,4 @@ export interface Entity {
   textContent: string;
 }
 
-export type DataSource = 'DDB' | '5e-drs';
+export type DataSource = 'DDB' | '5e-drs' | 'aide-dd';

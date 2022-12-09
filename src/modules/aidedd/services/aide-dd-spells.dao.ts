@@ -1,57 +1,42 @@
+import consola from 'consola';
 import { Injectable } from 'injection-js';
-import { NodeHtmlMarkdown } from 'node-html-markdown';
-import { parse, HTMLElement } from 'node-html-parser';
+import { HTMLElement, parse } from 'node-html-parser';
 import { URL } from 'url';
 
-import { AssetsService, EntityDao, LabelsHelper, LoggerFactory, notNil, PageService, PageServiceFactory, OldSpell } from '../../core';
+import { AssetsService, DataSource, InputService, LabelsHelper, NewPageService, notNil, Spell } from '../../core';
+import { AideDdHelper } from './aide-dd.helper';
 
 @Injectable()
-export class AideDdSpellsDao implements EntityDao<OldSpell> {
-  id: string = 'aide-dd-spells';
+export class AideDdSpellsInput implements InputService<Spell> {
+  sourceId: DataSource = 'aide-dd';
   private basePath = 'https://www.aidedd.org';
-  private pageService: PageService = this.pageFactoryService.create({
-    cacheContext: true,
-  });
-  private logger = this.loggerFactory.create('AideDdSpellsDao');
 
   private altNames: { [name: string]: string[] } = this.assetsService.readJson('aidedd/spells-alt-names.json');
 
   constructor(
-    private pageFactoryService: PageServiceFactory,
+    private pageService: NewPageService,
     private labelsHelper: LabelsHelper,
     private assetsService: AssetsService,
-    private loggerFactory: LoggerFactory
+    private helper: AideDdHelper
   ) {}
 
-  async getAll(): Promise<OldSpell[]> {
+  canHandle(entityType: string): number | undefined {
+    return entityType === 'Spell' ? 10 : undefined;
+  }
+
+  async *getAll(): AsyncGenerator<Spell> {
     const partialSpells = await this.getPartialSpells();
-    const spells: OldSpell[] = [];
     let index = 0;
-    for (let spell of partialSpells.slice(0, 1)) {
-      this.logger.info(`Processing ${index}/${partialSpells.length - 1} - ${spell.name}`);
-      spell = await this.completeSpellWithDetailPage(spell);
-      spells.push(spell);
+    for (let spell of partialSpells) {
+      consola.info(`Processing ${spell.uri} (${index + 1}/${partialSpells.length})`);
+      yield this.completeSpellWithDetailPage(spell);
       ++index;
     }
-    return spells;
   }
 
-  getByUri(uri: string): Promise<OldSpell> {
-    throw new Error('Method not implemented.');
-  }
-  save(entity: OldSpell): Promise<string> {
-    throw new Error('Method not implemented.');
-  }
-  patch(entity: OldSpell): Promise<string> {
-    throw new Error('Method not implemented.');
-  }
-  canHandle(entityType: string): number {
-    throw new Error('Method not implemented.');
-  }
-
-  async getPartialSpells(): Promise<OldSpell[]> {
+  async getPartialSpells(): Promise<Spell[]> {
     const listPageUrl = new URL('/regles/sorts/', this.basePath).toString();
-    const listPage = await this.pageService.getPageHtmlElement(listPageUrl);
+    const listPage = await this.pageService.getPageHtmlElement(listPageUrl, this.helper.getPageOptions());
     const anchors = listPage.querySelectorAll('.content .liste a');
     return anchors.map(anchor => {
       const name = anchor.innerText.trim();
@@ -59,19 +44,17 @@ export class AideDdSpellsDao implements EntityDao<OldSpell> {
       const uri = new URL(href, listPageUrl).toString();
       return {
         uri,
-        id: uri.match(/\?vf=(.*)/)![1],
-        entityType: 'Spell' as const,
+        type: 'Spell' as const,
         name: name,
-        link: uri,
-        dataSource: 'AideDD',
+        dataSource: 'aide-dd',
         lang: 'FR',
-      };
+      } as Spell;
     });
   }
 
-  async completeSpellWithDetailPage(partialMonster: OldSpell): Promise<OldSpell> {
+  async completeSpellWithDetailPage(partialMonster: Spell): Promise<Spell> {
     const spell = { ...partialMonster };
-    const detailPage = await this.pageService.getPageHtmlElement(partialMonster.uri);
+    const detailPage = await this.pageService.getPageHtmlElement(partialMonster.uri, this.helper.getPageOptions());
     const content = detailPage.querySelector('.bloc');
 
     if (!content) {
@@ -121,8 +104,7 @@ export class AideDdSpellsDao implements EntityDao<OldSpell> {
       .map(el => this.labelsHelper.getClass(el.innerText.trim()))
       .filter(notNil);
 
-    this.cleanContent(content);
-    spell.markdownContent = NodeHtmlMarkdown.translate(content.outerHTML, { blockElements: ['br'] });
+    spell.textContent = content.outerHTML;
 
     return spell;
   }

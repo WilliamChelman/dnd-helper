@@ -2,7 +2,8 @@
 import { Injector, ReflectiveInjector } from 'injection-js';
 
 import { FiveEDrsHelper, FiveEDrsMonstersDao, FiveEDrsSpellsInput, FiveEDrsSpellsMdOutput } from './5e-drs';
-import { AideDdMonstersDao, AideDdSpellsDao } from './aidedd';
+import { AideDdHelper, AideDdMonstersDao, AideDdSpellsInput } from './aidedd';
+import { AideDdSpellsMdOutput } from './aidedd/services/aide-dd-spells.md-output';
 import {
   AssetsService,
   CacheService,
@@ -64,12 +65,6 @@ export function getInjector() {
       useExisting: NotionSpellsDao,
       multi: true,
     },
-    AideDdSpellsDao,
-    {
-      provide: EntityDao,
-      useExisting: AideDdSpellsDao,
-      multi: true,
-    },
     AideDdMonstersDao,
     {
       provide: EntityDao,
@@ -83,6 +78,7 @@ export function getInjector() {
       multi: true,
     },
     FiveEDrsHelper,
+    AideDdHelper,
     // New architecture
     provideAsOutputService(DdbMagicItemsMdOutput),
     provideAsInputService(DdbMagicItemsInput),
@@ -98,6 +94,8 @@ export function getInjector() {
     provideAsInputService(DdbFeatsInput),
     provideAsInputService(FiveEDrsSpellsInput),
     provideAsOutputService(FiveEDrsSpellsMdOutput),
+    provideAsInputService(AideDdSpellsInput),
+    provideAsOutputService(AideDdSpellsMdOutput),
     DdbMdHelper,
     DdbLinkHelper,
     DdbSourcesHelper,

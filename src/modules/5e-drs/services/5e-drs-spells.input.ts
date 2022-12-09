@@ -98,18 +98,10 @@ export class FiveEDrsSpellsInput implements InputService<Spell> {
 
     const content = detailPage.querySelector('.page.content');
     if (content) {
-      this.cleanContent(content);
       spell.textContent = content.outerHTML;
     }
 
     return spell;
-  }
-
-  private cleanContent(content: HTMLElement): void {
-    content.querySelectorAll('a').forEach(anchor => {
-      const href = anchor.getAttribute('href');
-      anchor.setAttribute('href', new URL(href as string, this.basePath).toString());
-    });
   }
 
   private async getGithubMetadata(detailPageUrl: string): Promise<GithubMetadata> {
