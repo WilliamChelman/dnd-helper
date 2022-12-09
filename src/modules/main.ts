@@ -1,22 +1,23 @@
 // import 'reflect-metadata';
 import { Injector, ReflectiveInjector } from 'injection-js';
 
-import { FiveEDrsMonstersDao } from './5e-drs';
-import { FiveEDrsSpellsDao } from './5e-drs/services/5e-drs-spells.dao';
+import { FiveEDrsHelper, FiveEDrsMonstersDao, FiveEDrsSpellsInput, FiveEDrsSpellsMdOutput } from './5e-drs';
 import { AideDdMonstersDao, AideDdSpellsDao } from './aidedd';
 import {
   AssetsService,
+  CacheService,
   ConfigService,
   DaoConfig,
   EntityDao,
   HtmlElementHelper,
-  InputService,
   LabelsHelper,
   LoggerFactory,
   NewPageService,
-  OutputService,
   PageServiceFactory,
   PrefixService,
+  provideAsInputService,
+  provideAsOutputService,
+  provideExitCleaner,
 } from './core';
 import {
   DdbFeatsInput,
@@ -81,89 +82,29 @@ export function getInjector() {
       useExisting: FiveEDrsMonstersDao,
       multi: true,
     },
-    FiveEDrsSpellsDao,
-    {
-      provide: EntityDao,
-      useExisting: FiveEDrsSpellsDao,
-      multi: true,
-    },
+    FiveEDrsHelper,
     // New architecture
-    DdbMagicItemsMdOutput,
-    {
-      provide: OutputService,
-      useExisting: DdbMagicItemsMdOutput,
-      multi: true,
-    },
-    DdbMagicItemsInput,
-    {
-      provide: InputService,
-      useExisting: DdbMagicItemsInput,
-      multi: true,
-    },
-    DdbItemsMdOutput,
-    {
-      provide: OutputService,
-      useExisting: DdbItemsMdOutput,
-      multi: true,
-    },
-    DdbItemsInput,
-    {
-      provide: InputService,
-      useExisting: DdbItemsInput,
-      multi: true,
-    },
-    DdbSpellsMdOutput,
-    {
-      provide: OutputService,
-      useExisting: DdbSpellsMdOutput,
-      multi: true,
-    },
-    DdbSpellsInput,
-    {
-      provide: InputService,
-      useExisting: DdbSpellsInput,
-      multi: true,
-    },
-    DdbMonstersMdOutput,
-    {
-      provide: OutputService,
-      useExisting: DdbMonstersMdOutput,
-      multi: true,
-    },
-    DdbMonstersInput,
-    {
-      provide: InputService,
-      useExisting: DdbMonstersInput,
-      multi: true,
-    },
-    DdbSourcesMdOutput,
-    {
-      provide: OutputService,
-      useExisting: DdbSourcesMdOutput,
-      multi: true,
-    },
-    DdbSourcesInput,
-    {
-      provide: InputService,
-      useExisting: DdbSourcesInput,
-      multi: true,
-    },
-    DdbFeatsMdOutput,
-    {
-      provide: OutputService,
-      useExisting: DdbFeatsMdOutput,
-      multi: true,
-    },
-    DdbFeatsInput,
-    {
-      provide: InputService,
-      useExisting: DdbFeatsInput,
-      multi: true,
-    },
+    provideAsOutputService(DdbMagicItemsMdOutput),
+    provideAsInputService(DdbMagicItemsInput),
+    provideAsOutputService(DdbItemsMdOutput),
+    provideAsInputService(DdbItemsInput),
+    provideAsOutputService(DdbSpellsMdOutput),
+    provideAsInputService(DdbSpellsInput),
+    provideAsOutputService(DdbMonstersMdOutput),
+    provideAsInputService(DdbMonstersInput),
+    provideAsOutputService(DdbSourcesMdOutput),
+    provideAsInputService(DdbSourcesInput),
+    provideAsOutputService(DdbFeatsMdOutput),
+    provideAsInputService(DdbFeatsInput),
+    provideAsInputService(FiveEDrsSpellsInput),
+    provideAsOutputService(FiveEDrsSpellsMdOutput),
     DdbMdHelper,
     DdbLinkHelper,
     DdbSourcesHelper,
     NewPageService,
+    provideExitCleaner(NewPageService),
+    CacheService,
+    provideExitCleaner(CacheService),
   ]);
 }
 

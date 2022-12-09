@@ -1,4 +1,5 @@
-import { OldEntity, Entity } from '../models';
+import { Provider, Type } from 'injection-js';
+import { OldEntity, Entity, DataSource } from '../models';
 
 export abstract class EntityDao<T extends OldEntity = OldEntity> {
   abstract id: string;
@@ -19,7 +20,29 @@ export abstract class OutputService<T extends Entity = Entity> {
 }
 
 export abstract class InputService<T extends Entity = Entity> {
-  abstract sourceId: string;
+  abstract sourceId: DataSource;
   abstract canHandle(entityType: string): number | undefined;
   abstract getAll(): AsyncGenerator<T>;
+}
+
+export function provideAsInputService(type: Type<InputService>): Provider[] {
+  return [
+    type,
+    {
+      provide: InputService,
+      useExisting: type,
+      multi: true,
+    },
+  ];
+}
+
+export function provideAsOutputService(type: Type<OutputService>): Provider[] {
+  return [
+    type,
+    {
+      provide: OutputService,
+      useExisting: type,
+      multi: true,
+    },
+  ];
 }

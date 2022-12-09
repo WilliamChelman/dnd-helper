@@ -1,3 +1,5 @@
+import { EntityType } from './entity-type';
+
 export interface OldEntity {
   uri: string;
   entityType: string;
@@ -20,9 +22,11 @@ export interface OldAttachment {
 
 export interface Entity {
   uri: string;
-  type: string;
+  type: EntityType;
   name: string;
-  dataSource: string;
+  dataSource: DataSource;
   lang: string;
   textContent: string;
 }
+
+export type DataSource = 'DDB' | '5e-drs';

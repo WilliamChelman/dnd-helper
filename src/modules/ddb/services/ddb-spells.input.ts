@@ -1,13 +1,13 @@
 import { Injectable } from 'injection-js';
 import { HTMLElement } from 'node-html-parser';
 
-import { EntityType, HtmlElementHelper, LabelsHelper, NewPageService, Spell } from '../../core';
+import { DataSource, EntityType, HtmlElementHelper, LabelsHelper, NewPageService, Spell } from '../../core';
 import { DdbSearchableEntityInput } from './ddb-searchable-entity.input';
 import { DdbHelper } from './ddb.helper';
 
 @Injectable()
 export class DdbSpellsInput extends DdbSearchableEntityInput<Spell> {
-  sourceId: string = 'DDB';
+  sourceId: DataSource = 'DDB';
 
   protected entityType: EntityType = 'Spell';
   protected searchPagePath: string = 'spells';

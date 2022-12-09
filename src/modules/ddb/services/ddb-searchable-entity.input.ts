@@ -2,12 +2,12 @@ import consola from 'consola';
 import { Injectable } from 'injection-js';
 import { HTMLElement } from 'node-html-parser';
 
-import { Entity, EntityType, HtmlElementHelper, InputService, LabelsHelper, NewPageService } from '../../core';
+import { DataSource, Entity, EntityType, HtmlElementHelper, InputService, LabelsHelper, NewPageService } from '../../core';
 import { DdbHelper } from './ddb.helper';
 
 @Injectable()
 export abstract class DdbSearchableEntityInput<T extends Entity> implements InputService<T> {
-  sourceId: string = 'DDB';
+  sourceId: DataSource = 'DDB';
   protected abstract entityType: EntityType;
   protected abstract searchPagePath: string;
   protected abstract linkSelector: string;

@@ -14,7 +14,7 @@ export abstract class DdbEntityMdOutput<T extends Entity> extends DefaultMdOutpu
   }
 
   canHandle(entity: T): number | undefined {
-    return entity.type === this.entityType ? 10 : undefined;
+    return entity.dataSource === 'DDB' && entity.type === this.entityType ? 10 : undefined;
   }
 
   protected async getFilePath(entity: T, basePath: string): Promise<string> {

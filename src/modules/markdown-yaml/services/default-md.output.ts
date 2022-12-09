@@ -4,6 +4,7 @@ import { Injectable } from 'injection-js';
 import { NodeHtmlMarkdown } from 'node-html-markdown';
 import path from 'path';
 import prettier from 'prettier';
+import sanitizeFilename from 'sanitize-filename';
 import yaml from 'yaml';
 
 import { ConfigService, Entity, OutputService } from '../../core';
@@ -48,7 +49,13 @@ export abstract class DefaultMdOutput<T extends Entity = Entity> implements Outp
     return filePath;
   }
 
-  protected abstract getFilePath(entity: T, basePath: string): Promise<string>;
+  protected async getFilePath(entity: T, basePath: string): Promise<string> {
+    const folder = this.configService.config.markdownYaml?.folderEntityTypeMap[entity.type];
+    if (!folder) {
+      throw new Error(`Failed to find related folder for entity type ${entity.type}`);
+    }
+    return path.join(basePath, folder, sanitizeFilename(entity.name)) + '.md';
+  }
 
   protected getBasePath(): string {
     const config = this.configService.config;

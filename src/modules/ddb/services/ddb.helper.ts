@@ -2,7 +2,7 @@ import { Injectable } from 'injection-js';
 import { HTMLElement } from 'node-html-parser';
 import ufo from 'ufo';
 
-import { ConfigService, PageCookies, EntityType, PageService, PageServiceOptions, NewPageService, NewPageServiceOptions } from '../../core';
+import { ConfigService, EntityType, NewPageService, NewPageServiceOptions, PageCookies } from '../../core';
 import { DdbMetaSource } from '../models';
 
 @Injectable()
@@ -60,7 +60,7 @@ export class DdbHelper {
       .map(option => ({ label: option.innerText.trim(), id: option.getAttribute('value')! }));
   }
 
-  getDefaultPageServiceOptions(): PageServiceOptions {
+  getDefaultPageServiceOptions(): NewPageServiceOptions {
     return {
       cookies: this.getCookies(),
       validator: async page => {

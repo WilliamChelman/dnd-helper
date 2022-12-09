@@ -2,12 +2,12 @@ import consola from 'consola';
 import { Injectable } from 'injection-js';
 import { HTMLElement } from 'node-html-parser';
 
-import { InputService, LabelsHelper, Monster, NewPageService, notNil } from '../../core';
+import { DataSource, InputService, LabelsHelper, Monster, NewPageService, notNil } from '../../core';
 import { DdbHelper } from './ddb.helper';
 
 @Injectable()
 export class DdbMonstersInput implements InputService<Monster> {
-  sourceId: string = 'DDB';
+  sourceId: DataSource = 'DDB';
 
   constructor(private pageService: NewPageService, private labelsHelper: LabelsHelper, private ddbHelper: DdbHelper) {}
 

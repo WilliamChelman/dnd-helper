@@ -1,14 +1,14 @@
 import consola from 'consola';
 import { Injectable } from 'injection-js';
 
-import { ConfigService, HtmlElementHelper, InputService, NewPageService, Source, SourcePage } from '../../core';
+import { ConfigService, DataSource, HtmlElementHelper, InputService, NewPageService, Source, SourcePage } from '../../core';
 import { DdbLinkHelper } from './ddb-link.helper';
 import { DdbSourcesHelper } from './ddb-sources.helper';
 import { DdbHelper } from './ddb.helper';
 
 @Injectable()
 export class DdbSourcesInput implements InputService<Source> {
-  sourceId: string = 'DDB';
+  sourceId: DataSource = 'DDB';
 
   private blacklist: string[] = ['https://www.dndbeyond.com/sources/one-dnd', 'https://www.dndbeyond.com/sources/it/phb'];
 
@@ -24,7 +24,10 @@ export class DdbSourcesInput implements InputService<Source> {
   async *getAll(): AsyncGenerator<Source> {
     let pageUrl = new URL('/sources', this.ddbHelper.basePath).toString();
     const name = this.configService.config.ddb?.name?.toLowerCase();
-    const listPage = await this.pageService.getPageHtmlElement(pageUrl, this.ddbHelper.getDefaultPageServiceOptions());
+    const listPage = await this.pageService.getPageHtmlElement(pageUrl, {
+      ...this.ddbHelper.getDefaultPageServiceOptions(),
+      noCache: true,
+    });
     const uris = listPage
       .querySelectorAll('.sources-listing--item')
       .filter(anchor => {

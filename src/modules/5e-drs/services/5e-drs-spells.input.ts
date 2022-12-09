@@ -1,80 +1,79 @@
+import consola from 'consola';
 import { Injectable } from 'injection-js';
-import { NodeHtmlMarkdown } from 'node-html-markdown';
 import { HTMLElement } from 'node-html-parser';
 import { URL } from 'url';
 import { parse } from 'yaml';
 
-import { LabelsHelper, LoggerFactory, PageService, PageServiceFactory, SourceEntityDao, OldSpell } from '../../core';
+import { ConfigService, DataSource, InputService, LabelsHelper, NewPageService, Spell } from '../../core';
 import { notNil } from '../../core/utils';
+import { FiveEDrsHelper } from './5e-drs.helper';
 
 @Injectable()
-export class FiveEDrsSpellsDao implements SourceEntityDao<OldSpell> {
-  id: string = '5e-drs-spells';
+export class FiveEDrsSpellsInput implements InputService<Spell> {
+  sourceId: DataSource = '5e-drs';
   private basePath = 'https://5e-drs.fr';
-  private pageService: PageService = this.pageFactoryService.create({
-    cacheContext: true,
-  });
-  private logger = this.loggerFactory.create('FiveEDrsSpellsDao');
 
-  constructor(private pageFactoryService: PageServiceFactory, private labelsHelper: LabelsHelper, private loggerFactory: LoggerFactory) {}
+  constructor(
+    private pageService: NewPageService,
+    private labelsHelper: LabelsHelper,
+    private configService: ConfigService,
+    private helper: FiveEDrsHelper
+  ) {}
 
-  async getAll(): Promise<OldSpell[]> {
-    const partialSpells = await this.getPartialSpells();
-    const spells: OldSpell[] = [];
-    let index = 0;
-    for (let spell of partialSpells) {
-      this.logger.info(`Processing ${index}/${partialSpells.length - 1} - ${spell.name}`);
-      spell = await this.completeSpellWithDetailPage(spell);
-      spells.push(spell);
-      ++index;
-    }
-
-    return spells;
+  canHandle(entityType: string): number | undefined {
+    return entityType === 'Spell' ? 10 : undefined;
   }
 
-  async getPartialSpells(): Promise<OldSpell[]> {
+  async *getAll(): AsyncGenerator<Spell> {
+    const partialSpells = await this.getPartialSpells();
+    let index = 0;
+    // TODO move filter in config other than ddb?
+    const name = this.configService.config.ddb?.name?.toLowerCase();
+    for (let spell of partialSpells.filter(s => (name ? s.name.toLowerCase().includes(name) : true))) {
+      consola.info(`Processing ${spell.uri} (${index + 1}/${partialSpells.length})`);
+      yield this.completeSpellWithDetailPage(spell);
+      ++index;
+    }
+  }
+
+  async getPartialSpells(): Promise<Spell[]> {
     const items = [];
     let nextPage = new URL('/grimoire/', this.basePath).toString();
-    let listPage = await this.pageService.getPageHtmlElement(nextPage);
+    let listPage = await this.pageService.getPageHtmlElement(nextPage, this.helper.getPageOptions());
     const pageNumbers = listPage.querySelectorAll('.v-pagination li').map(li => parseInt(li.innerText.trim()));
     const maxPage = Math.max(...pageNumbers.filter(n => !isNaN(n)));
 
     for (let i = 1; i <= maxPage; ++i) {
       nextPage = nextPage.split('?')[0];
       nextPage += `?page=${i}`;
-      listPage = await this.pageService.getPageHtmlElement(nextPage);
+      listPage = await this.pageService.getPageHtmlElement(nextPage, this.helper.getPageOptions());
       items.push(...this.getPartialSpellsFromOneSearchPage(listPage));
     }
 
     return items;
   }
 
-  private getPartialSpellsFromOneSearchPage(searchPage: HTMLElement): OldSpell[] {
+  private getPartialSpellsFromOneSearchPage(searchPage: HTMLElement): Spell[] {
     const rows = searchPage.querySelectorAll('.v-data-table__wrapper tbody tr');
     return rows
       .map(row => {
         const anchor = row.querySelector('td:nth-child(3) a');
         if (!anchor) return undefined;
-        const link = new URL(anchor.getAttribute('href') as string, this.basePath).toString();
+        const uri = new URL(anchor.getAttribute('href') as string, this.basePath).toString();
         return {
-          uri: link,
-          entityType: 'Spell' as const,
-          id: link
-            .split('/')
-            .filter(v => !!v)
-            .pop()!,
+          uri,
+          type: 'Spell' as const,
           name: this.labelsHelper.getName(anchor.innerText.trim())!,
-          link: link,
-          dataSource: '5eDrs',
+          dataSource: '5e-drs',
           lang: 'FR',
-        };
+        } as Spell;
       })
       .filter(notNil);
   }
 
-  async completeSpellWithDetailPage(partialSpell: OldSpell): Promise<OldSpell> {
+  async completeSpellWithDetailPage(partialSpell: Spell): Promise<Spell> {
     const spell = { ...partialSpell };
-    const detailPage = await this.pageService.getPageHtmlElement(partialSpell.uri);
+    const detailPage = await this.pageService.getPageHtmlElement(partialSpell.uri, this.helper.getPageOptions());
 
     const metadata = await this.getGithubMetadata(partialSpell.uri);
     spell.school = this.labelsHelper.getSchool(metadata.school);
@@ -100,7 +99,7 @@ export class FiveEDrsSpellsDao implements SourceEntityDao<OldSpell> {
     const content = detailPage.querySelector('.page.content');
     if (content) {
       this.cleanContent(content);
-      spell.markdownContent = NodeHtmlMarkdown.translate(content.outerHTML, { blockElements: ['br'] });
+      spell.textContent = content.outerHTML;
     }
 
     return spell;
@@ -119,7 +118,8 @@ export class FiveEDrsSpellsDao implements SourceEntityDao<OldSpell> {
       .filter(p => !!p)
       .pop();
     const githubPage = await this.pageService.getPageHtmlElement(
-      `https://raw.githubusercontent.com/em-squared/5e-drs/master/docs/grimoire/${spellId}/README.md`
+      `https://raw.githubusercontent.com/em-squared/5e-drs/master/docs/grimoire/${spellId}/README.md`,
+      { ...this.helper.getPageOptions(), cleaner: undefined }
     );
     if (githubPage.innerText.includes('404: Not Found')) {
       throw new Error('github readme not found');
@@ -140,9 +140,8 @@ export class FiveEDrsSpellsDao implements SourceEntityDao<OldSpell> {
     return parse(yamlPart);
   }
 }
-// Generated by https://quicktype.io
 
-export interface GithubMetadata {
+interface GithubMetadata {
   title: string;
   description: string;
   school: string;
@@ -157,7 +156,7 @@ export interface GithubMetadata {
   source: string;
 }
 
-export interface Components {
+interface Components {
   verbal: boolean;
   somatic: boolean;
   material: boolean;

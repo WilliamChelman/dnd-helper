@@ -2,7 +2,7 @@ import 'reflect-metadata';
 
 import { Command } from '@oclif/core';
 
-import { ConfigService, InputService, NewPageService, OutputService, PageServiceFactory } from '../modules/core';
+import { ConfigService, ExitCleaner, InputService, NewPageService, OutputService, PageServiceFactory } from '../modules/core';
 import { getInjector } from '../modules/main';
 
 export default class Ddb extends Command {
@@ -25,8 +25,7 @@ hello world! (./src/commands/hello/world.ts)
     const { config } = injector.get(ConfigService) as ConfigService;
     const inputs = injector.get(InputService) as InputService[];
     const outputs = injector.get(OutputService) as OutputService[];
-    const pageServiceFactory = injector.get(PageServiceFactory) as PageServiceFactory;
-    const newPageService = injector.get(NewPageService) as NewPageService;
+    const cleaners = injector.get(ExitCleaner) as ExitCleaner[];
 
     try {
       for (const input of inputs) {
@@ -43,8 +42,7 @@ hello world! (./src/commands/hello/world.ts)
         }
       }
     } finally {
-      pageServiceFactory.closeAll();
-      newPageService.close();
+      cleaners.forEach(c => c.clean());
     }
   }
 }
