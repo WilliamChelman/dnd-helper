@@ -9,3 +9,4 @@ export * from './logger.factory';
 export * from './new-page.service';
 export * from './page.service';
 export * from './prefix.service';
+export * from './url.helper';

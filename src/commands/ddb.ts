@@ -2,7 +2,7 @@ import 'reflect-metadata';
 
 import { Command } from '@oclif/core';
 
-import { ConfigService, ExitCleaner, InputService, NewPageService, OutputService, PageServiceFactory } from '../modules/core';
+import { ConfigService, DataSource, ExitCleaner, InputService, OutputService } from '../modules/core';
 import { getInjector } from '../modules/main';
 
 export default class Ddb extends Command {
@@ -20,7 +20,7 @@ hello world! (./src/commands/hello/world.ts)
 
   async run(): Promise<void> {
     const outputFormat = 'md';
-    const sourceId = 'DDB';
+    const sourceId: DataSource = 'DDB';
     const injector = getInjector();
     const { config } = injector.get(ConfigService) as ConfigService;
     const inputs = injector.get(InputService) as InputService[];

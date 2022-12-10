@@ -15,7 +15,7 @@ export class DdbMonstersInput implements InputService<Monster> {
     const partialMonsters = await this.getPartialMonsters();
     let index = 0;
     for (let monster of partialMonsters) {
-      consola.log(`Processing ${index}/${partialMonsters.length - 1} - ${monster.name}`);
+      consola.log(`Processing ${monster.uri} (${index + 1}/${partialMonsters.length})`);
       yield await this.completeMonsterWithDetailPage(monster);
       ++index;
     }

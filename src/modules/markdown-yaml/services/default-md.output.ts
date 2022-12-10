@@ -54,7 +54,7 @@ export abstract class DefaultMdOutput<T extends Entity = Entity> implements Outp
     if (!folder) {
       throw new Error(`Failed to find related folder for entity type ${entity.type}`);
     }
-    return path.join(basePath, folder, sanitizeFilename(entity.name)) + '.md';
+    return path.join(basePath, folder, sanitizeFilename(entity.name, { replacement: ' ' })) + '.md';
   }
 
   protected getBasePath(): string {

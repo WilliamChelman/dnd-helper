@@ -26,7 +26,7 @@ export class DdbSourcesInput implements InputService<Source> {
     const name = this.configService.config.ddb?.name?.toLowerCase();
     const listPage = await this.pageService.getPageHtmlElement(pageUrl, {
       ...this.ddbHelper.getDefaultPageServiceOptions(),
-      noCache: true,
+      noCache: false,
     });
     const uris = listPage
       .querySelectorAll('.sources-listing--item')
@@ -39,7 +39,7 @@ export class DdbSourcesInput implements InputService<Source> {
     let index = 0;
     for (const uri of uris) {
       ++index;
-      if (this.blacklist.includes(uri)) continue;
+      if (this.blacklist.includes(uri) || uri.endsWith('/sotdq')) continue;
       consola.log(`Parsing (${index}/${uris.length})`, uri);
       yield await this.getSource(uri);
     }
@@ -67,7 +67,7 @@ export class DdbSourcesInput implements InputService<Source> {
 
     const pages: SourcePage[] = [];
     if (this.configService.config.ddb?.includeSourcePages) {
-      const subUris = this.ddbSourcesHelper.getSourcePageLinks(url, page);
+      const subUris = this.ddbSourcesHelper.getSourcePageUrisFromSource(url, page);
 
       for (const subUri of subUris ?? []) {
         pages.push(await this.getSubPage(subUri));

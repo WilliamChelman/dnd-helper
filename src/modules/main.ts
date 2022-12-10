@@ -19,6 +19,7 @@ import {
   provideAsInputService,
   provideAsOutputService,
   provideExitCleaner,
+  UrlHelper,
 } from './core';
 import {
   DdbFeatsInput,
@@ -51,6 +52,7 @@ export function getInjector() {
     PageServiceFactory,
     NotionItemsService,
     LoggerFactory,
+    UrlHelper,
     LabelsHelper,
     PrefixService,
     NotionMonstersDao,

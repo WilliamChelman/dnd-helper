@@ -53,7 +53,7 @@ export class DdbHelper {
   async getMetaSources(): Promise<DdbMetaSource[]> {
     const content = await this.pageService.getPageHtmlElement('https://www.dndbeyond.com/spells', {
       ...this.getDefaultPageServiceOptions(),
-      noCache: true,
+      noCache: false,
     });
     return content
       .querySelectorAll('#filter-source option')

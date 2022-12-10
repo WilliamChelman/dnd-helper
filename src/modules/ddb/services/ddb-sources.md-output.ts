@@ -5,12 +5,18 @@ import { ConfigService, EntityType, Source, SourcePage } from '../../core';
 import { DdbEntityMdOutput } from './ddb-entity.md-output';
 import { DdbLinkHelper } from './ddb-link.helper';
 import { DdbMdHelper } from './ddb-md.helper';
+import { DdbSourcesHelper } from './ddb-sources.helper';
 
 @Injectable()
 export class DdbSourcesMdOutput extends DdbEntityMdOutput<Source | SourcePage> {
   protected entityType: EntityType = 'Source';
 
-  constructor(protected configService: ConfigService, protected ddbMdHelper: DdbMdHelper, private ddbLinkHelper: DdbLinkHelper) {
+  constructor(
+    protected configService: ConfigService,
+    protected ddbMdHelper: DdbMdHelper,
+    private ddbLinkHelper: DdbLinkHelper,
+    private ddvSourcesHelper: DdbSourcesHelper
+  ) {
     super(configService, ddbMdHelper);
   }
 
@@ -32,7 +38,7 @@ export class DdbSourcesMdOutput extends DdbEntityMdOutput<Source | SourcePage> {
 
   protected async getMarkdownContent(entity: Source | SourcePage): Promise<string> {
     let content = parse(entity.textContent);
-    const isToc = !!content.querySelector('.compendium-toc-full-text');
+    const isToc = this.ddvSourcesHelper.isTocPage(content);
 
     //need to do it before fixing links
     let coverArt = content.querySelector('.view-cover-art a')?.getAttribute('href');
@@ -40,7 +46,7 @@ export class DdbSourcesMdOutput extends DdbEntityMdOutput<Source | SourcePage> {
       coverArt = this.ddbLinkHelper.getAbsoluteUrl(coverArt, entity.uri);
     }
 
-    await this.ddbMdHelper.applyFixes({ content, currentPageUrl: entity.uri, keepOneImage: undefined });
+    await this.ddbMdHelper.applyFixes({ content, currentPageUrl: entity.uri, keepImages: 'all' });
 
     if (isToc) {
       content.querySelectorAll('header.no-sub.no-nav').forEach(el => el.remove());
@@ -85,6 +91,24 @@ export class DdbSourcesMdOutput extends DdbEntityMdOutput<Source | SourcePage> {
           ${newNav.outerHTML}
         `);
       }
+
+      content.querySelectorAll('aside').forEach(aside => {
+        const id = aside.id;
+        if (id) {
+          aside.removeAttribute('id');
+        }
+        const blockQuote = parse(`<blockquote>${aside.innerHTML}</blockquote>`);
+        if (id) {
+          blockQuote.setAttribute('id', id);
+        }
+
+        aside.replaceWith(blockQuote);
+      });
+
+      content.querySelectorAll('[id]:not(h1,h2,h3,h4,h5)').forEach(blockWithId => {
+        const id = blockWithId.id;
+        blockWithId.replaceWith(`${blockWithId.outerHTML} ^${id}`);
+      });
     }
 
     return super.getMarkdownContent({ ...entity, textContent: content.outerHTML });

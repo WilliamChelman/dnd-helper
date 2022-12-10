@@ -5,16 +5,22 @@ import { DdbLinkHelper } from './ddb-link.helper';
 
 @Injectable()
 export class DdbSourcesHelper {
+  private blacklist: string[] = ['https://www.dndbeyond.com/legacy'];
+
   constructor(private ddbLinkHelper: DdbLinkHelper) {}
 
-  getSourcePageLinks(sourceUri: string, sourcePageContent: HTMLElement): string[] {
+  getSourcePageUrisFromSource(sourceUri: string, sourcePageContent: HTMLElement): string[] {
     return uniq(
       sourcePageContent
-        .querySelectorAll('.compendium-toc-full-text a')
+        .querySelectorAll('.compendium-toc-blockquote a, .legacy--note a, .compendium-toc-full-text a')
         .map(anchor => this.ddbLinkHelper.getAbsoluteUrl(anchor.getAttribute('href')!, sourceUri))
-        .map(link => link.split('#')[0])
-        .filter(link => !link.endsWith('.jpg'))
-        .filter(link => !link.endsWith('.png'))
+        .map(uri => uri.split('#')[0])
+        .filter(uri => !this.blacklist.includes(uri))
+        .filter(uri => (uri.endsWith('.html') ? true : !uri.match(/(\.[a-z]+)$/)))
     );
+  }
+
+  isTocPage(content: HTMLElement): boolean {
+    return !!content.querySelector('.compendium-toc-full-text');
   }
 }

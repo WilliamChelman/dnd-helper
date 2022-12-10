@@ -17,8 +17,11 @@ export class DdbLinkHelper {
         url = ufo.stringifyParsedURL({ ...ufo.parseURL(currentPageUrl), pathname: url });
       }
     }
-
-    return this.compendiumRewrite(url).replace(/\/$/, '');
+    url = ufo.cleanDoubleSlashes(this.compendiumRewrite(url).replace(/\/$/, '').replace(/\/#/, '#'));
+    const parsed = ufo.parseURL(url);
+    url = ufo.stringifyParsedURL({ ...parsed, pathname: parsed.pathname.toLowerCase() });
+    if (url.startsWith('http:')) url = url.replace('http:', 'https:');
+    return url;
   }
 
   replaceHost(url: string, newHost: string) {
