@@ -39,7 +39,7 @@ export class DdbSourcesInput implements InputService<Source> {
     let index = 0;
     for (const uri of uris) {
       ++index;
-      if (this.blacklist.includes(uri) || uri.endsWith('/sotdq')) continue;
+      if (this.blacklist.includes(uri)) continue;
       consola.log(`Parsing (${index}/${uris.length})`, uri);
       yield await this.getSource(uri);
     }

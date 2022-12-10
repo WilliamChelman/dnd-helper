@@ -30,6 +30,7 @@
     "immer": "^9.0.16",
     "injection-js": "^2.4.0",
     "node-html-markdown": "^1.2.2",
+    "node-html-parser": "^6.1.4",
     "playwright": "^1.28.0",
     "prettier": "^2.8.0",
     "reflect-metadata": "^0.1.13",

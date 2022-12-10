@@ -1,11 +1,9 @@
 import CDP from 'chrome-remote-interface';
 import consola from 'consola';
 import execa from 'execa';
-import { minify } from 'html-minifier';
 import { Injectable } from 'injection-js';
 import { HTMLElement, parse } from 'node-html-parser';
 import playwright from 'playwright';
-import prettier from 'prettier';
 
 import { CacheOptions, CacheService } from './cache.service';
 import { ConfigService } from './config.service';
@@ -92,9 +90,7 @@ export class NewPageService implements ExitCleaner {
     });
 
     let html = result.result.value as string;
-    if (options.preParseCleanup) html = options.preParseCleanup(html);
 
-    // await Page.close();
     const page = parse(html);
 
     if (options.validator) {
@@ -129,11 +125,6 @@ export class NewPageService implements ExitCleaner {
   private async setInCache(url: string, html: HTMLElement, options: NewPageServiceOptions): Promise<void> {
     options.cleaner?.(html);
     let content = html.outerHTML;
-    content = prettier.format(content, { parser: 'html' });
-    content = minify(content, {
-      conservativeCollapse: true,
-    });
-
     this.cacheService.setInCache(url, content, { ...this.getCacheOptions(options), type: 'html' });
   }
 
@@ -147,9 +138,7 @@ export interface NewPageServiceOptions {
   cookies?: NewPageCookies;
   headers?: { [key: string]: string };
   validator?: (page: HTMLElement) => Promise<boolean>;
-  cacheContext?: boolean;
   cleaner?: (el: HTMLElement) => void;
-  preParseCleanup?: (html: string) => string;
 }
 
 export type NewPageCookies = Parameters<playwright.BrowserContext['addCookies']>[0];

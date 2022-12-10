@@ -54,7 +54,19 @@ export class DdbMdHelper {
       let href = anchor.getAttribute('href');
       if (href) {
         href = await this.urlToMdUrl(href, currentPageUrl);
-        href = encodeURI(href);
+
+        let separator = '#^';
+        if (!href.includes(separator)) {
+          separator = '#';
+        }
+        const split = href.split(separator);
+        split[0] = encodeURI(split[0]);
+        if (split[1]) {
+          // no need for full uri encoding
+          split[1] = split[1].replace(/ /g, '%20');
+        }
+        href = split.join(separator);
+
         anchor.setAttribute('href', href);
       }
 
@@ -90,7 +102,7 @@ export class DdbMdHelper {
           const sourceContent = await this.pageService.getPageHtmlElement(sourceUri, this.ddbHelper.getDefaultPageServiceOptions());
           if (this.ddbSourcesHelper.isTocPage(sourceContent)) {
             const pagesUris = this.ddbSourcesHelper.getSourcePageUrisFromSource(sourceUri, sourceContent);
-            const index = pagesUris.findIndex(url => url === fullUrl.split(/(\/)?#/)[0]);
+            const index = pagesUris.findIndex(url => url === fullUrl.split('#')[0]);
             if (index >= 0) {
               name = `${(index + 1).toString().padStart(2, '0')} ${name}`;
             } else if (this.unreachablePages.some(p => fullUrl.match(p))) {
@@ -103,10 +115,12 @@ export class DdbMdHelper {
           if (fullUrl.includes('#')) {
             const id = fullUrl.split('#')[1];
             const el = content.getElementById(id);
-            // TODO check why el could be undefined
-            if (el?.tagName.toLowerCase().match(/^h[1-5]$/)) {
-              const headingTitle = el?.innerText.trim();
-              name = `${name}#${encodeURIComponent(headingTitle)}`;
+            // sometimes links are broken, like the first link in the section https://www.dndbeyond.com/sources/dmg/creating-a-campaign#1CreateaHomeBase
+            if (!el) {
+              return fullUrl;
+            } else if (el.tagName.toLowerCase().match(/^h[1-5]$/)) {
+              const headingTitle = el.innerText.trim();
+              name = `${name}#${headingTitle}`;
             } else {
               name = `${name}#^${id}`;
             }

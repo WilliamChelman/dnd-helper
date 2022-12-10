@@ -105,12 +105,22 @@ export class DdbSourcesMdOutput extends DdbEntityMdOutput<Source | SourcePage> {
         aside.replaceWith(blockQuote);
       });
 
+      content.querySelectorAll('table caption[id]').forEach(caption => {
+        const id = caption.id;
+        caption.removeAttribute('id');
+        const table = caption.parentNode;
+        table.setAttribute('id', id);
+        caption.remove();
+        table.replaceWith(`<b>${caption.innerHTML}</b> ${table.outerHTML}`);
+      });
+
       content.querySelectorAll('[id]:not(h1,h2,h3,h4,h5)').forEach(blockWithId => {
         const id = blockWithId.id;
         blockWithId.replaceWith(`${blockWithId.outerHTML} ^${id}`);
       });
     }
 
+    // TODO link to death domain in 35 appendix in PHB, certainly because of ":"
     return super.getMarkdownContent({ ...entity, textContent: content.outerHTML });
   }
 }

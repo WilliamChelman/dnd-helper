@@ -1,5 +1,4 @@
 import { existsSync, promises as fs } from 'fs';
-import { minify } from 'html-minifier';
 import { Injectable } from 'injection-js';
 import path from 'path';
 import prettier from 'prettier';
@@ -15,9 +14,6 @@ export class CacheService implements ExitCleaner {
   async setInCache(url: string, content: string, options: CacheWriteOptions): Promise<void> {
     if (options.type === 'html') {
       content = prettier.format(content, { parser: 'html' });
-      content = minify(content, {
-        conservativeCollapse: true,
-      });
     }
     const filePath = this.getCachePath(url, options);
     const folderPath = path.dirname(filePath);

@@ -14,7 +14,7 @@ export class ConfigService {
       includeSourcePages: true,
     },
     markdownYaml: {
-      distPath: path.join(process.cwd(), 'vault'),
+      distPath: path.join(process.cwd(), '../dnd-parser-test/vault'),
       folderEntityTypeMap: {
         MagicItem: 'Magic Items',
         Monster: 'Monsters',
