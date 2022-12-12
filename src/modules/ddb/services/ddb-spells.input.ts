@@ -46,6 +46,9 @@ export class DdbSpellsInput extends DdbSearchableEntityInput<Spell> {
       link.setAttribute('href', fullHref);
     });
 
+    const componentsText = this.htmlElementHelper
+      .getCleanedInnerText(page, '.ddb-statblock-item-components .ddb-statblock-item-value')
+      .replace(/\s?\*/, '');
     const spell: Spell = {
       uri,
       type: 'Spell' as const,
@@ -55,7 +58,7 @@ export class DdbSpellsInput extends DdbSearchableEntityInput<Spell> {
       ),
       castingTime: castingTime,
       rangeAndArea: rangeAndArea,
-      components: this.htmlElementHelper.getCleanedInnerText(page, '.ddb-statblock-item-components .ddb-statblock-item-value'),
+      components: componentsText.split(',').map(c => c.trim()),
       duration: duration,
       school: this.htmlElementHelper.getCleanedInnerText(page, '.ddb-statblock-item-school .ddb-statblock-item-value'),
       attackOrSave: this.htmlElementHelper.getCleanedInnerText(page, '.ddb-statblock-item-attack-save .ddb-statblock-item-value'),

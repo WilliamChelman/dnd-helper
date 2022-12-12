@@ -86,11 +86,10 @@ export class FiveEDrsSpellsInput implements InputService<Spell> {
       metadata.components.verbal ? 'V' : undefined,
       metadata.components.somatic ? 'S' : undefined,
       metadata.components.material ? 'M' : undefined,
-    ]
-      .filter(notNil)
-      .join(', ');
+    ].filter(notNil);
+
     if (metadata.components.materials) {
-      spell.components += ` (${metadata.components.materials})`;
+      // spell.components += ` (${metadata.components.materials})`;
     }
     spell.duration = metadata.duration;
     spell.ritual = metadata.ritual;

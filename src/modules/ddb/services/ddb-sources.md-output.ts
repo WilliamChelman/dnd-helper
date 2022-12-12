@@ -1,7 +1,10 @@
+import { existsSync, promises as fs } from 'fs';
 import { Injectable } from 'injection-js';
 import { parse } from 'node-html-parser';
+import path from 'path';
+import consola from 'consola';
 
-import { ConfigService, EntityType, Source, SourcePage } from '../../core';
+import { ConfigService, Entity, EntityType, Source, SourcePage, UrlHelper } from '../../core';
 import { DdbEntityMdOutput } from './ddb-entity.md-output';
 import { DdbLinkHelper } from './ddb-link.helper';
 import { DdbMdHelper } from './ddb-md.helper';
@@ -10,12 +13,17 @@ import { DdbSourcesHelper } from './ddb-sources.helper';
 @Injectable()
 export class DdbSourcesMdOutput extends DdbEntityMdOutput<Source | SourcePage> {
   protected entityType: EntityType = 'Source';
+  private compendiumSelectors: { [uri: string]: string } = {
+    'https://www.dndbeyond.com/sources/phb/appendix-a-conditions': 'h3.compendium-hr',
+    'https://www.dndbeyond.com/sources/basic-rules/using-ability-scores': 'h5',
+  };
 
   constructor(
     protected configService: ConfigService,
     protected ddbMdHelper: DdbMdHelper,
     private ddbLinkHelper: DdbLinkHelper,
-    private ddvSourcesHelper: DdbSourcesHelper
+    private urlHelper: UrlHelper,
+    private ddbSourcesHelper: DdbSourcesHelper
   ) {
     super(configService, ddbMdHelper);
   }
@@ -32,13 +40,13 @@ export class DdbSourcesMdOutput extends DdbEntityMdOutput<Source | SourcePage> {
       }
       return filePath;
     }
-
+    await this.saveCompendiums(entity);
     return super.saveOne(entity);
   }
 
   protected async getMarkdownContent(entity: Source | SourcePage): Promise<string> {
     let content = parse(entity.textContent);
-    const isToc = this.ddvSourcesHelper.isTocPage(content);
+    const isToc = this.ddbSourcesHelper.isTocPage(content);
 
     //need to do it before fixing links
     let coverArt = content.querySelector('.view-cover-art a')?.getAttribute('href');
@@ -122,5 +130,27 @@ export class DdbSourcesMdOutput extends DdbEntityMdOutput<Source | SourcePage> {
 
     // TODO link to death domain in 35 appendix in PHB, certainly because of ":"
     return super.getMarkdownContent({ ...entity, textContent: content.outerHTML });
+  }
+
+  private async saveCompendiums(entity: Entity): Promise<void> {
+    const selector = this.compendiumSelectors[entity.uri];
+    if (!selector) return;
+    const content = parse(entity.textContent);
+    for (const compendium of content.querySelectorAll(selector)) {
+      const name = this.urlHelper.sanitizeFilename(compendium.innerText.trim());
+      const uri = await this.ddbMdHelper.urlToMdUrl(`#${compendium.id}`, entity.uri);
+      const content = `![[${uri}]]`;
+      const filePath = path.join(this.getBasePath(), 'Compendiums', name + '.md');
+
+      if (!this.configService.config.force && existsSync(filePath)) {
+        consola.log(`Skipping ${entity.name} as ${filePath} already exists`);
+        continue;
+      }
+      consola.log(`Writing ${entity.name} in ${filePath}`);
+
+      const folderPath = path.dirname(filePath);
+      await fs.mkdir(folderPath, { recursive: true });
+      await fs.writeFile(filePath, content, 'utf8');
+    }
   }
 }

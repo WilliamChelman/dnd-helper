@@ -14,4 +14,9 @@ export abstract class FiveEDrsEntityMdOutput<T extends Entity> extends DefaultMd
   canHandle(entity: T): number | undefined {
     return entity.dataSource === '5e-drs' && this.entityType === entity.type ? 10 : undefined;
   }
+
+  protected async getFilePath(entity: T, basePath: string): Promise<string> {
+    let filePath = await super.getFilePath(entity, basePath);
+    return filePath.replace('.md', ' (FR).md');
+  }
 }

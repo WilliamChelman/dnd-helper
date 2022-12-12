@@ -10,8 +10,9 @@ export interface OldItem extends OldEntity {
 
 export interface Item extends Entity {
   type: 'Item';
+  itemType?: string;
   cost?: string;
   weight?: string;
   tags?: string[];
-  notes?: string[];
+  source?: string;
 }

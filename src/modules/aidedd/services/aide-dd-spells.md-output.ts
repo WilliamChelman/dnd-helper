@@ -1,5 +1,4 @@
 import { Injectable } from 'injection-js';
-import { NodeHtmlMarkdown } from 'node-html-markdown';
 import parse from 'node-html-parser';
 
 import { ConfigService, EntityType, Spell } from '../../core';
@@ -19,6 +18,6 @@ export class AideDdSpellsMdOutput extends AideDdEntityMdOutput<Spell> {
       anchor.replaceWith(parse(`<span>${anchor.innerText}</span>`));
     });
 
-    return NodeHtmlMarkdown.translate(content.outerHTML, { blockElements: ['br'] });
+    return super.getMarkdownContent({ ...entity, textContent: content.outerHTML });
   }
 }

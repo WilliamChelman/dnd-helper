@@ -2,12 +2,23 @@ import { Injectable } from 'injection-js';
 import { parse } from 'node-html-parser';
 
 import { ConfigService, EntityType, Spell } from '../../core';
+import { AdditionalTagFields } from '../../markdown-yaml';
 import { DdbEntityMdOutput } from './ddb-entity.md-output';
 import { DdbMdHelper } from './ddb-md.helper';
 
 @Injectable()
 export class DdbSpellsMdOutput extends DdbEntityMdOutput<Spell> {
   protected entityType: EntityType = 'Spell';
+  protected additionalTagFields: AdditionalTagFields<Spell>[] = [
+    'ritual',
+    'level',
+    'school',
+    'castingTime',
+    'components',
+    'concentration',
+    'source',
+    'spellLists',
+  ];
 
   constructor(configService: ConfigService, ddbMdHelper: DdbMdHelper) {
     super(configService, ddbMdHelper);

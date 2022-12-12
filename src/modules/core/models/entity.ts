@@ -27,6 +27,7 @@ export interface Entity {
   dataSource: DataSource;
   lang: string;
   textContent: string;
+  tags?: string[];
 }
 
 export type DataSource = 'DDB' | '5e-drs' | 'aide-dd';

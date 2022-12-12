@@ -2,7 +2,7 @@ import consola from 'consola';
 import { Injectable } from 'injection-js';
 import { HTMLElement } from 'node-html-parser';
 
-import { EntityType, Feat, HtmlElementHelper, LabelsHelper, NewPageService } from '../../core';
+import { AbilityScores, EntityType, Feat, HtmlElementHelper, LabelsHelper, NewPageService } from '../../core';
 import { DdbSearchableEntityInput } from './ddb-searchable-entity.input';
 import { DdbHelper } from './ddb.helper';
 
@@ -28,6 +28,12 @@ export class DdbFeatsInput extends DdbSearchableEntityInput<Feat> {
       type: 'Feat' as const,
       name: this.labelsHelper.getName(this.htmlElementHelper.getCleanedInnerText(page, 'header .page-title'))!,
       textContent: content.outerHTML,
+      tags: this.htmlElementHelper.getAllCleanedInnerText(page, '.tags .tag'),
+      halfFeat: Object.keys(AbilityScores).filter(label => {
+        const regexp = new RegExp(`increase.*${label.toLowerCase()}`, 'i');
+        return content.innerText.toLowerCase().match(regexp);
+      }),
+      source: this.htmlElementHelper.getCleanedText(content.querySelector('.source-description')?.innerText.split(',')?.[0]),
       dataSource: 'DDB',
       lang: 'EN',
     };

@@ -1,0 +1,5 @@
+- glossary conditions
+- glossary skills
+- tags in camelCase
+- items metadata
+- magic items metadata

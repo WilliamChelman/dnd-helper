@@ -2,12 +2,14 @@ import { Injectable } from 'injection-js';
 import { parse } from 'node-html-parser';
 
 import { ConfigService, EntityType, Item } from '../../core';
+import { AdditionalTagFields } from '../../markdown-yaml';
 import { DdbEntityMdOutput } from './ddb-entity.md-output';
 import { DdbMdHelper } from './ddb-md.helper';
 
 @Injectable()
 export class DdbItemsMdOutput extends DdbEntityMdOutput<Item> {
   protected entityType: EntityType = 'Item';
+  protected additionalTagFields: AdditionalTagFields<Item>[] = [['itemType', 'type'], 'source'];
 
   constructor(configService: ConfigService, ddbMdHelper: DdbMdHelper) {
     super(configService, ddbMdHelper);

@@ -2,14 +2,19 @@ import consola from 'consola';
 import { Injectable } from 'injection-js';
 import { HTMLElement } from 'node-html-parser';
 
-import { DataSource, InputService, LabelsHelper, Monster, NewPageService, notNil } from '../../core';
+import { DataSource, HtmlElementHelper, InputService, LabelsHelper, Monster, NewPageService, notNil } from '../../core';
 import { DdbHelper } from './ddb.helper';
 
 @Injectable()
 export class DdbMonstersInput implements InputService<Monster> {
   sourceId: DataSource = 'DDB';
 
-  constructor(private pageService: NewPageService, private labelsHelper: LabelsHelper, private ddbHelper: DdbHelper) {}
+  constructor(
+    private pageService: NewPageService,
+    private labelsHelper: LabelsHelper,
+    private ddbHelper: DdbHelper,
+    private htmlElementHelper: HtmlElementHelper
+  ) {}
 
   async *getAll(): AsyncGenerator<Monster> {
     const partialMonsters = await this.getPartialMonsters();
@@ -53,7 +58,7 @@ export class DdbMonstersInput implements InputService<Monster> {
           isLegacy,
           uri: link,
           type: 'Monster' as const,
-          challenge: block.querySelector('.monster-challenge')?.innerText.trim(),
+          challenge: this.htmlElementHelper.getCleanedInnerText(block, '.monster-challenge') ?? '?',
           source: this.labelsHelper.getSource(block.querySelector('.source')?.innerText.trim()),
           monsterType: block.querySelector('.monster-type .type')?.innerText.trim(),
           subtype: subtype ? capitalizeFirstLetter(subtype) : undefined,

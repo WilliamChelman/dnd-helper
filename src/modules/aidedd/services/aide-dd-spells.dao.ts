@@ -95,7 +95,7 @@ export class AideDdSpellsInput implements InputService<Spell> {
         spell.duration = value;
         spell.concentration = spell.duration.includes('concentration');
       } else if (el.innerText.includes('Composantes')) {
-        spell.components = value;
+        spell.components = value.split(',').map(c => c.trim());
       }
     });
 

@@ -2,16 +2,18 @@ import consola from 'consola';
 import { existsSync, promises as fs } from 'fs';
 import { Injectable } from 'injection-js';
 import { NodeHtmlMarkdown } from 'node-html-markdown';
+import { camelCase } from 'lodash';
 import path from 'path';
 import prettier from 'prettier';
 import sanitizeFilename from 'sanitize-filename';
 import yaml from 'yaml';
 
-import { ConfigService, Entity, OutputService } from '../../core';
+import { ConfigService, Entity, manyToArray, OutputService } from '../../core';
 
 @Injectable()
 export abstract class DefaultMdOutput<T extends Entity = Entity> implements OutputService<T> {
   format: string = 'md';
+  protected additionalTagFields: AdditionalTagFields<T>[] = [];
 
   constructor(protected configService: ConfigService) {}
 
@@ -36,6 +38,7 @@ export abstract class DefaultMdOutput<T extends Entity = Entity> implements Outp
 
     const yamlPart = yaml.stringify({
       ...entity,
+      tags: this.getTags(entity),
       textContent: undefined,
     });
     const lines = ['---', yamlPart, '---', await this.getMarkdownContent(entity)];
@@ -69,4 +72,33 @@ export abstract class DefaultMdOutput<T extends Entity = Entity> implements Outp
   protected async getMarkdownContent(entity: T): Promise<string> {
     return NodeHtmlMarkdown.translate(entity.textContent, { blockElements: ['br'] });
   }
+
+  protected getTags(entity: T): string[] {
+    const tags = entity.tags?.map(tag => `${camelCase(entity.type)}/other/${camelCase(tag)}`) ?? [];
+    tags.push(camelCase(entity.type));
+
+    this.additionalTagFields.forEach(field => {
+      const [actualField, renamedField] = manyToArray(field);
+      manyToArray(entity[actualField as keyof T]).forEach((value: any) => {
+        value = value.toString();
+        if (!value.trim()) return;
+        const parts = [entity.type, renamedField ?? actualField, value] as string[];
+
+        tags.push(
+          parts
+            .map(part =>
+              part
+                .split('/')
+                .map(p => camelCase(p))
+                .join('-')
+            )
+            .join('/')
+        );
+      });
+    });
+
+    return tags;
+  }
 }
+
+export type AdditionalTagFields<T> = keyof T | [keyof T, string];

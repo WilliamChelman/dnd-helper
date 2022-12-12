@@ -1,3 +1,5 @@
+export * from './ability-scores';
+export * from './classes';
 export * from './entity-type';
 export * from './entity';
 export * from './feat';

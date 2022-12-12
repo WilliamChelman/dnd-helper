@@ -27,7 +27,7 @@ export interface Spell extends Entity {
   castingTime?: string;
   rangeAndArea?: string;
   duration?: string;
-  components?: string;
+  components?: string[];
   source?: string;
   sourceDetails?: string;
   spellLists?: string[];

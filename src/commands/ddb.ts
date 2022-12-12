@@ -26,10 +26,11 @@ hello world! (./src/commands/hello/world.ts)
     const inputs = injector.get(InputService) as InputService[];
     const outputs = injector.get(OutputService) as OutputService[];
     const cleaners = injector.get(ExitCleaner) as ExitCleaner[];
+    const types = config.ddb?.types ?? [];
 
     try {
       for (const input of inputs) {
-        if (input.sourceId !== sourceId || !config.ddb?.types?.some(type => input.canHandle(type))) {
+        if (input.sourceId !== sourceId || !(types.length ? types.some(type => input.canHandle(type)) : true)) {
           continue;
         }
         for await (const entity of input.getAll()) {

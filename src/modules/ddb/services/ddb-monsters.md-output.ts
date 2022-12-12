@@ -2,12 +2,22 @@ import { Injectable } from 'injection-js';
 import { parse } from 'node-html-parser';
 
 import { ConfigService, EntityType, Monster } from '../../core';
+import { AdditionalTagFields } from '../../markdown-yaml';
 import { DdbEntityMdOutput } from './ddb-entity.md-output';
 import { DdbMdHelper } from './ddb-md.helper';
 
 @Injectable()
 export class DdbMonstersMdOutput extends DdbEntityMdOutput<Monster> {
   protected entityType: EntityType = 'Monster';
+  protected additionalTagFields: AdditionalTagFields<Monster>[] = [
+    ['monsterType', 'type'],
+    ['challenge', 'cr'],
+    ['isLegendary', 'legendary'],
+    ['isMythic', 'mythic'],
+    ['hasLair', 'lair'],
+    'environment',
+    'source',
+  ];
 
   constructor(protected configService: ConfigService, protected ddbMdHelper: DdbMdHelper) {
     super(configService, ddbMdHelper);
