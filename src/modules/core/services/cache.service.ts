@@ -35,6 +35,13 @@ export class CacheService implements ExitCleaner {
     return undefined;
   }
 
+  async removeFromCache(url: string, options: CacheOptions): Promise<void> {
+    const filePath = this.getCachePath(url, options);
+    if (existsSync(filePath)) {
+      await fs.rm(filePath);
+    }
+  }
+
   async clean(): Promise<void> {
     let tmpCachePath = this.configService.config.cachePath;
     tmpCachePath = path.join(tmpCachePath, '.tmp');

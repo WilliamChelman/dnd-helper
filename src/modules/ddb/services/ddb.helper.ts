@@ -66,6 +66,9 @@ export class DdbHelper {
       validator: async page => {
         return !page.querySelector('title')?.innerText.includes('Access to this page has been denied.');
       },
+      cacheValidator: async el => {
+        return !el.querySelector('.error-page-title');
+      },
       cleaner: el => {
         el.querySelectorAll(
           'head,script,style,iframe,noscript,#mega-menu-target,header.main,.site-bar,.ddb-site-banner,#footer,.ad-container,.homebrew-comments'
@@ -75,17 +78,19 @@ export class DdbHelper {
   }
 
   getType(uri: string): EntityType | undefined {
+    if (!uri.startsWith(this.basePath)) return undefined;
     uri = uri.replace(/[#\?].*/, '');
-    if (uri.includes('/magic-items/')) return 'MagicItem';
-    if (uri.includes('/spells/')) return 'Spell';
-    if (uri.includes('/monsters/')) return 'Monster';
-    if (uri.match(/\/sources\/[\w-]+$/)) return 'Source';
-    if (uri.match(/\/sources\//)) return 'SourcePage';
-    if (uri.match(/\/equipment\//)) return 'Item';
-    if (uri.match(/\/feats\//)) return 'Feat';
-    if (uri.match(/\/backgrounds\//)) return 'Background';
-    if (uri.match(/\/classes\//)) return 'Class';
-    if (uri.match(/\/subclasses\//)) return 'Subclass';
+    const { pathname } = ufo.parseURL(uri);
+    if (pathname.startsWith('/magic-items/')) return 'MagicItem';
+    if (pathname.startsWith('/spells/')) return 'Spell';
+    if (pathname.startsWith('/monsters/')) return 'Monster';
+    if (pathname.match(/^\/sources\/[\w-]+$/)) return 'Source';
+    if (pathname.match(/^\/sources\//)) return 'SourcePage';
+    if (pathname.match(/^\/equipment\//)) return 'Item';
+    if (pathname.match(/^\/feats\//)) return 'Feat';
+    if (pathname.match(/^\/backgrounds\//)) return 'Background';
+    if (pathname.match(/^\/classes\//)) return 'Class';
+    if (pathname.match(/^\/subclasses\//)) return 'Subclass';
 
     return undefined;
   }

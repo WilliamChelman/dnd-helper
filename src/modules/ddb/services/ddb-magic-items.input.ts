@@ -2,7 +2,8 @@ import consola from 'consola';
 import { Injectable } from 'injection-js';
 import { HTMLElement } from 'node-html-parser';
 
-import { ClassType, EntityType, HtmlElementHelper, LabelsHelper, MagicItem, NewPageService } from '../../core';
+import { ClassType, EntityType, HtmlElementHelper, LabelsHelper, MagicItem, Many, manyToArray, NewPageService } from '../../core';
+import { DdbLinkHelper } from './ddb-link.helper';
 import { DdbSearchableEntityInput } from './ddb-searchable-entity.input';
 import { DdbHelper } from './ddb.helper';
 
@@ -12,11 +13,17 @@ export class DdbMagicItemsInput extends DdbSearchableEntityInput<MagicItem> {
   protected searchPagePath: string = 'magic-items';
   protected linkSelector: string = 'ul.rpgmagic-item-listing > div a';
 
-  constructor(pageService: NewPageService, htmlElementHelper: HtmlElementHelper, ddbHelper: DdbHelper, labelsHelper: LabelsHelper) {
+  constructor(
+    pageService: NewPageService,
+    htmlElementHelper: HtmlElementHelper,
+    ddbHelper: DdbHelper,
+    labelsHelper: LabelsHelper,
+    private linkHelper: DdbLinkHelper
+  ) {
     super(pageService, htmlElementHelper, ddbHelper, labelsHelper);
   }
 
-  protected async getEntityFromDetailPage(uri: string, page: HTMLElement): Promise<MagicItem> {
+  protected async getEntityFromDetailPage(uri: string, page: HTMLElement, uris: string[]): Promise<Many<MagicItem>> {
     const content = page.querySelector('.more-info');
     if (!content) {
       consola.error(uri);
@@ -34,7 +41,8 @@ export class DdbMagicItemsInput extends DdbSearchableEntityInput<MagicItem> {
     const [type, subtype] = this.getParts(typePart);
     const [rarity, attunement] = this.getParts(metaPart);
 
-    const magicItem: MagicItem = {
+    const items: MagicItem[] = [];
+    items.push({
       uri,
       type: 'MagicItem' as const,
       name: this.labelsHelper.getName(this.htmlElementHelper.getCleanedInnerText(page, 'header .page-title'))!,
@@ -49,9 +57,16 @@ export class DdbMagicItemsInput extends DdbSearchableEntityInput<MagicItem> {
         .sort(),
       dataSource: 'DDB',
       lang: 'EN',
-    };
+    });
 
-    return magicItem;
+    for (const anchor of content.querySelectorAll('a[href]')) {
+      const variantUri = this.linkHelper.getAbsoluteUrl(anchor.getAttribute('href')!, uri);
+      if (!variantUri.startsWith('https://www.dndbeyond.com/magic-items/') || uris.includes(variantUri)) continue;
+      const variantPage = await this.pageService.getPageHtmlElement(variantUri, this.ddbHelper.getDefaultPageServiceOptions());
+      items.push(...manyToArray(await this.getEntityFromDetailPage(variantUri, variantPage, [...uris, variantUri])));
+    }
+
+    return items;
   }
 
   private getParts(text: string): [string, string | undefined] {

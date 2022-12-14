@@ -23,14 +23,21 @@ export class NewPageService implements ExitCleaner {
     if (!options.noCache) {
       const cache = await this.getFromCache(url, options);
       if (cache) {
-        return parse(cache);
+        const page = parse(cache);
+        if (!options.cacheValidator || (await options.cacheValidator(page))) {
+          return page;
+        } else {
+          this.cacheService.removeFromCache(url, this.getCacheOptions(options));
+        }
       }
     }
     consola.log(`Fetching live page ${url}`);
 
     const page = await this.getPage(url, options);
 
-    await this.setInCache(url, page, options);
+    if (!options.cacheValidator || (await options.cacheValidator(page))) {
+      await this.setInCache(url, page, options);
+    }
 
     return page;
   }
@@ -138,6 +145,7 @@ export interface NewPageServiceOptions {
   cookies?: NewPageCookies;
   headers?: { [key: string]: string };
   validator?: (page: HTMLElement) => Promise<boolean>;
+  cacheValidator?: (page: HTMLElement) => Promise<boolean>;
   cleaner?: (el: HTMLElement) => void;
 }
 
