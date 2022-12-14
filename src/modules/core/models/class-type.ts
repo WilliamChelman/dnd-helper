@@ -1,6 +1,6 @@
-export enum Classes {
+export enum ClassType {
   ARTIFICER = 'Artificer',
-  BLODD_HUNTER = 'Blood Hunter',
+  BLOOD_HUNTER = 'Blood Hunter',
   BARBARIAN = 'Barbarian',
   BARD = 'Bard',
   CLERIC = 'Cleric',

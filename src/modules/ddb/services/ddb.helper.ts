@@ -83,6 +83,9 @@ export class DdbHelper {
     if (uri.match(/\/sources\//)) return 'SourcePage';
     if (uri.match(/\/equipment\//)) return 'Item';
     if (uri.match(/\/feats\//)) return 'Feat';
+    if (uri.match(/\/backgrounds\//)) return 'Background';
+    if (uri.match(/\/classes\//)) return 'Class';
+    if (uri.match(/\/subclasses\//)) return 'Subclass';
 
     return undefined;
   }

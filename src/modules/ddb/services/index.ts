@@ -1,3 +1,5 @@
+export * from './ddb-backgrounds.input';
+export * from './ddb-backgrounds.md-output';
 export * from './ddb-feats.input';
 export * from './ddb-feats.md-output';
 export * from './ddb-items.input';
@@ -8,6 +10,8 @@ export * from './ddb-magic-items.md-output';
 export * from './ddb-md.helper';
 export * from './ddb-monsters.input';
 export * from './ddb-monsters.md-output';
+export * from './ddb-player-classes.input';
+export * from './ddb-player-classes.md-output';
 export * from './ddb-sources.helper';
 export * from './ddb-sources.input';
 export * from './ddb-sources.md-output';

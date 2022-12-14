@@ -23,6 +23,9 @@ export class ConfigService {
         Spell: 'Spells',
         Item: 'Items',
         Feat: 'Feats',
+        Background: 'Backgrounds',
+        Class: 'Classes',
+        Subclass: 'Subclasses',
       },
     },
   };

@@ -1,1 +1,11 @@
-export type EntityType = 'MagicItem' | 'Spell' | 'Monster' | 'Source' | 'SourcePage' | 'Item' | 'Feat';
+export type EntityType =
+  | 'Background'
+  | 'Class'
+  | 'Feat'
+  | 'Item'
+  | 'MagicItem'
+  | 'Monster'
+  | 'Source'
+  | 'SourcePage'
+  | 'Spell'
+  | 'Subclass';

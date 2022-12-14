@@ -84,8 +84,8 @@ export class DdbMdHelper {
 
     if (type) {
       const content = await this.pageService.getPageHtmlElement(fullUrl, this.ddbHelper.getDefaultPageServiceOptions());
-
       let name = this.htmlElementHelper.getCleanedInnerText(content, '.page-title') ?? fullUrl;
+
       if (
         type === 'Monster' &&
         content.querySelectorAll('header.page-header .badge-label').some(el => el.innerText.toLowerCase().includes('legacy'))
@@ -112,24 +112,15 @@ export class DdbMdHelper {
               throw new Error('Failed to create link to source page');
             }
           }
-          if (fullUrl.includes('#')) {
-            const id = fullUrl.split('#')[1];
-            const el = content.getElementById(id);
-            // sometimes links are broken, like the first link in the section https://www.dndbeyond.com/sources/dmg/creating-a-campaign#1CreateaHomeBase
-            if (!el) {
-              return fullUrl;
-            } else if (el.tagName.toLowerCase().match(/^h[1-5]$/)) {
-              const headingTitle = el.innerText.trim();
-              name = `${name}#${headingTitle}`;
-            } else {
-              name = `${name}#^${id}`;
-            }
-          }
+
+          name = this.adaptHashes(fullUrl, name, content);
           const sourcePath = await this.urlToMdUrl(sourceUri);
           return path.join(sourcePath, '..', name);
         }
       } else {
         const folder = this.configService.config.markdownYaml?.folderEntityTypeMap[type];
+        name = this.adaptHashes(fullUrl, name, content);
+
         if (folder) {
           if (type === 'Source') {
             return path.join(folder, name, `00 ${name}`);
@@ -154,6 +145,21 @@ export class DdbMdHelper {
       const parentAnchor = img.closest('a');
       parentAnchor?.replaceWith(img);
     });
+  }
+
+  private adaptHashes(fullUrl: string, name: string, content: HTMLElement): string {
+    if (!fullUrl.includes('#')) return name;
+
+    const id = fullUrl.split('#')[1];
+    const el = content.getElementById(id);
+    // sometimes links are broken, like the first link in the section https://www.dndbeyond.com/sources/dmg/creating-a-campaign#1CreateaHomeBase
+    if (!el) {
+      return name;
+    } else if (el.tagName.toLowerCase().match(/^h[1-5]$/)) {
+      const headingTitle = el.innerText.trim();
+      return `${name}#${headingTitle}`;
+    }
+    return `${name}#^${id}`;
   }
 }
 

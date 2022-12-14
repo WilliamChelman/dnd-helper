@@ -97,7 +97,7 @@ export abstract class DefaultMdOutput<T extends Entity = Entity> implements Outp
       });
     });
 
-    return tags;
+    return tags.sort();
   }
 }
 
