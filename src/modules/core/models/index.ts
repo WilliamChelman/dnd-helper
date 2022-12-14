@@ -10,4 +10,5 @@ export * from './monster';
 export * from './player-class';
 export * from './source-page';
 export * from './source';
+export * from './species';
 export * from './spell';

@@ -1,8 +1,8 @@
 // import 'reflect-metadata';
 import { Injector, ReflectiveInjector } from 'injection-js';
 
-import { FiveEDrsHelper, FiveEDrsMonstersDao, FiveEDrsSpellsInput, FiveEDrsSpellsMdOutput } from './5e-drs';
-import { AideDdHelper, AideDdMonstersDao, AideDdSpellsInput } from './aidedd';
+import { FiveEDrsHelper, FiveEDrsSpellsInput, FiveEDrsSpellsMdOutput } from './5e-drs';
+import { AideDdHelper, AideDdSpellsInput } from './aidedd';
 import { AideDdSpellsMdOutput } from './aidedd/services/aide-dd-spells.md-output';
 import {
   AssetsService,
@@ -12,10 +12,8 @@ import {
   EntityDao,
   HtmlElementHelper,
   LabelsHelper,
-  LoggerFactory,
   NewPageService,
   PageServiceFactory,
-  PrefixService,
   provideAsInputService,
   provideAsOutputService,
   provideExitCleaner,
@@ -40,11 +38,11 @@ import {
   DdbSourcesHelper,
   DdbSourcesInput,
   DdbSourcesMdOutput,
+  DdbSpeciesInput,
+  DdbSpeciesMdOutput,
   DdbSpellsInput,
   DdbSpellsMdOutput,
 } from './ddb';
-import { NotionHelper, NotionItemsService, NotionSpellsDao } from './notion';
-import { NotionMonstersDao } from './notion/services/notion-monsters.dao';
 
 export function getInjector() {
   return ReflectiveInjector.resolveAndCreate([
@@ -69,6 +67,7 @@ export function getInjector() {
     provideAsInputService(DdbMonstersInput),
     provideAsInputService(DdbPlayerClassesInput),
     provideAsInputService(DdbSourcesInput),
+    provideAsInputService(DdbSpeciesInput),
     provideAsInputService(DdbSpellsInput),
     provideAsInputService(FiveEDrsSpellsInput),
     provideAsOutputService(AideDdSpellsMdOutput),
@@ -79,6 +78,7 @@ export function getInjector() {
     provideAsOutputService(DdbMonstersMdOutput),
     provideAsOutputService(DdbPlayerClassesMdOutput),
     provideAsOutputService(DdbSourcesMdOutput),
+    provideAsOutputService(DdbSpeciesMdOutput),
     provideAsOutputService(DdbSpellsMdOutput),
     provideAsOutputService(FiveEDrsSpellsMdOutput),
     provideExitCleaner(CacheService),

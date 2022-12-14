@@ -91,6 +91,7 @@ export class DdbHelper {
     if (pathname.match(/^\/backgrounds\//)) return 'Background';
     if (pathname.match(/^\/classes\//)) return 'Class';
     if (pathname.match(/^\/subclasses\//)) return 'Subclass';
+    if (pathname.match(/^\/races\//)) return 'Species';
 
     return undefined;
   }

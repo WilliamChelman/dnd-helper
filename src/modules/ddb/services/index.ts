@@ -15,6 +15,8 @@ export * from './ddb-player-classes.md-output';
 export * from './ddb-sources.helper';
 export * from './ddb-sources.input';
 export * from './ddb-sources.md-output';
+export * from './ddb-species.input';
+export * from './ddb-species.md-output';
 export * from './ddb-spells.input';
 export * from './ddb-spells.md-output';
 export * from './ddb.helper';

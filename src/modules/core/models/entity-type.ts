@@ -7,5 +7,6 @@ export type EntityType =
   | 'Monster'
   | 'Source'
   | 'SourcePage'
+  | 'Species'
   | 'Spell'
   | 'Subclass';

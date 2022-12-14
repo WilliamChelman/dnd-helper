@@ -26,6 +26,7 @@ export class ConfigService {
         Background: 'Backgrounds',
         Class: 'Classes',
         Subclass: 'Subclasses',
+        Species: 'Species',
       },
     },
   };

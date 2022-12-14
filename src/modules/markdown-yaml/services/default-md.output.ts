@@ -74,7 +74,7 @@ export abstract class DefaultMdOutput<T extends Entity = Entity> implements Outp
   }
 
   protected getTags(entity: T): string[] {
-    const tags = entity.tags?.map(tag => `${camelCase(entity.type)}/other/${camelCase(tag)}`) ?? [];
+    const tags = entity.tags?.map(tag => `${camelCase(entity.type)}/tags/${camelCase(tag)}`) ?? [];
     tags.push(camelCase(entity.type));
 
     this.additionalTagFields.forEach(field => {

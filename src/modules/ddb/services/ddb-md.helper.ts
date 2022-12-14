@@ -86,7 +86,9 @@ export class DdbMdHelper {
       const content = await this.pageService.getPageHtmlElement(fullUrl, this.ddbHelper.getDefaultPageServiceOptions());
       let name = this.htmlElementHelper.getCleanedInnerText(content, '.page-title') ?? fullUrl;
 
-      if (
+      if (type === 'Species' && content.querySelector('h1 #legacy-badge')) {
+        name = `${name} (Legacy)`;
+      } else if (
         type === 'Monster' &&
         content.querySelectorAll('header.page-header .badge-label').some(el => el.innerText.toLowerCase().includes('legacy'))
       ) {
