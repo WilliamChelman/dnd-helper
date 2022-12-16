@@ -34,6 +34,11 @@ export abstract class DefaultMdOutput<T extends Entity = Entity> implements Outp
       consola.log(`Skipping ${entity.name} as ${filePath} already exists`);
       return filePath;
     }
+    if (!(await this.canBeSaved(entity))) {
+      consola.log(`Skipping ${entity.name} because it cannot be saved`);
+      return filePath;
+    }
+
     consola.log(`Writing ${entity.name} in ${filePath}`);
 
     const yamlPart = yaml.stringify({
@@ -53,11 +58,19 @@ export abstract class DefaultMdOutput<T extends Entity = Entity> implements Outp
   }
 
   protected async getFilePath(entity: T, basePath: string): Promise<string> {
+    return path.join(await this.getFolderPath(entity, basePath), sanitizeFilename(entity.name, { replacement: ' ' })) + '.md';
+  }
+
+  protected async getFolderPath(entity: T, basePath: string): Promise<string> {
     const folder = this.configService.config.markdownYaml?.folderEntityTypeMap[entity.type];
     if (!folder) {
       throw new Error(`Failed to find related folder for entity type ${entity.type}`);
     }
-    return path.join(basePath, folder, sanitizeFilename(entity.name, { replacement: ' ' })) + '.md';
+    return path.join(basePath, folder);
+  }
+
+  protected async canBeSaved(entity: T): Promise<boolean> {
+    return true;
   }
 
   protected getBasePath(): string {
@@ -80,6 +93,7 @@ export abstract class DefaultMdOutput<T extends Entity = Entity> implements Outp
     this.additionalTagFields.forEach(field => {
       const [actualField, renamedField] = manyToArray(field);
       manyToArray(entity[actualField as keyof T]).forEach((value: any) => {
+        if (typeof value === 'boolean') value = value ? 'yes' : 'no';
         value = value.toString();
         if (!value.trim()) return;
         const parts = [entity.type, renamedField ?? actualField, value] as string[];

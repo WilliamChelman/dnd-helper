@@ -2,18 +2,25 @@ import consola from 'consola';
 import { Injectable } from 'injection-js';
 import { HTMLElement } from 'node-html-parser';
 
-import { AbilityScores, EntityType, Feat, HtmlElementHelper, LabelsHelper, NewPageService } from '../../core';
-import { DdbSearchableEntityInput } from './ddb-searchable-entity.input';
+import { AbilityScores, ConfigService, EntityType, Feat, HtmlElementHelper, LabelsHelper, NewPageService } from '../../core';
+import { DdbSearchableEntityInput, SearchType } from './ddb-searchable-entity.input';
 import { DdbHelper } from './ddb.helper';
 
 @Injectable()
 export class DdbFeatsInput extends DdbSearchableEntityInput<Feat> {
   protected entityType: EntityType = 'Feat';
-  protected searchPagePath: string = 'feats';
+  protected searchPagePath: string = 'https://www.dndbeyond.com/feats';
+  protected searchType: SearchType = 'onePager';
   protected linkSelector: string = 'ul.listing .list-row-name-primary a';
 
-  constructor(pageService: NewPageService, htmlElementHelper: HtmlElementHelper, ddbHelper: DdbHelper, labelsHelper: LabelsHelper) {
-    super(pageService, htmlElementHelper, ddbHelper, labelsHelper);
+  constructor(
+    pageService: NewPageService,
+    htmlElementHelper: HtmlElementHelper,
+    ddbHelper: DdbHelper,
+    labelsHelper: LabelsHelper,
+    configService: ConfigService
+  ) {
+    super(pageService, htmlElementHelper, ddbHelper, labelsHelper, configService);
   }
 
   protected async getEntityFromDetailPage(uri: string, page: HTMLElement): Promise<Feat> {
@@ -34,8 +41,8 @@ export class DdbFeatsInput extends DdbSearchableEntityInput<Feat> {
         return content.innerText.toLowerCase().match(regexp);
       }),
       source: this.htmlElementHelper.getCleanedText(content.querySelector('.source-description')?.innerText.split(',')?.[0]),
-      dataSource: 'DDB',
-      lang: 'EN',
+      dataSource: 'ddb',
+      lang: 'en',
     };
 
     return item;

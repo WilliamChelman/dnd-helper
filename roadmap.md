@@ -1,0 +1,5 @@
+- better monster pages
+- better inline monsters
+- obsidian getting started doc
+- vehicles
+- decimal cr?

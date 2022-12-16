@@ -1,5 +1,4 @@
 import { Injectable } from 'injection-js';
-import { NodeHtmlMarkdown } from 'node-html-markdown';
 import parse from 'node-html-parser';
 
 import { ConfigService, EntityType, Spell } from '../../core';
@@ -20,6 +19,7 @@ export class FiveEDrsSpellsMdOutput extends FiveEDrsEntityMdOutput<Spell> {
       const href = anchor.getAttribute('href');
       anchor.setAttribute('href', new URL(href as string, this.basePath).toString());
     });
-    return NodeHtmlMarkdown.translate(content.outerHTML, { blockElements: ['br'] });
+
+    return super.getMarkdownContent({ ...entity, textContent: content.outerHTML });
   }
 }

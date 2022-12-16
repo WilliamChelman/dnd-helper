@@ -23,23 +23,33 @@ export class DdbMdHelper {
     private htmlElementHelper: HtmlElementHelper,
     private urlHelper: UrlHelper
   ) {
-    this.urlToMdUrl = memoize(this.urlToMdUrl.bind(this), (url, currentUrl) => [url, currentUrl].join('@@'));
+    this.uriToMdUrl = memoize(this.uriToMdUrl.bind(this), (url, currentUrl) => [url, currentUrl].join('@@'));
   }
 
   async applyFixes(options: DdbMdFixes): Promise<void> {
-    options = defu(options, { adaptLinks: true, fixImages: true, keepImages: 'first' } as Partial<DdbMdFixes>);
+    options = defu(options, {
+      adaptLinks: true,
+      fixImages: true,
+      keepImages: 'first',
+      fixMissingWhitespace: true,
+      inlineTagsContent: true,
+    } as Partial<DdbMdFixes>);
     if (options.keepImages) this.keepOnlyOneImage(options.content, options.keepImages);
     if (options.fixImages) this.fixImages(options.content);
     if (options.adaptLinks) await this.adaptLinks(options.content, options.currentPageUrl);
+    if (options.fixMissingWhitespace) this.fixMissingWhitespace(options.content);
+    if (options.inlineTagsContent) this.inlineTagsContent(options.content);
   }
 
-  keepOnlyOneImage(content: HTMLElement, type: 'first' | 'last' | 'all'): void {
+  keepOnlyOneImage(content: HTMLElement, type: DdbMdFixes['keepImages']): void {
     if (type === 'all') return;
     content.querySelectorAll('img').forEach((img, index, arr) => {
-      if (type === 'first' && index > 0) {
-        img.parentNode.remove();
+      if (type === 'none') {
+        img.remove();
+      } else if (type === 'first' && index > 0) {
+        img.remove();
       } else if (type === 'last' && index < arr.length - 1) {
-        img.parentNode.remove();
+        img.remove();
       }
     });
   }
@@ -53,33 +63,52 @@ export class DdbMdHelper {
 
       let href = anchor.getAttribute('href');
       if (href) {
-        href = await this.urlToMdUrl(href, currentPageUrl);
-
-        let separator = '#^';
-        if (!href.includes(separator)) {
-          separator = '#';
-        }
-        const split = href.split(separator);
-        split[0] = encodeURI(split[0]);
-        if (split[1]) {
-          // no need for full uri encoding
-          split[1] = split[1].replace(/ /g, '%20');
-        }
-        href = split.join(separator);
-
+        href = await this.uriToMdUrl(href, currentPageUrl);
+        href = this.escapeUriForLink(href);
         anchor.setAttribute('href', href);
-      }
-
-      const previousText = anchor.previousSibling?.textContent;
-      if (!previousText || previousText.trim().match(/\w$/)) {
-        const wrapper = parse(`<span> </span>${anchor.outerHTML}`);
-        anchor.replaceWith(wrapper);
       }
     }
   }
 
-  async urlToMdUrl(url: string, currentPageUrl: string = url): Promise<string> {
-    const fullUrl = this.ddbLinkHelper.getAbsoluteUrl(url, currentPageUrl);
+  escapeUriForLink(uri: string): string {
+    let separator = '#^';
+    if (!uri.includes(separator)) {
+      separator = '#';
+    }
+    const split = uri.split(separator);
+    split[0] = encodeURI(split[0]);
+    if (split[1]) {
+      // no need for full uri encoding
+      split[1] = split[1].replace(/ /g, '%20');
+    }
+    return split.join(separator);
+  }
+
+  fixMissingWhitespace(page: HTMLElement): void {
+    page.querySelectorAll('a,b,strong').forEach(el => {
+      const previousText = el.previousSibling?.textContent;
+      if (!previousText || previousText.trim().match(/(\w|,)$/)) {
+        const wrapper = parse(`<span> </span>${el.outerHTML}`);
+        el.replaceWith(wrapper);
+      }
+    });
+  }
+
+  inlineTagsContent(page: HTMLElement): void {
+    page.querySelectorAll('.tags').forEach(tagsEl => {
+      tagsEl.querySelectorAll('*').forEach((el, i, arr) => {
+        let content = el.innerHTML;
+        if (el.classList.contains('tag')) {
+          if (i === 0) content = ` ${content}`;
+          if (el.classList.contains('tag') && i < arr.length - 1) content += ', ';
+        }
+        el.replaceWith(`<span>${content}</span>`);
+      });
+    });
+  }
+
+  async uriToMdUrl(uri: string, currentPageUrl: string = uri): Promise<string> {
+    const fullUrl = this.ddbLinkHelper.getAbsoluteUrl(uri, currentPageUrl);
     const type = this.ddbHelper.getType(fullUrl);
 
     if (type) {
@@ -110,13 +139,13 @@ export class DdbMdHelper {
             } else if (this.unreachablePages.some(p => fullUrl.match(p))) {
               return fullUrl;
             } else {
-              consola.error({ url, currentPageUrl, fullUrl, sourceUri, pagesUris });
+              consola.error({ url: uri, currentPageUrl, fullUrl, sourceUri, pagesUris });
               throw new Error('Failed to create link to source page');
             }
           }
 
           name = this.adaptHashes(fullUrl, name, content);
-          const sourcePath = await this.urlToMdUrl(sourceUri);
+          const sourcePath = await this.uriToMdUrl(sourceUri);
           return path.join(sourcePath, '..', name);
         }
       } else {
@@ -169,6 +198,8 @@ export interface DdbMdFixes {
   currentPageUrl: string;
   content: HTMLElement;
   fixImages?: boolean;
+  fixMissingWhitespace?: boolean;
   adaptLinks?: boolean;
-  keepImages?: 'first' | 'last' | 'all';
+  keepImages?: 'first' | 'last' | 'all' | 'none';
+  inlineTagsContent?: boolean;
 }

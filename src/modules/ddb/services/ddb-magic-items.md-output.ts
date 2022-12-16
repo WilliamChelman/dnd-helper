@@ -14,6 +14,7 @@ export class DdbMagicItemsMdOutput extends DdbEntityMdOutput<MagicItem> {
     ['magicItemSubType', 'subtype'],
     'rarity',
     'classes',
+    'isVariant',
   ];
 
   constructor(configService: ConfigService, ddbMdHelper: DdbMdHelper) {

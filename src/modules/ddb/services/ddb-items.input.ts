@@ -2,18 +2,24 @@ import consola from 'consola';
 import { Injectable } from 'injection-js';
 import { HTMLElement } from 'node-html-parser';
 
-import { EntityType, HtmlElementHelper, Item, LabelsHelper, NewPageService } from '../../core';
+import { ConfigService, EntityType, HtmlElementHelper, Item, LabelsHelper, NewPageService } from '../../core';
 import { DdbSearchableEntityInput } from './ddb-searchable-entity.input';
 import { DdbHelper } from './ddb.helper';
 
 @Injectable()
 export class DdbItemsInput extends DdbSearchableEntityInput<Item> {
   protected entityType: EntityType = 'Item';
-  protected searchPagePath: string = 'equipment';
+  protected searchPagePath: string = 'https://www.dndbeyond.com/equipment';
   protected linkSelector: string = 'ul.listing .list-row-name-primary a';
 
-  constructor(pageService: NewPageService, htmlElementHelper: HtmlElementHelper, ddbHelper: DdbHelper, labelsHelper: LabelsHelper) {
-    super(pageService, htmlElementHelper, ddbHelper, labelsHelper);
+  constructor(
+    pageService: NewPageService,
+    htmlElementHelper: HtmlElementHelper,
+    ddbHelper: DdbHelper,
+    labelsHelper: LabelsHelper,
+    configService: ConfigService
+  ) {
+    super(pageService, htmlElementHelper, ddbHelper, labelsHelper, configService);
   }
 
   protected async getEntityFromDetailPage(uri: string, page: HTMLElement): Promise<Item> {
@@ -34,8 +40,8 @@ export class DdbItemsInput extends DdbSearchableEntityInput<Item> {
       tags: this.htmlElementHelper.getAllCleanedInnerText(page, '.tags .tag'),
       textContent: content.outerHTML,
       source: this.htmlElementHelper.getCleanedInnerText(content, '.source-description'),
-      dataSource: 'DDB',
-      lang: 'EN',
+      dataSource: 'ddb',
+      lang: 'en',
     };
 
     return item;

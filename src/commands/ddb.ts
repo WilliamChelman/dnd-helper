@@ -20,7 +20,7 @@ hello world! (./src/commands/hello/world.ts)
 
   async run(): Promise<void> {
     const outputFormat = 'md';
-    const sourceId: DataSource = 'DDB';
+    const sourceId: DataSource = 'ddb';
     const injector = getInjector();
     const { config } = injector.get(ConfigService) as ConfigService;
     const inputs = injector.get(InputService) as InputService[];

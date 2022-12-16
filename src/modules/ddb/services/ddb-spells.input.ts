@@ -1,20 +1,26 @@
 import { Injectable } from 'injection-js';
 import { HTMLElement } from 'node-html-parser';
 
-import { DataSource, EntityType, HtmlElementHelper, LabelsHelper, NewPageService, Spell } from '../../core';
+import { ConfigService, DataSource, EntityType, HtmlElementHelper, LabelsHelper, NewPageService, Spell } from '../../core';
 import { DdbSearchableEntityInput } from './ddb-searchable-entity.input';
 import { DdbHelper } from './ddb.helper';
 
 @Injectable()
 export class DdbSpellsInput extends DdbSearchableEntityInput<Spell> {
-  sourceId: DataSource = 'DDB';
+  sourceId: DataSource = 'ddb';
 
   protected entityType: EntityType = 'Spell';
-  protected searchPagePath: string = 'spells';
+  protected searchPagePath: string = 'https://www.dndbeyond.com/spells';
   protected linkSelector: string = 'ul.rpgspell-listing > div a';
 
-  constructor(pageService: NewPageService, htmlElementHelper: HtmlElementHelper, ddbHelper: DdbHelper, labelsHelper: LabelsHelper) {
-    super(pageService, htmlElementHelper, ddbHelper, labelsHelper);
+  constructor(
+    pageService: NewPageService,
+    htmlElementHelper: HtmlElementHelper,
+    ddbHelper: DdbHelper,
+    labelsHelper: LabelsHelper,
+    configService: ConfigService
+  ) {
+    super(pageService, htmlElementHelper, ddbHelper, labelsHelper, configService);
   }
 
   protected async getEntityFromDetailPage(uri: string, page: HTMLElement): Promise<Spell> {
@@ -70,8 +76,8 @@ export class DdbSpellsInput extends DdbSearchableEntityInput<Spell> {
       source: this.labelsHelper.getSource(sourceDetails.split(',')[0].trim()),
       ritual,
       concentration,
-      dataSource: 'DDB',
-      lang: 'EN',
+      dataSource: 'ddb',
+      lang: 'en',
     };
 
     return spell;

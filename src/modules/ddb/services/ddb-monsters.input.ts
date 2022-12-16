@@ -7,7 +7,7 @@ import { DdbHelper } from './ddb.helper';
 
 @Injectable()
 export class DdbMonstersInput implements InputService<Monster> {
-  sourceId: DataSource = 'DDB';
+  sourceId: DataSource = 'ddb';
 
   constructor(
     private pageService: NewPageService,
@@ -32,7 +32,7 @@ export class DdbMonstersInput implements InputService<Monster> {
 
   private async getPartialMonsters(): Promise<PartialMonster[]> {
     return await this.ddbHelper.crawlSearchPages<PartialMonster>(
-      'monsters',
+      'https://www.dndbeyond.com/monsters',
       this.getMonstersFromSearchPage.bind(this),
       this.ddbHelper.getDefaultPageServiceOptions()
     );
@@ -65,8 +65,8 @@ export class DdbMonstersInput implements InputService<Monster> {
           size: block.querySelector('.monster-size')?.innerText.trim(),
           alignment: block.querySelector('.monster-alignment')?.innerText.trim(),
           isLegendary: !!block.querySelector('.i-legendary-monster'),
-          lang: 'EN',
-          dataSource: 'DDB',
+          lang: 'en',
+          dataSource: 'ddb',
         } as PartialMonster;
       })
       .filter(notNil);

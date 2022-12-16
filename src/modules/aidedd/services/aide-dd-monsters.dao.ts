@@ -58,7 +58,7 @@ export class AideDdMonstersDao implements EntityDao<OldMonster> {
         link: uri,
         isLegacy: name.includes('(Legacy)'),
         dataSource: 'AideDD',
-        lang: 'FR',
+        lang: 'fr',
       };
     });
   }

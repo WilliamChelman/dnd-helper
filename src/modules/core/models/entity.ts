@@ -28,6 +28,7 @@ export interface Entity {
   lang: string;
   textContent: string;
   tags?: string[];
+  altNames?: string[];
 }
 
-export type DataSource = 'DDB' | '5e-drs' | 'aide-dd';
+export type DataSource = 'ddb' | '5e-drs' | 'aide-dd';

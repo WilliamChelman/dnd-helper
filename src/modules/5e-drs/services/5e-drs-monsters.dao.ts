@@ -66,7 +66,7 @@ export class FiveEDrsMonstersDao implements SourceEntityDao<OldMonster> {
           entityType: 'Monster' as const,
           link: uri,
           dataSource: '5eDrs',
-          lang: 'FR',
+          lang: 'fr',
         };
       })
       .filter(notNil);

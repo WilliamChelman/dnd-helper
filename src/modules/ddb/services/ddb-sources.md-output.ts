@@ -54,7 +54,7 @@ export class DdbSourcesMdOutput extends DdbEntityMdOutput<Source | SourcePage> {
       coverArt = this.ddbLinkHelper.getAbsoluteUrl(coverArt, entity.uri);
     }
 
-    await this.ddbMdHelper.applyFixes({ content, currentPageUrl: entity.uri, keepImages: 'all' });
+    await this.ddbMdHelper.applyFixes({ content, currentPageUrl: entity.uri, keepImages: 'all', inlineTagsContent: false });
 
     if (isToc) {
       content.querySelectorAll('header.no-sub.no-nav').forEach(el => el.remove());
@@ -138,7 +138,7 @@ export class DdbSourcesMdOutput extends DdbEntityMdOutput<Source | SourcePage> {
     const content = parse(entity.textContent);
     for (const compendium of content.querySelectorAll(selector)) {
       const name = this.urlHelper.sanitizeFilename(compendium.innerText.trim());
-      const uri = await this.ddbMdHelper.urlToMdUrl(`#${compendium.id}`, entity.uri);
+      const uri = await this.ddbMdHelper.uriToMdUrl(`#${compendium.id}`, entity.uri);
       const content = `![[${uri}]]`;
       const filePath = path.join(this.getBasePath(), 'Compendiums', name + '.md');
 

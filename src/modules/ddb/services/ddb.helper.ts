@@ -32,7 +32,7 @@ export class DdbHelper {
   private async getBaseSearchPage(path: string): Promise<string> {
     const { config } = this.configService;
 
-    let pageUrl = ufo.resolveURL(this.basePath, path);
+    let pageUrl = path;
 
     if (config.ddb?.name) {
       pageUrl = ufo.withQuery(pageUrl, { 'filter-search': config.ddb?.name });
@@ -63,6 +63,7 @@ export class DdbHelper {
   getDefaultPageServiceOptions(): NewPageServiceOptions {
     return {
       cookies: this.getCookies(),
+      headless: false,
       validator: async page => {
         return !page.querySelector('title')?.innerText.includes('Access to this page has been denied.');
       },

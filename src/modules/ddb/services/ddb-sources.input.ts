@@ -1,65 +1,44 @@
 import consola from 'consola';
 import { Injectable } from 'injection-js';
+import { HTMLElement } from 'node-html-parser';
 
-import { ConfigService, DataSource, HtmlElementHelper, InputService, NewPageService, Source, SourcePage } from '../../core';
-import { DdbLinkHelper } from './ddb-link.helper';
+import { ConfigService, DataSource, EntityType, HtmlElementHelper, LabelsHelper, NewPageService, Source, SourcePage } from '../../core';
+import { DdbSearchableEntityInput, SearchType } from './ddb-searchable-entity.input';
 import { DdbSourcesHelper } from './ddb-sources.helper';
 import { DdbHelper } from './ddb.helper';
 
 @Injectable()
-export class DdbSourcesInput implements InputService<Source> {
-  sourceId: DataSource = 'DDB';
+export class DdbSourcesInput extends DdbSearchableEntityInput<Source> {
+  sourceId: DataSource = 'ddb';
 
-  private blacklist: string[] = ['https://www.dndbeyond.com/sources/one-dnd', 'https://www.dndbeyond.com/sources/it/phb'];
+  protected searchType: SearchType = 'onePager';
+  protected entityType: EntityType = 'Source';
+  protected searchPagePath: string = 'https://www.dndbeyond.com/sources';
+  protected linkSelector: string = '.sources-listing--item';
+  protected uriBlacklist: string[] = ['https://www.dndbeyond.com/sources/one-dnd', 'https://www.dndbeyond.com/sources/it/phb'];
 
   constructor(
-    private pageService: NewPageService,
-    private htmlElementHelper: HtmlElementHelper,
-    private ddbHelper: DdbHelper,
-    private configService: ConfigService,
-    private ddbLinkHelper: DdbLinkHelper,
+    pageService: NewPageService,
+    htmlElementHelper: HtmlElementHelper,
+    ddbHelper: DdbHelper,
+    configService: ConfigService,
+    labelsHelper: LabelsHelper,
+
     private ddbSourcesHelper: DdbSourcesHelper
-  ) {}
-
-  async *getAll(): AsyncGenerator<Source> {
-    let pageUrl = new URL('/sources', this.ddbHelper.basePath).toString();
-    const name = this.configService.config.ddb?.name?.toLowerCase();
-    const listPage = await this.pageService.getPageHtmlElement(pageUrl, {
-      ...this.ddbHelper.getDefaultPageServiceOptions(),
-      noCache: false,
-    });
-    const uris = listPage
-      .querySelectorAll('.sources-listing--item')
-      .filter(anchor => {
-        if (!name) return true;
-        return anchor.innerText.toLowerCase().includes(name);
-      })
-      .map(anchor => this.ddbLinkHelper.getAbsoluteUrl(anchor.getAttribute('href')!, pageUrl));
-
-    let index = 0;
-    for (const uri of uris) {
-      ++index;
-      if (this.blacklist.includes(uri)) continue;
-      consola.log(`Parsing (${index}/${uris.length})`, uri);
-      yield await this.getSource(uri);
-    }
+  ) {
+    super(pageService, htmlElementHelper, ddbHelper, labelsHelper, configService);
   }
 
-  canHandle(entityType: string): number | undefined {
-    return entityType === 'Source' ? 10 : undefined;
-  }
-
-  private async getSource(url: string): Promise<Source> {
-    const page = await this.pageService.getPageHtmlElement(url, this.ddbHelper.getDefaultPageServiceOptions());
+  protected async getEntityFromDetailPage(uri: string, page: HTMLElement): Promise<Source> {
     const toc = page.querySelector('.compendium-toc-full-text');
     let content = page.querySelector('.compendium-toc-full-text');
     if (toc) {
       content = page.querySelector('.container');
     }
     if (!content) {
-      const singlePageSource = { ...(await this.getSubPage(url)), type: 'Source' as const };
+      const singlePageSource = { ...(await this.getSubPage(uri)), type: 'Source' as const };
       if (!singlePageSource) {
-        consola.error(url);
+        consola.error(uri);
         throw new Error('Failed to get source content');
       }
       return singlePageSource;
@@ -67,7 +46,7 @@ export class DdbSourcesInput implements InputService<Source> {
 
     const pages: SourcePage[] = [];
     if (this.configService.config.ddb?.includeSourcePages) {
-      const subUris = this.ddbSourcesHelper.getSourcePageUrisFromSource(url, page);
+      const subUris = this.ddbSourcesHelper.getSourcePageUrisFromSource(uri, page);
 
       for (const subUri of subUris ?? []) {
         pages.push(await this.getSubPage(subUri));
@@ -75,12 +54,12 @@ export class DdbSourcesInput implements InputService<Source> {
     }
 
     const source: Source = {
-      uri: url,
+      uri,
       type: 'Source' as const,
       name: this.htmlElementHelper.getCleanedInnerText(page, 'header .page-title')!,
       textContent: content.outerHTML,
-      dataSource: 'DDB',
-      lang: 'EN',
+      dataSource: 'ddb',
+      lang: 'en',
       pages,
     };
 
@@ -103,8 +82,8 @@ export class DdbSourcesInput implements InputService<Source> {
       type: 'SourcePage' as const,
       name: this.htmlElementHelper.getCleanedInnerText(content, 'h1')!,
       textContent: content.outerHTML,
-      dataSource: 'DDB',
-      lang: 'EN',
+      dataSource: 'ddb',
+      lang: 'en',
     };
 
     return subPage;

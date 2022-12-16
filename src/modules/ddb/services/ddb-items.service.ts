@@ -27,8 +27,8 @@ export class DdbItemsService {
   //         entityType: 'Item' as const,
   //         id: link.split('/').pop()!,
   //         type: block.querySelector('.list-row-name-secondary-text')?.innerText.trim(),
-  //         lang: 'EN',
-  //         dataSource: 'DDB',
+  //         lang: 'en',
+  //         dataSource: 'ddb',
   //       };
   //     })
   //     .filter(notNil);

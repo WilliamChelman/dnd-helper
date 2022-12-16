@@ -65,7 +65,7 @@ export class FiveEDrsSpellsInput implements InputService<Spell> {
           type: 'Spell' as const,
           name: this.labelsHelper.getName(anchor.innerText.trim())!,
           dataSource: '5e-drs',
-          lang: 'FR',
+          lang: 'fr',
         } as Spell;
       })
       .filter(notNil);

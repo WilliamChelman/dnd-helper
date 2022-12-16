@@ -1,6 +1,5 @@
 import consola from 'consola';
 import { Injectable } from 'injection-js';
-import { HTMLElement, parse } from 'node-html-parser';
 import { URL } from 'url';
 
 import { AssetsService, DataSource, InputService, LabelsHelper, NewPageService, notNil, Spell } from '../../core';
@@ -47,7 +46,7 @@ export class AideDdSpellsInput implements InputService<Spell> {
         type: 'Spell' as const,
         name: name,
         dataSource: 'aide-dd',
-        lang: 'FR',
+        lang: 'fr',
       } as Spell;
     });
   }
@@ -63,7 +62,7 @@ export class AideDdSpellsInput implements InputService<Spell> {
     const altNames = detailPage
       ?.querySelector('.trad')
       ?.innerText?.match(/\[([^\]]*)\]/g)
-      ?.map(v => v.replace('[', '').replace(']', '').trim())
+      ?.map(v => v.replace('[', '').replace(']', '').replace(/\s+/g, ' ').trim())
       .filter(altName => altName !== spell.name);
     spell.altNames = altNames ?? [];
     if (this.altNames[spell.name!]) {
@@ -107,12 +106,5 @@ export class AideDdSpellsInput implements InputService<Spell> {
     spell.textContent = content.outerHTML;
 
     return spell;
-  }
-
-  private cleanContent(content: HTMLElement): void {
-    content.querySelectorAll('a').forEach(anchor => {
-      anchor.replaceWith(parse(`<span>${anchor.innerText}</span>`));
-    });
-    content.querySelectorAll('.classe,.source,.ref').forEach(el => el.remove());
   }
 }

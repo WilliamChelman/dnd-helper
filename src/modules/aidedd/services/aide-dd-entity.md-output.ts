@@ -1,4 +1,3 @@
-import { file } from '@oclif/core/lib/parser';
 import { Injectable } from 'injection-js';
 
 import { ConfigService, Entity, EntityType } from '../../core';

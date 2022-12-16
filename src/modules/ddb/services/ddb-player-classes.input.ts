@@ -1,56 +1,30 @@
 import consola from 'consola';
 import { Injectable } from 'injection-js';
 import { kebabCase } from 'lodash';
+import { HTMLElement } from 'node-html-parser';
 
-import { ConfigService, DataSource, HtmlElementHelper, InputService, NewPageService, PlayerClass, PlayerSubclass } from '../../core';
-import { DdbLinkHelper } from './ddb-link.helper';
+import { ConfigService, EntityType, HtmlElementHelper, LabelsHelper, NewPageService, PlayerClass, PlayerSubclass } from '../../core';
+import { DdbSearchableEntityInput, SearchType } from './ddb-searchable-entity.input';
 import { DdbHelper } from './ddb.helper';
 
 @Injectable()
-export class DdbPlayerClassesInput implements InputService<PlayerClass> {
-  sourceId: DataSource = 'DDB';
-
-  private blacklist: string[] = [];
+export class DdbPlayerClassesInput extends DdbSearchableEntityInput<PlayerClass> {
+  protected searchType: SearchType = 'onePager';
+  protected entityType: EntityType = 'Class';
+  protected searchPagePath: string = 'https://www.dndbeyond.com/classes';
+  protected linkSelector: string = 'a.listing-card__link';
 
   constructor(
-    private pageService: NewPageService,
-    private htmlElementHelper: HtmlElementHelper,
-    private ddbHelper: DdbHelper,
-    private configService: ConfigService,
-    private ddbLinkHelper: DdbLinkHelper
-  ) {}
-
-  async *getAll(): AsyncGenerator<PlayerClass> {
-    let pageUrl = new URL('/classes', this.ddbHelper.basePath).toString();
-    const name = this.configService.config.ddb?.name?.toLowerCase();
-    const listPage = await this.pageService.getPageHtmlElement(pageUrl, {
-      ...this.ddbHelper.getDefaultPageServiceOptions(),
-      noCache: false,
-    });
-    const uris = listPage
-      .querySelectorAll('a.listing-card__link')
-      .filter(anchor => {
-        if (!name) return true;
-        return anchor.querySelector('.listing-card__title')?.innerText.toLowerCase().includes(name);
-      })
-      .map(anchor => this.ddbLinkHelper.getAbsoluteUrl(anchor.getAttribute('href')!, pageUrl));
-
-    let index = 0;
-    for (const uri of uris) {
-      ++index;
-      if (this.blacklist.includes(uri)) continue;
-      consola.log(`Parsing (${index}/${uris.length})`, uri);
-      yield await this.getPlayerClass(uri);
-    }
+    pageService: NewPageService,
+    htmlElementHelper: HtmlElementHelper,
+    ddbHelper: DdbHelper,
+    labelsHelper: LabelsHelper,
+    configService: ConfigService
+  ) {
+    super(pageService, htmlElementHelper, ddbHelper, labelsHelper, configService);
   }
 
-  canHandle(entityType: string): number | undefined {
-    return entityType === 'Class' ? 10 : undefined;
-  }
-
-  private async getPlayerClass(url: string): Promise<PlayerClass> {
-    const page = await this.pageService.getPageHtmlElement(url, this.ddbHelper.getDefaultPageServiceOptions());
-
+  protected async getEntityFromDetailPage(url: string, page: HTMLElement): Promise<PlayerClass> {
     const content = page.querySelector('.content-container');
 
     const subclasses: PlayerSubclass[] = [];
@@ -68,8 +42,8 @@ export class DdbPlayerClassesInput implements InputService<PlayerClass> {
       type: 'Class' as const,
       name: this.htmlElementHelper.getCleanedInnerText(page, 'header .page-title')!,
       textContent: content?.outerHTML ?? '',
-      dataSource: 'DDB',
-      lang: 'EN',
+      dataSource: 'ddb',
+      lang: 'en',
       subclasses,
     };
 
@@ -90,10 +64,10 @@ export class DdbPlayerClassesInput implements InputService<PlayerClass> {
       type: 'Subclass' as const,
       name: this.htmlElementHelper.getCleanedInnerText(content, 'h1')!,
       textContent: content.outerHTML,
-      dataSource: 'DDB',
+      dataSource: 'ddb',
       baseClass: this.htmlElementHelper.getCleanedInnerText(content, '.base-class-callout-link'),
       source: this.htmlElementHelper.getCleanedInnerText(content, '.source-description'),
-      lang: 'EN',
+      lang: 'en',
     };
 
     return subPage;

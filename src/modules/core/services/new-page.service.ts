@@ -82,6 +82,9 @@ export class NewPageService implements ExitCleaner {
   }
 
   private async getPage(url: string, options: NewPageServiceOptions, tryCount: number = 0): Promise<HTMLElement> {
+    if (options.headless != null) {
+      this.headless = options.headless;
+    }
     const { Page, Network, Runtime } = await this.getClient();
 
     for (const cookie of options.cookies ?? []) {
@@ -144,6 +147,7 @@ export interface NewPageServiceOptions {
   noCache?: boolean;
   cookies?: NewPageCookies;
   headers?: { [key: string]: string };
+  headless?: boolean;
   validator?: (page: HTMLElement) => Promise<boolean>;
   cacheValidator?: (page: HTMLElement) => Promise<boolean>;
   cleaner?: (el: HTMLElement) => void;
