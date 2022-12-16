@@ -1,8 +1,8 @@
 import { Injectable } from 'injection-js';
-import { parse } from 'node-html-parser';
+import { parse, HTMLElement } from 'node-html-parser';
 
-import { ConfigService, EntityType, Monster } from '../../core';
-import { AdditionalTagFields } from '../../markdown-yaml';
+import { ConfigService, EntityType, InfoBoxOptions, KeyValue, Monster } from '../../core';
+import { AdditionalTagFields, ObsidianMdHelper } from '../../markdown-yaml';
 import { DdbEntityMdOutput } from './ddb-entity.md-output';
 import { DdbMdHelper } from './ddb-md.helper';
 
@@ -19,19 +19,12 @@ export class DdbMonstersMdOutput extends DdbEntityMdOutput<Monster> {
     'source',
   ];
 
-  constructor(protected configService: ConfigService, protected ddbMdHelper: DdbMdHelper) {
+  constructor(protected configService: ConfigService, protected ddbMdHelper: DdbMdHelper, private obsidianMdHelper: ObsidianMdHelper) {
     super(configService, ddbMdHelper);
   }
 
   protected async getMarkdownContent(entity: Monster): Promise<string> {
     const content = parse(entity.textContent);
-
-    const links = content.querySelectorAll('a[href]');
-    links.forEach(link => {
-      const fullHref = new URL(link.getAttribute('href')!, entity.uri).toString();
-      link.setAttribute('href', fullHref);
-    });
-    // content.querySelectorAll('.image').forEach(img => img.remove());
 
     const title = content.querySelector('.mon-stat-block__name');
     const newTitle = parse(`<h1>${title?.innerText.trim()}</h1>`);
@@ -43,27 +36,11 @@ export class DdbMonstersMdOutput extends DdbEntityMdOutput<Monster> {
 
     content.querySelector('footer')?.remove();
 
-    const abilityBlock = content.querySelector('.ability-block');
-    if (abilityBlock) {
-      const cleanText = (value: string) => value.trim();
-      const abilityLabels = abilityBlock
-        .querySelectorAll('.ability-block__heading')
-        .map(labelBlock => `<td>${cleanText(labelBlock.innerText)}</td>`)
-        .join('\n');
-      const abilityValues = abilityBlock
-        .querySelectorAll('.ability-block__data')
-        .map(valueBlock => `<td>${cleanText(valueBlock.innerText)}</td>`)
-        .join('\n');
-      const abilityTable = parse(`
-      <table>
-        <tbody>
-          <tr>${abilityLabels}</tr>
-          <tr>${abilityValues}</tr>
-        </tbody>
-      </table>
-    `);
-      abilityBlock.replaceWith(abilityTable);
-    }
+    this.ddbMdHelper.fixStatBlocks(content, {
+      containers: '.ability-block',
+      headings: '.ability-block__heading',
+      values: '.ability-block__data',
+    });
 
     // fix for https://www.dndbeyond.com/monsters/94512-sibriex, failed to be translated to notion
     const complexBlockquote = content.querySelector('blockquote table')?.parentNode;
@@ -71,8 +48,42 @@ export class DdbMonstersMdOutput extends DdbEntityMdOutput<Monster> {
       complexBlockquote.replaceWith(parse(`<div>${complexBlockquote.innerHTML}</div>`));
     }
 
-    await this.ddbMdHelper.applyFixes({ content, currentPageUrl: entity.uri });
+    await this.ddbMdHelper.applyFixes({ content, currentPageUrl: entity.uri, keepImages: 'first' });
+
+    const infoboxConfig = this.configService.config.markdownYaml?.typeConfig.Monster.infobox;
+    if (infoboxConfig) {
+      return await this.getMdWithInfoBox(entity, content, infoboxConfig);
+    }
 
     return super.getMarkdownContent({ ...entity, textContent: content.outerHTML });
+  }
+
+  private async getMdWithInfoBox(entity: Monster, content: HTMLElement, infoboxConfig: InfoBoxOptions): Promise<string> {
+    const img = content.querySelector('img');
+    const imgSrc = img?.getAttribute('src');
+    const imgAlt = img?.getAttribute('alt');
+
+    const properties: KeyValue[] = [
+      {
+        key: 'Type',
+        value: entity.monsterType ?? '?',
+      },
+      {
+        key: 'CR',
+        value: entity.challenge ?? '?',
+      },
+      {
+        key: 'HP (avg.)',
+        value: entity.avgHitPoints?.toString() ?? '?',
+      },
+    ];
+
+    const infobox = this.obsidianMdHelper.getInfoBox({ name: entity.name, imgAlt, imgSrc, properties, imgSize: infoboxConfig.imageSize });
+    img?.remove();
+    content.querySelector('h1')?.replaceWith('<h2>Stats</h2>');
+
+    const md = await super.getMarkdownContent({ ...entity, textContent: content.outerHTML });
+
+    return [infobox, md].join('\n\n');
   }
 }

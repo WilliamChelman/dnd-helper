@@ -38,6 +38,12 @@ export class DdbPlayerClassesMdOutput extends DdbEntityMdOutput<PlayerClass | Pl
       content.querySelectorAll('.compendium-header-subtitle, .secondary-content, .nav-select').forEach(el => el.remove());
     }
 
+    this.ddbMdHelper.fixStatBlocks(content, {
+      containers: '.stat-block-ability-scores',
+      headings: '.stat-block-ability-scores-heading',
+      values: '.stat-block-ability-scores-data',
+    });
+
     await this.ddbMdHelper.applyFixes({ content, currentPageUrl: entity.uri, keepImages: 'all' });
 
     return super.getMarkdownContent({ ...entity, textContent: content.outerHTML });

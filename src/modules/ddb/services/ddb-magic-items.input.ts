@@ -14,6 +14,7 @@ import {
   NewPageService,
 } from '../../core';
 import { DdbLinkHelper } from './ddb-link.helper';
+import { DdbMagicItemsHelper } from './ddb-magic-items.helper';
 import { DdbSearchableEntityInput } from './ddb-searchable-entity.input';
 import { DdbHelper } from './ddb.helper';
 
@@ -29,7 +30,8 @@ export class DdbMagicItemsInput extends DdbSearchableEntityInput<MagicItem> {
     ddbHelper: DdbHelper,
     labelsHelper: LabelsHelper,
     configService: ConfigService,
-    private linkHelper: DdbLinkHelper
+    private linkHelper: DdbLinkHelper,
+    private ddbMagicItemsHelper: DdbMagicItemsHelper
   ) {
     super(pageService, htmlElementHelper, ddbHelper, labelsHelper, configService);
   }
@@ -41,16 +43,7 @@ export class DdbMagicItemsInput extends DdbSearchableEntityInput<MagicItem> {
       throw new Error('Failed to get magic item content');
     }
 
-    const details = this.htmlElementHelper.getCleanedInnerText(content, '.item-info .details');
-    const firstParenthesis = details.indexOf(')');
-    let separatingComma = details.indexOf(',', firstParenthesis > 0 ? firstParenthesis : undefined);
-    if (separatingComma < 0) {
-      separatingComma = details.indexOf(',');
-    }
-    const typePart = details.slice(0, separatingComma);
-    const metaPart = details.slice(separatingComma + 1);
-    const [type, subtype] = this.getParts(typePart);
-    const [rarity, attunement] = this.getParts(metaPart);
+    const { type, subtype, rarity, attunement } = this.ddbMagicItemsHelper.getDetailsInfo(content);
 
     const tags = this.htmlElementHelper.getAllCleanedInnerText(page, '.item-tag');
 
@@ -81,14 +74,5 @@ export class DdbMagicItemsInput extends DdbSearchableEntityInput<MagicItem> {
     }
 
     return items;
-  }
-
-  private getParts(text: string): [string, string | undefined] {
-    const index = text.indexOf('(');
-    if (index < 0) return [text, undefined];
-    return [
-      this.htmlElementHelper.getCleanedText(text.slice(0, index)),
-      this.htmlElementHelper.getCleanedText(text.slice(index).replace(/[\(\)]/g, '')),
-    ];
   }
 }

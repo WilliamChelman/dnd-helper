@@ -67,6 +67,11 @@ export class DdbSourcesMdOutput extends DdbEntityMdOutput<Source | SourcePage> {
         `);
       }
     } else {
+      this.ddbMdHelper.fixStatBlocks(content, {
+        containers: '.stat-block-ability-scores',
+        headings: '.stat-block-ability-scores-heading',
+        values: '.stat-block-ability-scores-data',
+      });
       content.querySelectorAll('h1 a, h2 a, h3 a, h4 a, h5 a').forEach(anchor => {
         anchor.replaceWith(parse(`<span>${anchor.innerHTML}</span>`));
       });

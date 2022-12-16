@@ -1,8 +1,8 @@
 import { Injectable } from 'injection-js';
-import { parse } from 'node-html-parser';
+import { parse, HTMLElement } from 'node-html-parser';
 
-import { ConfigService, EntityType, Spell } from '../../core';
-import { AdditionalTagFields } from '../../markdown-yaml';
+import { ConfigService, EntityType, HtmlElementHelper, InfoBoxOptions, KeyValue, Spell } from '../../core';
+import { AdditionalTagFields, ObsidianMdHelper } from '../../markdown-yaml';
 import { DdbEntityMdOutput } from './ddb-entity.md-output';
 import { DdbMdHelper } from './ddb-md.helper';
 
@@ -20,7 +20,12 @@ export class DdbSpellsMdOutput extends DdbEntityMdOutput<Spell> {
     'spellLists',
   ];
 
-  constructor(configService: ConfigService, ddbMdHelper: DdbMdHelper) {
+  constructor(
+    configService: ConfigService,
+    ddbMdHelper: DdbMdHelper,
+    private obsidianMdHelper: ObsidianMdHelper,
+    private htmlElementsHelper: HtmlElementHelper
+  ) {
     super(configService, ddbMdHelper);
   }
 
@@ -28,6 +33,11 @@ export class DdbSpellsMdOutput extends DdbEntityMdOutput<Spell> {
     const content = parse(entity.textContent);
 
     await this.ddbMdHelper.applyFixes({ content, currentPageUrl: entity.uri });
+
+    const infoboxConfig = this.configService.config.markdownYaml?.typeConfig.Spell.infobox;
+    if (infoboxConfig) {
+      return this.getMdWithInfoBox(entity, content, infoboxConfig);
+    }
 
     const stats = content.querySelectorAll('.ddb-statblock-spell .ddb-statblock-item-value');
 
@@ -50,5 +60,54 @@ export class DdbSpellsMdOutput extends DdbEntityMdOutput<Spell> {
 `)
     );
     return super.getMarkdownContent({ ...entity, textContent: content.outerHTML });
+  }
+
+  private async getMdWithInfoBox(entity: Spell, content: HTMLElement, infoboxConfig: InfoBoxOptions): Promise<string> {
+    const img = content.querySelector('img');
+    const imgSrc = img?.getAttribute('src');
+    const imgAlt = img?.getAttribute('alt');
+
+    const properties: KeyValue[] = [
+      {
+        key: 'Level',
+        value: entity.level ?? '?',
+      },
+      {
+        key: 'Casting Time',
+        value: entity.castingTime ?? '?',
+      },
+      {
+        key: 'Range/Area',
+        value: entity.rangeAndArea ?? '?',
+      },
+      {
+        key: 'Components',
+        value: this.htmlElementsHelper.getCleanedInnerText(content, '.ddb-statblock-item-components .ddb-statblock-item-value') ?? '?',
+      },
+      {
+        key: 'Duration',
+        value: entity.duration ?? '?',
+      },
+      {
+        key: 'School',
+        value: entity.school ?? '?',
+      },
+      {
+        key: 'Attack/Save',
+        value: entity.attackOrSave ?? '?',
+      },
+      {
+        key: 'Damage/Effect',
+        value: entity.damageOrEffect ?? '?',
+      },
+    ];
+
+    const infobox = this.obsidianMdHelper.getInfoBox({ name: entity.name, imgAlt, imgSrc, properties, imgSize: infoboxConfig.imageSize });
+    img?.remove();
+    content.querySelector('.ddb-statblock-spell')?.remove();
+
+    const md = await super.getMarkdownContent({ ...entity, textContent: content.outerHTML });
+
+    return [infobox, md].join('\n\n');
   }
 }

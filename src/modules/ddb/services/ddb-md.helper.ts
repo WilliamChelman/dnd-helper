@@ -178,6 +178,29 @@ export class DdbMdHelper {
     });
   }
 
+  fixStatBlocks(page: HTMLElement, selectors: { containers: string; headings: string; values: string }): void {
+    page.querySelectorAll(selectors.containers).forEach(abilityBlock => {
+      const cleanText = (value: string) => value.trim();
+      const abilityLabels = abilityBlock
+        .querySelectorAll(selectors.headings)
+        .map(labelBlock => `<td>${cleanText(labelBlock.innerText)}</td>`)
+        .join('\n');
+      const abilityValues = abilityBlock
+        .querySelectorAll(selectors.values)
+        .map(valueBlock => `<td>${cleanText(valueBlock.innerText)}</td>`)
+        .join('\n');
+      const abilityTable = parse(`
+      <table>
+        <tbody>
+          <tr>${abilityLabels}</tr>
+          <tr>${abilityValues}</tr>
+        </tbody>
+      </table>
+    `);
+      abilityBlock.replaceWith(abilityTable);
+    });
+  }
+
   private adaptHashes(fullUrl: string, name: string, content: HTMLElement): string {
     if (!fullUrl.includes('#')) return name;
 

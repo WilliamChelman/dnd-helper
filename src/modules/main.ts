@@ -28,6 +28,7 @@ import {
   DdbItemsInput,
   DdbItemsMdOutput,
   DdbLinkHelper,
+  DdbMagicItemsHelper,
   DdbMagicItemsInput,
   DdbMagicItemsMdOutput,
   DdbMdHelper,
@@ -43,6 +44,7 @@ import {
   DdbSpellsInput,
   DdbSpellsMdOutput,
 } from './ddb';
+import { ObsidianMdHelper } from './markdown-yaml';
 
 export function getInjector() {
   return ReflectiveInjector.resolveAndCreate([
@@ -59,6 +61,8 @@ export function getInjector() {
     LabelsHelper,
     NewPageService,
     UrlHelper,
+    DdbMagicItemsHelper,
+    ObsidianMdHelper,
     provideAsInputService(AideDdSpellsInput),
     provideAsInputService(DdbBackgroundsInput),
     provideAsInputService(DdbFeatsInput),

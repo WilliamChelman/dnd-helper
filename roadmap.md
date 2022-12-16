@@ -1,5 +1,14 @@
-- better monster pages
-- better inline monsters
 - obsidian getting started doc
 - vehicles
 - decimal cr?
+- ddb cache burst if new source detected
+- cleanup path computing for read/write based on config and cwd
+- move filtering config outside of ddb config
+- sourceName, name and type filter for all entities inputs
+- script to parse .md and download files for local access
+- use playwright chrome binary?
+- cmd configs
+- aidedd monsters
+- 5edrs monsters
+- link from variant magic items to base item
+- search page icon for Item
