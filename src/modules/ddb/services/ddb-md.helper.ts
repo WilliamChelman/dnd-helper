@@ -23,7 +23,7 @@ export class DdbMdHelper {
     private htmlElementHelper: HtmlElementHelper,
     private urlHelper: UrlHelper
   ) {
-    this.uriToMdUrl = memoize(this.uriToMdUrl.bind(this), (url, currentUrl) => [url, currentUrl].join('@@'));
+    this.uriToMdPath = memoize(this.uriToMdPath.bind(this), (url, currentUrl) => this.ddbLinkHelper.getAbsoluteUrl(url, currentUrl ?? url));
   }
 
   async applyFixes(options: DdbMdFixes): Promise<void> {
@@ -34,14 +34,14 @@ export class DdbMdHelper {
       fixMissingWhitespace: true,
       inlineTagsContent: true,
     } as Partial<DdbMdFixes>);
-    if (options.keepImages) this.keepOnlyOneImage(options.content, options.keepImages);
+    if (options.keepImages) this.keepImages(options.content, options.keepImages);
     if (options.fixImages) this.fixImages(options.content);
     if (options.adaptLinks) await this.adaptLinks(options.content, options.currentPageUrl);
     if (options.fixMissingWhitespace) this.fixMissingWhitespace(options.content);
     if (options.inlineTagsContent) this.inlineTagsContent(options.content);
   }
 
-  keepOnlyOneImage(content: HTMLElement, type: DdbMdFixes['keepImages']): void {
+  keepImages(content: HTMLElement, type: DdbMdFixes['keepImages']): void {
     if (type === 'all') return;
     content.querySelectorAll('img').forEach((img, index, arr) => {
       if (type === 'none') {
@@ -63,7 +63,7 @@ export class DdbMdHelper {
 
       let href = anchor.getAttribute('href');
       if (href) {
-        href = await this.uriToMdUrl(href, currentPageUrl);
+        href = await this.uriToMdPath(href, currentPageUrl);
         href = this.escapeUriForLink(href);
         anchor.setAttribute('href', href);
       }
@@ -107,7 +107,7 @@ export class DdbMdHelper {
     });
   }
 
-  async uriToMdUrl(uri: string, currentPageUrl: string = uri): Promise<string> {
+  async uriToMdPath(uri: string, currentPageUrl: string = uri): Promise<string> {
     const fullUrl = this.ddbLinkHelper.getAbsoluteUrl(uri, currentPageUrl);
     const type = this.ddbHelper.getType(fullUrl);
 
@@ -145,7 +145,7 @@ export class DdbMdHelper {
           }
 
           name = this.adaptHashes(fullUrl, name, content);
-          const sourcePath = await this.uriToMdUrl(sourceUri);
+          const sourcePath = await this.uriToMdPath(sourceUri);
           return path.join(sourcePath, '..', name);
         }
       } else {

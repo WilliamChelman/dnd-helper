@@ -21,7 +21,7 @@ export class AideDdSpellsMdOutput extends AideDdEntityMdOutput<Spell> {
       if (href?.startsWith(base)) {
         const id = href.replace(base, '').replace(/-s-/g, 's-');
         const ddbSpellUri = `https://www.dndbeyond.com/spells/${id}`;
-        href = await this.ddbMdHelper.uriToMdUrl(ddbSpellUri);
+        href = await this.ddbMdHelper.uriToMdPath(ddbSpellUri);
         anchor.setAttribute('href', this.ddbMdHelper.escapeUriForLink(href));
       } else {
         anchor.remove();

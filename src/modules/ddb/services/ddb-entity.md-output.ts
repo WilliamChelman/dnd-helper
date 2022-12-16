@@ -18,6 +18,6 @@ export abstract class DdbEntityMdOutput<T extends Entity> extends DefaultMdOutpu
   }
 
   protected async getFilePath(entity: T, basePath: string): Promise<string> {
-    return path.join(basePath, await this.ddbMdHelper.uriToMdUrl(entity.uri, entity.uri)) + '.md';
+    return path.join(basePath, await this.ddbMdHelper.uriToMdPath(entity.uri, entity.uri)) + '.md';
   }
 }

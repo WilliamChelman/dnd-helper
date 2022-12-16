@@ -49,10 +49,10 @@ export class DdbSourcesMdOutput extends DdbEntityMdOutput<Source | SourcePage> {
     const isToc = this.ddbSourcesHelper.isTocPage(content);
 
     //need to do it before fixing links
-    let coverArt = content.querySelector('.view-cover-art a')?.getAttribute('href');
-    if (coverArt) {
-      coverArt = this.ddbLinkHelper.getAbsoluteUrl(coverArt, entity.uri);
-    }
+    let coverArt = content.querySelector('.view-cover-art a, a.view-cover-art')?.getAttribute('href');
+    // if (coverArt) {
+    //   coverArt = this.ddbLinkHelper.getAbsoluteUrl(coverArt, entity.uri);
+    // }
 
     await this.ddbMdHelper.applyFixes({ content, currentPageUrl: entity.uri, keepImages: 'all', inlineTagsContent: false });
 
@@ -143,7 +143,7 @@ export class DdbSourcesMdOutput extends DdbEntityMdOutput<Source | SourcePage> {
     const content = parse(entity.textContent);
     for (const compendium of content.querySelectorAll(selector)) {
       const name = this.urlHelper.sanitizeFilename(compendium.innerText.trim());
-      const uri = await this.ddbMdHelper.uriToMdUrl(`#${compendium.id}`, entity.uri);
+      const uri = await this.ddbMdHelper.uriToMdPath(`#${compendium.id}`, entity.uri);
       const content = `![[${uri}]]`;
       const filePath = path.join(this.getBasePath(), 'Compendiums', name + '.md');
 
