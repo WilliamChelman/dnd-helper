@@ -30,7 +30,9 @@ export abstract class DefaultMdOutput<T extends Entity = Entity> implements Outp
   protected async saveOne(entity: T): Promise<string> {
     const basePath = this.getBasePath();
     const filePath = await this.getFilePath(entity, basePath);
-    if (!this.configService.config.force && existsSync(filePath)) {
+    const alreadyExists = existsSync(filePath);
+
+    if (!this.configService.config.force && alreadyExists) {
       consola.log(`Skipping ${entity.name} as ${filePath} already exists`);
       return filePath;
     }
@@ -50,8 +52,13 @@ export abstract class DefaultMdOutput<T extends Entity = Entity> implements Outp
 
     const content = prettier.format(lines.join('\n'), { parser: 'markdown' });
 
-    const folderPath = path.dirname(filePath);
-    await fs.mkdir(folderPath, { recursive: true });
+    if (alreadyExists && (await fs.readFile(filePath, 'utf8')) === content) {
+      return filePath;
+    } else if (!alreadyExists) {
+      const folderPath = path.dirname(filePath);
+      await fs.mkdir(folderPath, { recursive: true });
+    }
+
     await fs.writeFile(filePath, content, 'utf8');
 
     return filePath;

@@ -54,23 +54,40 @@ export class DdbSourcesMdOutput extends DdbEntityMdOutput<Source | SourcePage> {
           ${content.outerHTML}
         `);
       }
-    } else {
-      this.ddbMdHelper.fixStatBlocks(content, {
-        containers: '.stat-block-ability-scores',
-        headings: '.stat-block-ability-scores-heading',
-        values: '.stat-block-ability-scores-data',
-      });
-      this.ddbMdHelper.wrapMonsterBlock(content);
-      content.querySelectorAll('h1 a, h2 a, h3 a, h4 a, h5 a').forEach(anchor => {
-        anchor.replaceWith(parse(`<span>${anchor.innerHTML}</span>`));
-      });
+      return super.getMarkdownContent({ ...entity, textContent: content.outerHTML });
+    }
 
-      content.querySelectorAll('.social-share').forEach(el => el.remove());
+    this.ddbMdHelper.fixStatBlocks(content, {
+      containers: '.stat-block-ability-scores',
+      headings: '.stat-block-ability-scores-heading',
+      values: '.stat-block-ability-scores-data',
+    });
+    this.ddbMdHelper.wrapMonsterBlock(content);
+    content.querySelectorAll('h1 a, h2 a, h3 a, h4 a, h5 a').forEach(anchor => {
+      anchor.replaceWith(parse(`<span>${anchor.innerHTML}</span>`));
+    });
 
-      const topNav = content.querySelector('.top-next-nav');
-      if (topNav) {
-        const anchors = topNav.querySelectorAll('a');
-        const newNav = parse(`
+    content.querySelectorAll('.social-share').forEach(el => el.remove());
+
+    content.querySelectorAll('.compendium-image-subtitle.heading-anchor').forEach(heading => {
+      const sibling = heading.previousElementSibling;
+      if (!sibling) return;
+      if (heading.id) {
+        const parent = heading.parentNode?.closest(`[id]`);
+        // not exact match always because of https://www.dndbeyond.com/sources/bgdia/elturel-has-fallen#Map26GrandCemeteryOssuaryLevel
+        if (parent?.id?.toLowerCase() === heading.id.toLowerCase()) {
+          parent.querySelector('img')?.setAttribute('id', heading.id);
+          parent.removeAttribute('id');
+        }
+      }
+      sibling.replaceWith(`${heading.outerHTML} ${sibling.outerHTML}`);
+      heading.remove();
+    });
+
+    const topNav = content.querySelector('.top-next-nav');
+    if (topNav) {
+      const anchors = topNav.querySelectorAll('a');
+      const newNav = parse(`
         <table>
           <tr>
             ${anchors
@@ -87,43 +104,42 @@ export class DdbSourcesMdOutput extends DdbEntityMdOutput<Source | SourcePage> {
           </tr>
         </table>
         `);
-        topNav.replaceWith(newNav);
-        content = parse(`
+      topNav.replaceWith(newNav);
+      content = parse(`
           ${content.outerHTML}
           ${newNav.outerHTML}
         `);
+    }
+
+    content.querySelectorAll('aside').forEach(aside => {
+      const id = aside.id;
+      if (id) {
+        aside.removeAttribute('id');
+      }
+      const blockQuote = parse(`<blockquote>${aside.innerHTML}</blockquote>`);
+      if (id) {
+        blockQuote.setAttribute('id', id);
       }
 
-      content.querySelectorAll('aside').forEach(aside => {
-        const id = aside.id;
-        if (id) {
-          aside.removeAttribute('id');
-        }
-        const blockQuote = parse(`<blockquote>${aside.innerHTML}</blockquote>`);
-        if (id) {
-          blockQuote.setAttribute('id', id);
-        }
+      aside.replaceWith(blockQuote);
+    });
 
-        aside.replaceWith(blockQuote);
-      });
+    content.querySelectorAll('table caption').forEach(caption => {
+      const table = caption.parentNode;
+      const id = caption.id;
+      if (id) {
+        caption.removeAttribute('id');
+        table.setAttribute('id', id);
+      }
+      caption.remove();
+      const wrapper = caption.querySelector('h1,h2,h3,h4,h5') ? 'div' : 'b';
+      table.replaceWith(`<${wrapper}>${caption.innerHTML}</${wrapper}> ${table.outerHTML}`);
+    });
 
-      content.querySelectorAll('table caption').forEach(caption => {
-        const table = caption.parentNode;
-        const id = caption.id;
-        if (id) {
-          caption.removeAttribute('id');
-          table.setAttribute('id', id);
-        }
-        caption.remove();
-        const wrapper = caption.querySelector('h1,h2,h3,h4,h5') ? 'div' : 'b';
-        table.replaceWith(`<${wrapper}>${caption.innerHTML}</${wrapper}> ${table.outerHTML}`);
-      });
-
-      content.querySelectorAll('[id]:not(h1,h2,h3,h4,h5)').forEach(blockWithId => {
-        const id = blockWithId.id;
-        blockWithId.replaceWith(`${blockWithId.outerHTML} ^${id}`);
-      });
-    }
+    content.querySelectorAll('[id]:not(h1,h2,h3,h4,h5)').forEach(blockWithId => {
+      const id = blockWithId.id;
+      blockWithId.replaceWith(`${blockWithId.outerHTML} ^${id}`);
+    });
 
     // TODO link to death domain in 35 appendix in PHB, certainly because of ":"
     return super.getMarkdownContent({ ...entity, textContent: content.outerHTML });

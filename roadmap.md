@@ -13,3 +13,6 @@
 - search page icon for Item
 - class feature table with spells
 - subclass as sub folder of class
+- blacklist service
+- compendium -> glossary
+- more precise glossary
