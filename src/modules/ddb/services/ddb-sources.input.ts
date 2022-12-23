@@ -3,7 +3,17 @@ import { Injectable } from 'injection-js';
 import { memoize } from 'lodash';
 import { HTMLElement } from 'node-html-parser';
 
-import { ConfigService, DataSource, EntityType, HtmlElementHelper, LabelsHelper, NewPageService, Source, SourcePage } from '../../core';
+import {
+  ConfigService,
+  DataSource,
+  EntityType,
+  HtmlElementHelper,
+  LabelsHelper,
+  Many,
+  NewPageService,
+  Source,
+  SourcePage,
+} from '../../core';
 import { DdbLinkHelper } from './ddb-link.helper';
 import { DdbSearchableEntityInput, SearchType } from './ddb-searchable-entity.input';
 import { DdbSourcesHelper } from './ddb-sources.helper';
@@ -32,7 +42,7 @@ export class DdbSourcesInput extends DdbSearchableEntityInput<Source | SourcePag
     this.getEntityFromDetailPage = memoize(this.getEntityFromDetailPage.bind(this));
   }
 
-  protected async getEntityFromDetailPage(uri: string): Promise<Source | SourcePage> {
+  protected async getEntityFromDetailPage(uri: string): Promise<Many<Source | SourcePage>> {
     const page = await this.pageService.getPageHtmlElement(uri, this.ddbHelper.getDefaultPageServiceOptions());
 
     const type = await this.getType(uri, page);
@@ -46,6 +56,7 @@ export class DdbSourcesInput extends DdbSearchableEntityInput<Source | SourcePag
     }
     if (!content) {
       const singlePageSource = { ...(await this.getSubPage(uri)), type: 'Source' as const };
+
       if (!singlePageSource) {
         consola.error(uri);
         throw new Error('Failed to get source content');
@@ -53,12 +64,12 @@ export class DdbSourcesInput extends DdbSearchableEntityInput<Source | SourcePag
       return singlePageSource;
     }
 
-    const pages: SourcePage[] = [];
-    if (this.configService.config.ddb?.includeSourcePages) {
-      const subUris = this.ddbSourcesHelper.getSourcePageUrisFromSource(uri, page);
+    const items: (Source | SourcePage)[] = [];
 
+    const subUris: string[] = this.ddbSourcesHelper.getSourcePageUrisFromSource(uri, page);
+    if (this.configService.config.ddb?.includeSourcePages) {
       for (const subUri of subUris ?? []) {
-        pages.push(await this.getSubPage(subUri));
+        items.push(await this.getSubPage(subUri));
       }
     }
 
@@ -69,14 +80,14 @@ export class DdbSourcesInput extends DdbSearchableEntityInput<Source | SourcePag
       textContent: content.outerHTML,
       dataSource: 'ddb',
       lang: 'en',
-      pages,
+      pagesUris: subUris,
     };
-
-    return source;
+    items.push(source);
+    return items;
   }
 
   private async getType(uri: string, page: HTMLElement): Promise<'Source' | 'SourcePage'> {
-    if (uri.match(/\/sources\/[\w-]+$/)) return 'Source';
+    if (uri.match(/\/sources\/[\w|-]+$/)) return 'Source';
     const breadcrumbs = page.querySelectorAll('.b-breadcrumb.b-breadcrumb-a a').map(anchor => anchor.innerText.trim().toLowerCase());
 
     if (breadcrumbs.length === 3) {

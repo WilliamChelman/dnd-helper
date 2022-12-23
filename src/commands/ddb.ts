@@ -4,6 +4,7 @@ import { Command } from '@oclif/core';
 
 import { ConfigService, DataSource, ExitCleaner, InputService, OutputService } from '../modules/core';
 import { getInjector } from '../modules/main';
+import consola from 'consola';
 
 export default class Ddb extends Command {
   static description = 'Run the parser';
@@ -42,6 +43,8 @@ hello world! (./src/commands/hello/world.ts)
           }
         }
       }
+    } catch (err) {
+      consola.error('Parsing failed', err);
     } finally {
       cleaners.forEach(c => c.clean());
     }

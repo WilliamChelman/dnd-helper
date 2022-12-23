@@ -1,12 +1,11 @@
+import consola from 'consola';
 import { existsSync, promises as fs } from 'fs';
 import { Injectable } from 'injection-js';
 import { parse } from 'node-html-parser';
 import path from 'path';
-import consola from 'consola';
 
 import { ConfigService, Entity, EntityType, Source, SourcePage, UrlHelper } from '../../core';
 import { DdbEntityMdOutput } from './ddb-entity.md-output';
-import { DdbLinkHelper } from './ddb-link.helper';
 import { DdbMdHelper } from './ddb-md.helper';
 import { DdbSourcesHelper } from './ddb-sources.helper';
 
@@ -21,7 +20,6 @@ export class DdbSourcesMdOutput extends DdbEntityMdOutput<Source | SourcePage> {
   constructor(
     protected configService: ConfigService,
     protected ddbMdHelper: DdbMdHelper,
-    private ddbLinkHelper: DdbLinkHelper,
     private urlHelper: UrlHelper,
     private ddbSourcesHelper: DdbSourcesHelper
   ) {
@@ -33,13 +31,6 @@ export class DdbSourcesMdOutput extends DdbEntityMdOutput<Source | SourcePage> {
   }
 
   protected async saveOne(entity: Source | SourcePage): Promise<string> {
-    if (entity.type === 'Source') {
-      const filePath = await super.saveOne({ ...entity, pages: undefined });
-      for (const page of entity.pages ?? []) {
-        await this.saveOne(page);
-      }
-      return filePath;
-    }
     await this.saveCompendiums(entity);
     return super.saveOne(entity);
   }

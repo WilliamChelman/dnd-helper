@@ -12,7 +12,6 @@ import {
   LabelsHelper,
   Many,
   manyToArray,
-  manyToOne,
   NewPageService,
   notNil,
 } from '../../core';
@@ -73,7 +72,7 @@ export abstract class DdbSearchableEntityInput<T extends Entity> implements Inpu
   }
 
   async getByUri(uri: string): Promise<T> {
-    return manyToOne(await this.getEntityFromDetailPage(uri, [uri]));
+    return manyToArray(await this.getEntityFromDetailPage(uri, [uri])).find(e => e.uri === uri)!;
   }
 
   canHandle(entityType: string): number | undefined {

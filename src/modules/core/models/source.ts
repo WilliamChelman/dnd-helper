@@ -4,7 +4,7 @@ export interface OldSource extends OldEntity {}
 
 export interface Source extends Entity {
   type: 'Source';
-  pages?: SourcePage[];
+  pagesUris?: string[];
 }
 
 export interface SourcePage extends Entity {

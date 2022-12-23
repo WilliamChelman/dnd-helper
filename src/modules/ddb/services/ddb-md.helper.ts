@@ -5,7 +5,7 @@ import { memoize } from 'lodash';
 import { HTMLElement, parse } from 'node-html-parser';
 import path from 'path';
 
-import { ConfigService, Entity, InputService, SourcePage, UrlHelper } from '../../core';
+import { ConfigService, Entity, InputService, Source, SourcePage, UrlHelper } from '../../core';
 import { DdbLinkHelper } from './ddb-link.helper';
 import { DdbSourcesHelper } from './ddb-sources.helper';
 import { DdbHelper } from './ddb.helper';
@@ -139,18 +139,16 @@ export class DdbMdHelper {
 
         let sourceUri = (entity as SourcePage).sourceUri;
         if (sourceUri) {
-          const source = (await this.getEntityByUri(sourceUri))!;
+          const source = (await this.getEntityByUri(sourceUri))! as Source;
 
-          const sourceContent = parse(source.textContent);
-          if (this.ddbSourcesHelper.isTocPage(sourceContent)) {
-            const pagesUris = this.ddbSourcesHelper.getSourcePageUrisFromSource(sourceUri, sourceContent);
-            const index = pagesUris.findIndex(url => url === fullUrl.split('#')[0]);
+          if (source.pagesUris) {
+            const index = source.pagesUris.findIndex(url => url === fullUrl.split('#')[0]);
             if (index >= 0) {
               name = `${(index + 1).toString().padStart(2, '0')} ${name}`;
             } else if (this.isInBlacklist(fullUrl) || sourceUri === currentPageUrl) {
               return fullUrl;
             } else {
-              consola.error({ url: uri, currentPageUrl, fullUrl, sourceUri, pagesUris });
+              consola.error({ url: uri, currentPageUrl, fullUrl, sourceUri });
               throw new Error('Failed to create link to source page');
             }
           }
