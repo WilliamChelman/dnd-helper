@@ -9,4 +9,5 @@ export interface Source extends Entity {
 
 export interface SourcePage extends Entity {
   type: 'SourcePage';
+  sourceUri: string;
 }

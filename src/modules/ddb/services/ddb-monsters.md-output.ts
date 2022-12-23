@@ -35,6 +35,8 @@ export class DdbMonstersMdOutput extends DdbEntityMdOutput<Monster> {
     });
 
     content.querySelector('footer')?.remove();
+    const moreInfo = content.querySelector('.mon-details__description-block');
+    moreInfo?.replaceWith(`<h2>More Info</h2> ${moreInfo.outerHTML}`);
 
     this.ddbMdHelper.fixStatBlocks(content, {
       containers: '.ability-block',
@@ -78,9 +80,8 @@ export class DdbMonstersMdOutput extends DdbEntityMdOutput<Monster> {
       },
     ];
 
-    const infobox = this.obsidianMdHelper.getInfoBox({ name: entity.name, imgAlt, imgSrc, properties, imgSize: infoboxConfig.imageSize });
+    const infobox = this.obsidianMdHelper.getInfoBox({ entity, imgAlt, imgSrc, properties, imgSize: infoboxConfig.imageSize });
     img?.remove();
-    content.querySelector('h1')?.replaceWith('<h2>Stats</h2>');
 
     const md = await super.getMarkdownContent({ ...entity, textContent: content.outerHTML });
 

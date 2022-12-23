@@ -30,6 +30,9 @@ export interface Config {
       Spell: MdSpellConfig;
       Monster: MdMonsterConfig;
       Item: MdItemConfig;
+      Source: MdSourceConfig;
+      Species: MdSpeciesConfig;
+      Class: MdClassConfig;
     };
   };
 }
@@ -60,6 +63,18 @@ export interface MdMonsterConfig extends MdTypeConfig {
 
 export interface MdItemConfig extends MdTypeConfig {
   infobox: InfoBoxOptions | false;
+}
+
+export interface MdSpeciesConfig extends MdTypeConfig {
+  infobox: InfoBoxOptions | false;
+}
+
+export interface MdClassConfig extends MdTypeConfig {
+  infobox: InfoBoxOptions | false;
+}
+
+export interface MdSourceConfig extends MdTypeConfig {
+  useFolderNoteForSourceRoot: boolean;
 }
 
 export interface InfoBoxOptions {

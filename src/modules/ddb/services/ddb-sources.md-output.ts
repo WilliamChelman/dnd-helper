@@ -50,15 +50,12 @@ export class DdbSourcesMdOutput extends DdbEntityMdOutput<Source | SourcePage> {
 
     //need to do it before fixing links
     let coverArt = content.querySelector('.view-cover-art a, a.view-cover-art')?.getAttribute('href');
-    // if (coverArt) {
-    //   coverArt = this.ddbLinkHelper.getAbsoluteUrl(coverArt, entity.uri);
-    // }
 
     await this.ddbMdHelper.applyFixes({ content, currentPageUrl: entity.uri, keepImages: 'all', inlineTagsContent: false });
 
     if (isToc) {
       content.querySelectorAll('header.no-sub.no-nav').forEach(el => el.remove());
-      content = content.querySelector('.compendium-toc-full-text')!;
+      content = parse(content.querySelectorAll('.compendium-toc-full').reduce((html, div) => html + div.outerHTML, ''));
       if (coverArt) {
         content = parse(`
           <h1>${entity.name}</h1>
@@ -72,6 +69,7 @@ export class DdbSourcesMdOutput extends DdbEntityMdOutput<Source | SourcePage> {
         headings: '.stat-block-ability-scores-heading',
         values: '.stat-block-ability-scores-data',
       });
+      this.ddbMdHelper.wrapMonsterBlock(content);
       content.querySelectorAll('h1 a, h2 a, h3 a, h4 a, h5 a').forEach(anchor => {
         anchor.replaceWith(parse(`<span>${anchor.innerHTML}</span>`));
       });
@@ -118,13 +116,16 @@ export class DdbSourcesMdOutput extends DdbEntityMdOutput<Source | SourcePage> {
         aside.replaceWith(blockQuote);
       });
 
-      content.querySelectorAll('table caption[id]').forEach(caption => {
-        const id = caption.id;
-        caption.removeAttribute('id');
+      content.querySelectorAll('table caption').forEach(caption => {
         const table = caption.parentNode;
-        table.setAttribute('id', id);
+        const id = caption.id;
+        if (id) {
+          caption.removeAttribute('id');
+          table.setAttribute('id', id);
+        }
         caption.remove();
-        table.replaceWith(`<b>${caption.innerHTML}</b> ${table.outerHTML}`);
+        const wrapper = caption.querySelector('h1,h2,h3,h4,h5') ? 'div' : 'b';
+        table.replaceWith(`<${wrapper}>${caption.innerHTML}</${wrapper}> ${table.outerHTML}`);
       });
 
       content.querySelectorAll('[id]:not(h1,h2,h3,h4,h5)').forEach(blockWithId => {

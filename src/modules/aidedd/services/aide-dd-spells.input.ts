@@ -33,6 +33,10 @@ export class AideDdSpellsInput implements InputService<Spell> {
     }
   }
 
+  getByUri(uri: string): Promise<Spell> {
+    throw new Error('not implemented');
+  }
+
   async getPartialSpells(): Promise<Spell[]> {
     const listPageUrl = new URL('/regles/sorts/', this.basePath).toString();
     const listPage = await this.pageService.getPageHtmlElement(listPageUrl, this.helper.getPageOptions());

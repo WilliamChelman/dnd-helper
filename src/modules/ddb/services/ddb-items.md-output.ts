@@ -16,9 +16,9 @@ export class DdbItemsMdOutput extends DdbEntityMdOutput<Item> {
   }
 
   protected async getMarkdownContent(entity: Item): Promise<string> {
-    const content = parse(entity.textContent);
+    const content = parse(`<h1>${entity.name}</h1> ${parse(entity.textContent)}`);
 
-    let infobox = this.configService.config.markdownYaml?.typeConfig.Item.infobox;
+    const infobox = this.configService.config.markdownYaml?.typeConfig.Item.infobox;
 
     await this.ddbMdHelper.applyFixes({ content, currentPageUrl: entity.uri, keepImages: infobox ? 'first' : 'none' });
     if (infobox) {
@@ -47,7 +47,7 @@ export class DdbItemsMdOutput extends DdbEntityMdOutput<Item> {
       },
     ];
 
-    const infobox = this.obsidianMdHelper.getInfoBox({ name: entity.name, imgAlt, imgSrc, properties, imgSize: infoboxConfig.imageSize });
+    const infobox = this.obsidianMdHelper.getInfoBox({ entity, imgAlt, imgSrc, properties, imgSize: infoboxConfig.imageSize });
     img?.remove();
     content.querySelector('.details-container-content-description-text')?.remove();
 

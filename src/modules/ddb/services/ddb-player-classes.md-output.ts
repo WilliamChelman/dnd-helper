@@ -1,8 +1,8 @@
 import { Injectable } from 'injection-js';
 import { parse } from 'node-html-parser';
 
-import { ConfigService, EntityType, PlayerClass, PlayerSubclass } from '../../core';
-import { AdditionalTagFields } from '../../markdown-yaml';
+import { ConfigService, EntityType, KeyValue, PlayerClass, PlayerSubclass } from '../../core';
+import { AdditionalTagFields, ObsidianMdHelper } from '../../markdown-yaml';
 import { DdbEntityMdOutput } from './ddb-entity.md-output';
 import { DdbMdHelper } from './ddb-md.helper';
 
@@ -11,7 +11,7 @@ export class DdbPlayerClassesMdOutput extends DdbEntityMdOutput<PlayerClass | Pl
   protected entityType: EntityType = 'Class';
   protected additionalTagFields: AdditionalTagFields<PlayerClass | PlayerSubclass>[] = [['baseClass', 'class'], 'source'] as any;
 
-  constructor(configService: ConfigService, ddbMdHelper: DdbMdHelper) {
+  constructor(configService: ConfigService, ddbMdHelper: DdbMdHelper, private obsidianMdHelper: ObsidianMdHelper) {
     super(configService, ddbMdHelper);
   }
 
@@ -32,7 +32,12 @@ export class DdbPlayerClassesMdOutput extends DdbEntityMdOutput<PlayerClass | Pl
   }
 
   protected async getMarkdownContent(entity: PlayerClass | PlayerSubclass): Promise<string> {
-    const content = parse(entity.textContent);
+    let content;
+    if (entity.type === 'Class') {
+      content = parse(entity.textContent);
+    } else {
+      content = parse(`<h1>${entity.name}</h1> ${parse(entity.textContent)}`);
+    }
 
     if (entity.type === 'Class') {
       content.querySelectorAll('.compendium-header-subtitle, .secondary-content, .nav-select').forEach(el => el.remove());
@@ -43,9 +48,29 @@ export class DdbPlayerClassesMdOutput extends DdbEntityMdOutput<PlayerClass | Pl
       headings: '.stat-block-ability-scores-heading',
       values: '.stat-block-ability-scores-data',
     });
+    this.ddbMdHelper.wrapMonsterBlock(content);
 
     await this.ddbMdHelper.applyFixes({ content, currentPageUrl: entity.uri, keepImages: 'all' });
 
-    return super.getMarkdownContent({ ...entity, textContent: content.outerHTML });
+    const infoboxConfig = this.configService.config.markdownYaml?.typeConfig.Species.infobox;
+    if (!infoboxConfig) return super.getMarkdownContent({ ...entity, textContent: content.outerHTML });
+
+    const img = content.querySelector('img');
+    const imgSrc = img?.getAttribute('src');
+    const imgAlt = img?.getAttribute('alt');
+
+    const properties: KeyValue[] = [];
+
+    if (entity.type === 'Subclass') {
+      properties.push({ key: 'Base Class', value: entity.baseClass ?? '?' });
+      content.querySelector('.base-class-callout')?.remove();
+    }
+
+    const infobox = this.obsidianMdHelper.getInfoBox({ entity, imgAlt, imgSrc, properties, imgSize: infoboxConfig.imageSize });
+    img?.remove();
+
+    const md = await super.getMarkdownContent({ ...entity, textContent: content.outerHTML });
+
+    return [infobox, md].join('\n\n');
   }
 }

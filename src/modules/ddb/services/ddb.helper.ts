@@ -14,6 +14,7 @@ export class DdbHelper {
 
   async crawlSearchPages<T>(path: string, parser: (page: HTMLElement) => T[], options: NewPageServiceOptions): Promise<T[]> {
     const items = [];
+
     let nextPageUrl = await this.getBaseSearchPage(path);
     while (true) {
       const listPage = await this.pageService.getPageHtmlElement(nextPageUrl, options);
@@ -57,7 +58,8 @@ export class DdbHelper {
     });
     return content
       .querySelectorAll('#filter-source option')
-      .map(option => ({ label: option.innerText.trim(), id: option.getAttribute('value')! }));
+      .map(option => ({ label: option.innerText.trim(), id: option.getAttribute('value')! }))
+      .sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }));
   }
 
   getDefaultPageServiceOptions(): NewPageServiceOptions {

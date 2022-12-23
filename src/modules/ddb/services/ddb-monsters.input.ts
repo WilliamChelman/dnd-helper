@@ -1,87 +1,83 @@
 import consola from 'consola';
 import { Injectable } from 'injection-js';
-import { HTMLElement } from 'node-html-parser';
 
-import { DataSource, HtmlElementHelper, InputService, LabelsHelper, Monster, NewPageService, notNil } from '../../core';
+import {
+  ConfigService,
+  DataSource,
+  EntityType,
+  HtmlElementHelper,
+  InputService,
+  LabelsHelper,
+  Monster,
+  NewPageService,
+  notNil,
+} from '../../core';
+import { DdbSearchableEntityInput } from './ddb-searchable-entity.input';
 import { DdbHelper } from './ddb.helper';
 
 @Injectable()
-export class DdbMonstersInput implements InputService<Monster> {
+export class DdbMonstersInput extends DdbSearchableEntityInput<Monster> implements InputService<Monster> {
   sourceId: DataSource = 'ddb';
 
+  protected entityType: EntityType = 'Monster';
+  protected searchPagePath: string = 'https://www.dndbeyond.com/monsters';
+  protected linkSelector: string = '.listing-body ul > div .name a:not(.badge-cta)';
+
   constructor(
-    private pageService: NewPageService,
-    private labelsHelper: LabelsHelper,
-    private ddbHelper: DdbHelper,
-    private htmlElementHelper: HtmlElementHelper
-  ) {}
-
-  async *getAll(): AsyncGenerator<Monster> {
-    const partialMonsters = await this.getPartialMonsters();
-    let index = 0;
-    for (let monster of partialMonsters) {
-      consola.log(`Processing ${monster.uri} (${index + 1}/${partialMonsters.length})`);
-      yield await this.completeMonsterWithDetailPage(monster);
-      ++index;
-    }
+    pageService: NewPageService,
+    htmlElementHelper: HtmlElementHelper,
+    ddbHelper: DdbHelper,
+    labelsHelper: LabelsHelper,
+    configService: ConfigService
+  ) {
+    super(pageService, htmlElementHelper, ddbHelper, labelsHelper, configService);
   }
 
-  canHandle(entityType: string): number | undefined {
-    return entityType === 'Monster' ? 10 : undefined;
-  }
+  protected async getEntityFromDetailPage(uri: string): Promise<Monster> {
+    const page = await this.pageService.getPageHtmlElement(uri, this.ddbHelper.getDefaultPageServiceOptions());
 
-  private async getPartialMonsters(): Promise<PartialMonster[]> {
-    return await this.ddbHelper.crawlSearchPages<PartialMonster>(
-      'https://www.dndbeyond.com/monsters',
-      this.getMonstersFromSearchPage.bind(this),
-      this.ddbHelper.getDefaultPageServiceOptions()
-    );
-  }
-
-  private getMonstersFromSearchPage(page: HTMLElement): PartialMonster[] {
-    const monsterBlocks = page.querySelectorAll('.listing-body ul > div');
-    return monsterBlocks
-      .map(block => {
-        const linkAnchor = block.querySelector('.name a:not(.badge-cta)');
-        if (!linkAnchor) return undefined;
-        const link = new URL(linkAnchor.getAttribute('href')!, this.ddbHelper.basePath).toString();
-        const badge = block.querySelector('.badge-label')?.innerText.trim();
-        const isLegacy = !!badge?.includes('Legacy');
-        let name = linkAnchor.innerText.trim();
-        if (isLegacy) {
-          name += ' (Legacy)';
-        }
-        const subtype = block.querySelector('.monster-type .subtype')?.innerText.trim().replace('(', '').replace(')', '').trim();
-
-        return {
-          name: this.labelsHelper.getName(name)!,
-          isLegacy,
-          uri: link,
-          type: 'Monster' as const,
-          challenge: this.htmlElementHelper.getCleanedInnerText(block, '.monster-challenge') ?? '?',
-          source: this.labelsHelper.getSource(block.querySelector('.source')?.innerText.trim()),
-          monsterType: block.querySelector('.monster-type .type')?.innerText.trim(),
-          subtype: subtype ? capitalizeFirstLetter(subtype) : undefined,
-          size: block.querySelector('.monster-size')?.innerText.trim(),
-          alignment: block.querySelector('.monster-alignment')?.innerText.trim(),
-          isLegendary: !!block.querySelector('.i-legendary-monster'),
-          lang: 'en',
-          dataSource: 'ddb',
-        } as PartialMonster;
-      })
-      .filter(notNil);
-  }
-
-  private async completeMonsterWithDetailPage(partialMonster: PartialMonster): Promise<Monster> {
-    const monster = { ...partialMonster } as Monster;
-    const page = await this.pageService.getPageHtmlElement(monster.uri, this.ddbHelper.getDefaultPageServiceOptions());
     const content = page.querySelector('.more-info.details-more-info');
-
     if (!content) {
-      consola.log(partialMonster.uri);
+      consola.log(uri);
       throw new Error('Failed to find monster content');
     }
-    monster.textContent = content.outerHTML;
+
+    let name = this.htmlElementHelper.getCleanedInnerText(page, '.mon-stat-block__name-link');
+    const isLegacy = page.querySelector('.page-heading .badge-label')?.innerText.toLowerCase().includes('legacy') ?? false;
+    if (isLegacy) {
+      name += ' (Legacy)';
+    }
+    const metaBlockText = this.htmlElementHelper.getCleanedInnerText(content, '.mon-stat-block__meta');
+    let [typePart, alignmentPart] = metaBlockText.split(',');
+    const splitType = typePart.split(' ');
+    const size = splitType[0];
+    typePart = splitType.slice(1).join(' ');
+    let type;
+    let subtype;
+
+    if (typePart.includes('(')) {
+      const match = typePart.match(/(.*) \((.*)\)/);
+      type = match?.[1].trim() ?? '?';
+      subtype = match?.[2].trim() ?? '?';
+    } else {
+      type = typePart.trim();
+    }
+    const monster: Monster = {
+      uri,
+      type: 'Monster',
+      name,
+      isLegacy,
+      alignment: alignmentPart?.trim(),
+      monsterType: type,
+      subtype,
+      size,
+      lang: 'en',
+      dataSource: 'ddb',
+      isLegendary: content
+        .querySelectorAll('.mon-stat-block__description-block-heading')
+        .some(heading => heading.innerText.toLowerCase().includes('legendary actions')),
+      textContent: content.outerHTML,
+    };
 
     const attributes = content.querySelectorAll('.mon-stat-block__attribute');
 
@@ -135,6 +131,9 @@ export class DdbMonstersInput implements InputService<Monster> {
       if (label.includes('Senses')) {
         monster.senses = this.getDistanceField(value);
       }
+      if (label.includes('Challenge')) {
+        monster.challenge = value.match(/([\d|\/]+)/)?.[1] ?? '?';
+      }
       if (label.includes('Languages') && value !== '--') {
         monster.languages = value
           .replace('--', '')
@@ -146,6 +145,7 @@ export class DdbMonstersInput implements InputService<Monster> {
     monster.environment = content.querySelectorAll('.environment-tag').map(env => env.innerText.trim());
     monster.tags = content.querySelectorAll('.monster-tag').map(env => env.innerText.trim());
     monster.sourceDetails = content.querySelector('.monster-source')?.innerText.trim();
+    monster.source = monster.sourceDetails?.split(',')[0].trim();
     monster.isMythic = content
       .querySelectorAll('.mon-stat-block__description-block-heading')
       .some(heading => heading.innerText.includes('Mythic Actions'));
@@ -171,20 +171,3 @@ export class DdbMonstersInput implements InputService<Monster> {
 function capitalizeFirstLetter(v: string) {
   return v.charAt(0).toUpperCase() + v.slice(1);
 }
-
-type PartialMonster = Pick<
-  Monster,
-  | 'name'
-  | 'isLegacy'
-  | 'uri'
-  | 'type'
-  | 'challenge'
-  | 'source'
-  | 'monsterType'
-  | 'subtype'
-  | 'size'
-  | 'alignment'
-  | 'isLegendary'
-  | 'lang'
-  | 'dataSource'
->;

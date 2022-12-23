@@ -30,7 +30,7 @@ export class DdbSpellsMdOutput extends DdbEntityMdOutput<Spell> {
   }
 
   protected async getMarkdownContent(entity: Spell): Promise<string> {
-    const content = parse(entity.textContent);
+    const content = parse(`<h1>${entity.name}</h1> ${parse(entity.textContent)}`);
 
     await this.ddbMdHelper.applyFixes({ content, currentPageUrl: entity.uri });
 
@@ -102,7 +102,7 @@ export class DdbSpellsMdOutput extends DdbEntityMdOutput<Spell> {
       },
     ];
 
-    const infobox = this.obsidianMdHelper.getInfoBox({ name: entity.name, imgAlt, imgSrc, properties, imgSize: infoboxConfig.imageSize });
+    const infobox = this.obsidianMdHelper.getInfoBox({ entity, imgAlt, imgSrc, properties, imgSize: infoboxConfig.imageSize });
     img?.remove();
     content.querySelector('.ddb-statblock-spell')?.remove();
 

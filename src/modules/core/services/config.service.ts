@@ -43,9 +43,21 @@ export class ConfigService {
           folderName: 'Monsters',
           infobox: { imageSize: null },
         },
+        Species: {
+          folderName: 'Species',
+          infobox: { imageSize: null },
+        },
+        Class: {
+          folderName: 'Species',
+          infobox: { imageSize: null },
+        },
         Item: {
           folderName: 'Items',
           infobox: { imageSize: 'small' },
+        },
+        Source: {
+          folderName: 'Source',
+          useFolderNoteForSourceRoot: true,
         },
       },
     },

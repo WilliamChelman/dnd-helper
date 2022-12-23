@@ -22,6 +22,7 @@ export abstract class OutputService<T extends Entity = Entity> {
 export abstract class InputService<T extends Entity = Entity> {
   abstract sourceId: DataSource;
   abstract canHandle(entityType: string): number | undefined;
+  abstract getByUri(uri: string): Promise<T>;
   abstract getAll(): AsyncGenerator<T>;
 }
 

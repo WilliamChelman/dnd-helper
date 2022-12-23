@@ -2,7 +2,7 @@ import { Injectable } from 'injection-js';
 import { parse } from 'node-html-parser';
 
 import { ConfigService, EntityType, KeyValue, MagicItem } from '../../core';
-import { AdditionalTagFields, ObsidianMdHelper } from '../../markdown-yaml';
+import { AdditionalTagFields, Link, ObsidianMdHelper } from '../../markdown-yaml';
 import { DdbEntityMdOutput } from './ddb-entity.md-output';
 import { DdbMagicItemsHelper } from './ddb-magic-items.helper';
 import { DdbMdHelper } from './ddb-md.helper';
@@ -16,6 +16,7 @@ export class DdbMagicItemsMdOutput extends DdbEntityMdOutput<MagicItem> {
     'rarity',
     'classes',
     'isVariant',
+    'isLegacy',
   ];
 
   constructor(
@@ -28,17 +29,17 @@ export class DdbMagicItemsMdOutput extends DdbEntityMdOutput<MagicItem> {
   }
 
   protected async getMarkdownContent(entity: MagicItem): Promise<string> {
-    const content = parse(entity.textContent);
+    const content = parse(`<h1>${entity.name}</h1> ${parse(entity.textContent)}`);
 
     await this.ddbMdHelper.applyFixes({ content, currentPageUrl: entity.uri });
     const infoboxConfig = this.configService.config.markdownYaml?.typeConfig.MagicItem.infobox;
-    if (!infoboxConfig) return super.getMarkdownContent(entity);
+    if (!infoboxConfig) return super.getMarkdownContent({ ...entity, textContent: content.outerHTML });
 
     const img = content.querySelector('img');
     const imgSrc = img?.getAttribute('src');
     const imgAlt = img?.getAttribute('alt');
 
-    const properties: KeyValue[] = [];
+    const properties: KeyValue<string | Link>[] = [];
     if (entity.magicItemType) {
       let value = entity.magicItemType;
       if (entity.magicItemSubType) {
@@ -61,7 +62,19 @@ export class DdbMagicItemsMdOutput extends DdbEntityMdOutput<MagicItem> {
       value: attunement ? attunement : 'No',
     });
 
-    const infobox = this.obsidianMdHelper.getInfoBox({ name: entity.name, imgAlt, imgSrc, properties, imgSize: infoboxConfig.imageSize });
+    if (entity.variantOf) {
+      let href = await this.ddbMdHelper.uriToMdPath(entity.variantOf);
+      href = this.ddbMdHelper.escapeUriForLink(href);
+      properties.push({
+        key: 'Variant of',
+        value: {
+          label: 'base item',
+          href,
+        },
+      });
+    }
+
+    const infobox = this.obsidianMdHelper.getInfoBox({ entity, imgAlt, imgSrc, properties, imgSize: infoboxConfig.imageSize });
     img?.remove();
     content.querySelector(this.ddbMagicItemsHelper.detailsSelector)?.remove();
 

@@ -1,5 +1,4 @@
 import { Injectable } from 'injection-js';
-import { HTMLElement } from 'node-html-parser';
 
 import { ConfigService, EntityType, HtmlElementHelper, LabelsHelper, NewPageService, Species } from '../../core';
 import { DdbSearchableEntityInput, SearchType } from './ddb-searchable-entity.input';
@@ -22,7 +21,9 @@ export class DdbSpeciesInput extends DdbSearchableEntityInput<Species> {
     super(pageService, htmlElementHelper, ddbHelper, labelsHelper, configService);
   }
 
-  protected async getEntityFromDetailPage(uri: string, page: HTMLElement): Promise<Species> {
+  protected async getEntityFromDetailPage(uri: string): Promise<Species> {
+    const page = await this.pageService.getPageHtmlElement(uri, this.ddbHelper.getDefaultPageServiceOptions());
+
     const content = page.querySelector('.content-container');
     if (!content) throw new Error(`Failed to get species content ${uri}`);
 

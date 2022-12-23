@@ -36,6 +36,10 @@ export class FiveEDrsSpellsInput implements InputService<Spell> {
     }
   }
 
+  getByUri(uri: string): Promise<Spell> {
+    throw new Error('not implemented');
+  }
+
   async getPartialSpells(): Promise<Spell[]> {
     const items = [];
     let nextPage = new URL('/grimoire/', this.basePath).toString();

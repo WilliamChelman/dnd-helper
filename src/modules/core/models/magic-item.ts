@@ -10,4 +10,6 @@ export interface MagicItem extends Entity {
   attunement?: boolean;
   classes?: string[];
   isVariant?: boolean;
+  variantOf?: string;
+  isLegacy?: boolean;
 }

@@ -12,6 +12,7 @@ import {
   LabelsHelper,
   Many,
   manyToArray,
+  manyToOne,
   NewPageService,
   notNil,
 } from '../../core';
@@ -21,7 +22,7 @@ import { DdbHelper } from './ddb.helper';
 export abstract class DdbSearchableEntityInput<T extends Entity> implements InputService<T> {
   sourceId: DataSource = 'ddb';
   protected searchType: SearchType = 'crawl';
-  protected abstract entityType: EntityType;
+  protected abstract entityType: Many<EntityType>;
   protected abstract searchPagePath: string;
   protected abstract linkSelector: string;
   protected uriBlacklist: string[] = ['https://www.dndbeyond.com/legacy'];
@@ -43,6 +44,7 @@ export abstract class DdbSearchableEntityInput<T extends Entity> implements Inpu
         this.getEntityUrisFromSearchPage.bind(this),
         this.ddbHelper.getDefaultPageServiceOptions()
       );
+      allUris = Array.from(new Set(allUris)).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
     } else {
       const searchPage = await this.pageService.getPageHtmlElement(this.searchPagePath, this.ddbHelper.getDefaultPageServiceOptions());
       allUris = await this.getEntityUrisFromSearchPage(searchPage);
@@ -58,8 +60,7 @@ export abstract class DdbSearchableEntityInput<T extends Entity> implements Inpu
         continue;
       }
 
-      const page = await this.pageService.getPageHtmlElement(uri, this.ddbHelper.getDefaultPageServiceOptions());
-      const entities = manyToArray(await this.getEntityFromDetailPage(uri, page, allUris));
+      const entities = manyToArray(await this.getEntityFromDetailPage(uri, allUris));
       supplementalCount += entities.length - 1;
 
       for (const entity of entities) {
@@ -71,8 +72,12 @@ export abstract class DdbSearchableEntityInput<T extends Entity> implements Inpu
     }
   }
 
+  async getByUri(uri: string): Promise<T> {
+    return manyToOne(await this.getEntityFromDetailPage(uri, [uri]));
+  }
+
   canHandle(entityType: string): number | undefined {
-    return entityType === this.entityType ? 10 : undefined;
+    return manyToArray(this.entityType).includes(entityType as EntityType) ? 10 : undefined;
   }
 
   protected getEntityUrisFromSearchPage(page: HTMLElement): string[] {
@@ -83,12 +88,13 @@ export abstract class DdbSearchableEntityInput<T extends Entity> implements Inpu
         const href = link.getAttribute('href');
         if (href?.match(/\.[a-z]+$/)) return undefined;
         if (this.searchType === 'onePager' && name && !link.textContent.toLowerCase().includes(name)) return undefined;
+        // TODO getAbsoluteUrl
         return new URL(href!, this.ddbHelper.basePath).toString();
       })
       .filter(notNil);
   }
 
-  protected abstract getEntityFromDetailPage(uri: string, page: HTMLElement, allUris: string[]): Promise<Many<T>>;
+  protected abstract getEntityFromDetailPage(uri: string, allUris: string[]): Promise<Many<T>>;
 }
 
 export type SearchType = 'crawl' | 'onePager';

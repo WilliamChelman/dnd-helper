@@ -10,5 +10,6 @@
 - cmd configs
 - aidedd monsters
 - 5edrs monsters
-- link from variant magic items to base item
 - search page icon for Item
+- class feature table with spells
+- subclass as sub folder of class

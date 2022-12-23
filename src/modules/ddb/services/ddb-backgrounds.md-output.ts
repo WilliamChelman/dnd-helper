@@ -16,7 +16,7 @@ export class DdbBackgroundsMdOutput extends DdbEntityMdOutput<Background> {
   }
 
   protected async getMarkdownContent(entity: Background): Promise<string> {
-    const content = parse(entity.textContent);
+    const content = parse(`<h1>${entity.name}</h1> ${parse(entity.textContent)}`);
 
     await this.ddbMdHelper.applyFixes({ content, currentPageUrl: entity.uri, keepImages: 'none' });
 

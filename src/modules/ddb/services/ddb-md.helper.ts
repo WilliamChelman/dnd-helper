@@ -1,27 +1,38 @@
 import consola from 'consola';
 import defu from 'defu';
-import { Injectable } from 'injection-js';
+import { Inject, Injectable } from 'injection-js';
 import { memoize } from 'lodash';
 import { HTMLElement, parse } from 'node-html-parser';
 import path from 'path';
 
-import { ConfigService, HtmlElementHelper, NewPageService, UrlHelper } from '../../core';
+import { ConfigService, Entity, InputService, SourcePage, UrlHelper } from '../../core';
 import { DdbLinkHelper } from './ddb-link.helper';
 import { DdbSourcesHelper } from './ddb-sources.helper';
 import { DdbHelper } from './ddb.helper';
 
 @Injectable()
 export class DdbMdHelper {
-  private unreachablePages: (string | RegExp)[] = [/\/basic-rules\/monster-stat-blocks-.*$/];
+  private uriBlacklist: (string | RegExp)[] = [
+    /\/basic-rules\/monster-stat-blocks-.*$/,
+    'https://www.dndbeyond.com/sources/oga/one-grunge-above', // should be 'https://www.dndbeyond.com/sources/oga/one-grung-above'
+    'https://www.dndbeyond.com/monsters/succubus-incubus',
+    'https://www.dndbeyond.com/backgrounds/folkhero',
+    'https://www.dndbeyond.com/sources/cotn/magic-itemsMedalofMuscle',
+    'https://www.dndbeyond.com/sources/cotn/magic-itemsmedalofmuscle',
+    'https://www.dndbeyond.com/sources/cos/appendices',
+    /\/sources\/tftyp\/a\d$/,
+    'https://www.dndbeyond.com/sources/cos/the-town-of-vallaki data-content-chunk-id=',
+    'https://www.dndbeyond.com/backgrounds/criminal', // should be https://www.dndbeyond.com/backgrounds/criminal-spy
+  ];
 
   constructor(
-    private pageService: NewPageService,
     private configService: ConfigService,
     private ddbHelper: DdbHelper,
     private ddbLinkHelper: DdbLinkHelper,
     private ddbSourcesHelper: DdbSourcesHelper,
-    private htmlElementHelper: HtmlElementHelper,
-    private urlHelper: UrlHelper
+    private urlHelper: UrlHelper,
+    @Inject(InputService)
+    private inputServices: InputService[]
   ) {
     this.uriToMdPath = memoize(this.uriToMdPath.bind(this), (url, currentUrl) => this.ddbLinkHelper.getAbsoluteUrl(url, currentUrl ?? url));
   }
@@ -79,7 +90,7 @@ export class DdbMdHelper {
     split[0] = encodeURI(split[0]);
     if (split[1]) {
       // no need for full uri encoding
-      split[1] = split[1].replace(/ /g, '%20');
+      split[1] = this.urlHelper.unescapeHtml(split[1]).replace(/\s/g, '%20');
     }
     return split.join(separator);
   }
@@ -109,34 +120,34 @@ export class DdbMdHelper {
 
   async uriToMdPath(uri: string, currentPageUrl: string = uri): Promise<string> {
     const fullUrl = this.ddbLinkHelper.getAbsoluteUrl(uri, currentPageUrl);
-    const type = this.ddbHelper.getType(fullUrl);
+    let entity;
+    try {
+      entity = await this.getEntityByUri(fullUrl);
+    } catch (err) {
+      consola.error('Failed to get entity to generate md link', err);
+      consola.log({ uri, currentPageUrl });
+    }
 
-    if (type) {
-      const content = await this.pageService.getPageHtmlElement(fullUrl, this.ddbHelper.getDefaultPageServiceOptions());
-      let name = this.htmlElementHelper.getCleanedInnerText(content, '.page-title') ?? fullUrl;
+    if (entity) {
+      let name = entity.name;
+      const type = entity.type;
 
-      if (type === 'Species' && content.querySelector('h1 #legacy-badge')) {
-        name = `${name} (Legacy)`;
-      } else if (
-        type === 'Monster' &&
-        content.querySelectorAll('header.page-header .badge-label').some(el => el.innerText.toLowerCase().includes('legacy'))
-      ) {
-        name = `${name} (Legacy)`;
-      }
       name = this.urlHelper.sanitizeFilename(name);
 
       if (type === 'SourcePage') {
-        const breadcrumbs = content.querySelectorAll('.b-breadcrumb.b-breadcrumb-a a');
-        let sourceUri = breadcrumbs[2]?.getAttribute('href')!;
+        const content = parse(entity.textContent);
+
+        let sourceUri = (entity as SourcePage).sourceUri;
         if (sourceUri) {
-          sourceUri = this.ddbLinkHelper.getAbsoluteUrl(sourceUri, fullUrl);
-          const sourceContent = await this.pageService.getPageHtmlElement(sourceUri, this.ddbHelper.getDefaultPageServiceOptions());
+          const source = (await this.getEntityByUri(sourceUri))!;
+
+          const sourceContent = parse(source.textContent);
           if (this.ddbSourcesHelper.isTocPage(sourceContent)) {
             const pagesUris = this.ddbSourcesHelper.getSourcePageUrisFromSource(sourceUri, sourceContent);
             const index = pagesUris.findIndex(url => url === fullUrl.split('#')[0]);
             if (index >= 0) {
               name = `${(index + 1).toString().padStart(2, '0')} ${name}`;
-            } else if (this.unreachablePages.some(p => fullUrl.match(p))) {
+            } else if (this.isInBlacklist(fullUrl) || sourceUri === currentPageUrl) {
               return fullUrl;
             } else {
               consola.error({ url: uri, currentPageUrl, fullUrl, sourceUri, pagesUris });
@@ -150,11 +161,15 @@ export class DdbMdHelper {
         }
       } else {
         const folder = this.configService.config.markdownYaml?.folderEntityTypeMap[type];
-        name = this.adaptHashes(fullUrl, name, content);
+        name = this.adaptHashes(fullUrl, name, parse(entity.textContent));
 
         if (folder) {
           if (type === 'Source') {
-            return path.join(folder, name, `00 ${name}`);
+            if (this.configService.config.markdownYaml?.typeConfig.Source.useFolderNoteForSourceRoot) {
+              return path.join(folder, name.split('#')[0], name);
+            } else {
+              return path.join(folder, name, `00 ${name}`);
+            }
           }
           return path.join(folder, name);
         }
@@ -199,6 +214,33 @@ export class DdbMdHelper {
     `);
       abilityBlock.replaceWith(abilityTable);
     });
+  }
+
+  wrapMonsterBlock(page: HTMLElement): void {
+    page.querySelectorAll('.Basic-Text-Frame, .Basic-Text-Frame-2').forEach(abilityBlock => {
+      if (abilityBlock.closest('blockquote')) return;
+      abilityBlock.replaceWith(`<blockquote>${abilityBlock.outerHTML}</blockquote>`);
+    });
+  }
+
+  private isInBlacklist(uri: string): boolean {
+    return this.uriBlacklist.some(bl => (typeof bl === 'string' ? bl === uri : uri.match(bl)));
+  }
+
+  private async getEntityByUri(uri: string): Promise<Entity | undefined> {
+    uri = uri.split('#')[0];
+
+    if (this.isInBlacklist(uri)) {
+      return undefined;
+    }
+
+    const type = this.ddbHelper.getType(uri);
+    if (!type) return undefined;
+
+    const input = this.inputServices.find(iS => iS.sourceId === 'ddb' && iS.canHandle(type));
+    if (!input) return undefined;
+
+    return input.getByUri(uri);
   }
 
   private adaptHashes(fullUrl: string, name: string, content: HTMLElement): string {

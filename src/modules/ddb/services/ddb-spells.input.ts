@@ -1,5 +1,4 @@
 import { Injectable } from 'injection-js';
-import { HTMLElement } from 'node-html-parser';
 
 import { ConfigService, DataSource, EntityType, HtmlElementHelper, LabelsHelper, NewPageService, Spell } from '../../core';
 import { DdbSearchableEntityInput } from './ddb-searchable-entity.input';
@@ -23,7 +22,9 @@ export class DdbSpellsInput extends DdbSearchableEntityInput<Spell> {
     super(pageService, htmlElementHelper, ddbHelper, labelsHelper, configService);
   }
 
-  protected async getEntityFromDetailPage(uri: string, page: HTMLElement): Promise<Spell> {
+  protected async getEntityFromDetailPage(uri: string): Promise<Spell> {
+    const page = await this.pageService.getPageHtmlElement(uri, this.ddbHelper.getDefaultPageServiceOptions());
+
     const sourceDetails = this.htmlElementHelper.getCleanedInnerText(page, '.source.spell-source');
     let castingTime = this.htmlElementHelper.getCleanedInnerText(page, '.ddb-statblock-item-casting-time .ddb-statblock-item-value');
     const ritual = castingTime.endsWith('Ritual');

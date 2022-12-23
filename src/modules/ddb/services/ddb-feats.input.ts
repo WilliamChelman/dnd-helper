@@ -1,6 +1,5 @@
 import consola from 'consola';
 import { Injectable } from 'injection-js';
-import { HTMLElement } from 'node-html-parser';
 
 import { AbilityScores, ConfigService, EntityType, Feat, HtmlElementHelper, LabelsHelper, NewPageService } from '../../core';
 import { DdbSearchableEntityInput, SearchType } from './ddb-searchable-entity.input';
@@ -23,7 +22,8 @@ export class DdbFeatsInput extends DdbSearchableEntityInput<Feat> {
     super(pageService, htmlElementHelper, ddbHelper, labelsHelper, configService);
   }
 
-  protected async getEntityFromDetailPage(uri: string, page: HTMLElement): Promise<Feat> {
+  protected async getEntityFromDetailPage(uri: string): Promise<Feat> {
+    const page = await this.pageService.getPageHtmlElement(uri, this.ddbHelper.getDefaultPageServiceOptions());
     const content = page.querySelector('.primary-content');
     if (!content) {
       consola.error(uri);

@@ -1,16 +1,15 @@
 import consola from 'consola';
 import { Injectable } from 'injection-js';
 import { kebabCase } from 'lodash';
-import { HTMLElement } from 'node-html-parser';
 
 import { ConfigService, EntityType, HtmlElementHelper, LabelsHelper, NewPageService, PlayerClass, PlayerSubclass } from '../../core';
 import { DdbSearchableEntityInput, SearchType } from './ddb-searchable-entity.input';
 import { DdbHelper } from './ddb.helper';
 
 @Injectable()
-export class DdbPlayerClassesInput extends DdbSearchableEntityInput<PlayerClass> {
+export class DdbPlayerClassesInput extends DdbSearchableEntityInput<PlayerClass | PlayerSubclass> {
   protected searchType: SearchType = 'onePager';
-  protected entityType: EntityType = 'Class';
+  protected entityType: EntityType[] = ['Class', 'Subclass'];
   protected searchPagePath: string = 'https://www.dndbeyond.com/classes';
   protected linkSelector: string = 'a.listing-card__link';
 
@@ -24,7 +23,10 @@ export class DdbPlayerClassesInput extends DdbSearchableEntityInput<PlayerClass>
     super(pageService, htmlElementHelper, ddbHelper, labelsHelper, configService);
   }
 
-  protected async getEntityFromDetailPage(url: string, page: HTMLElement): Promise<PlayerClass> {
+  protected async getEntityFromDetailPage(uri: string): Promise<PlayerClass | PlayerSubclass> {
+    const page = await this.pageService.getPageHtmlElement(uri, this.ddbHelper.getDefaultPageServiceOptions());
+
+    if (this.ddbHelper.getType(uri) === 'Subclass') return this.getSubclass(uri);
     const content = page.querySelector('.content-container');
 
     const subclasses: PlayerSubclass[] = [];
@@ -38,7 +40,7 @@ export class DdbPlayerClassesInput extends DdbSearchableEntityInput<PlayerClass>
     }
 
     const playerClass: PlayerClass = {
-      uri: url,
+      uri: uri,
       type: 'Class' as const,
       name: this.htmlElementHelper.getCleanedInnerText(page, 'header .page-title')!,
       textContent: content?.outerHTML ?? '',
@@ -62,7 +64,7 @@ export class DdbPlayerClassesInput extends DdbSearchableEntityInput<PlayerClass>
     const subPage: PlayerSubclass = {
       uri: url,
       type: 'Subclass' as const,
-      name: this.htmlElementHelper.getCleanedInnerText(content, 'h1')!,
+      name: this.htmlElementHelper.getCleanedInnerText(page, 'h1.page-title')!,
       textContent: content.outerHTML,
       dataSource: 'ddb',
       baseClass: this.htmlElementHelper.getCleanedInnerText(content, '.base-class-callout-link'),

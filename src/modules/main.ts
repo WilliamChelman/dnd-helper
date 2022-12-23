@@ -1,5 +1,5 @@
 // import 'reflect-metadata';
-import { Injector, ReflectiveInjector } from 'injection-js';
+import { ReflectiveInjector } from 'injection-js';
 
 import { FiveEDrsHelper, FiveEDrsSpellsInput, FiveEDrsSpellsMdOutput } from './5e-drs';
 import { AideDdHelper, AideDdSpellsInput } from './aidedd';
@@ -8,12 +8,9 @@ import {
   AssetsService,
   CacheService,
   ConfigService,
-  DaoConfig,
-  EntityDao,
   HtmlElementHelper,
   LabelsHelper,
   NewPageService,
-  PageServiceFactory,
   provideAsInputService,
   provideAsOutputService,
   provideExitCleaner,
@@ -89,46 +86,3 @@ export function getInjector() {
     provideExitCleaner(NewPageService),
   ]);
 }
-
-class Main {
-  private daoList = this.injector.get(EntityDao) as EntityDao[];
-
-  constructor(private injector: Injector) {}
-
-  async run(): Promise<void> {
-    const configService = this.injector.get(ConfigService) as ConfigService;
-    const pageServiceFactory = this.injector.get(PageServiceFactory) as PageServiceFactory;
-    try {
-      for (const flow of configService.config.flows?.filter(f => !f.disabled) ?? []) {
-        for (const [sourceId, sourceConfig] of Object.entries(flow.sources)) {
-          const sourceDao = this.getDao(sourceId, sourceConfig);
-          if (!sourceDao) continue;
-          const entities = await sourceDao.getAll();
-          for (const entity of entities) {
-            for (const [destinationId, destinationConfig] of Object.entries(flow.destinations)) {
-              const destinationDao = this.getDao(destinationId, destinationConfig);
-              if (!destinationDao) continue;
-              if (!destinationDao.canHandle(entity.entityType)) continue;
-              await destinationDao.save(entity);
-            }
-          }
-        }
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      pageServiceFactory.closeAll();
-    }
-  }
-
-  private getDao(daoId: string, daoConfig: boolean | DaoConfig): EntityDao | undefined {
-    if (!daoConfig) return;
-    const dao = this.daoList.find(dao => dao.id === daoId);
-    if (!dao) {
-      throw new Error(`Cannot find Dao with id "${daoId}"`);
-    }
-    return dao;
-  }
-}
-
-// main();
