@@ -1,12 +1,11 @@
 import consola from 'consola';
 import { existsSync, promises as fs } from 'fs';
-import { Injectable } from 'injection-js';
+import { Injectable, Injector } from 'injection-js';
 import { parse } from 'node-html-parser';
 import path from 'path';
 
-import { ConfigService, Entity, EntityType, Source, SourcePage, UrlHelper } from '../../core';
+import { Entity, EntityType, Source, SourcePage, UrlHelper } from '../../core';
 import { DdbEntityMdOutput } from './ddb-entity.md-output';
-import { DdbMdHelper } from './ddb-md.helper';
 import { DdbSourcesHelper } from './ddb-sources.helper';
 
 @Injectable()
@@ -18,12 +17,12 @@ export class DdbSourcesMdOutput extends DdbEntityMdOutput<Source | SourcePage> {
   };
 
   constructor(
-    protected configService: ConfigService,
-    protected ddbMdHelper: DdbMdHelper,
+    injector: Injector,
+
     private urlHelper: UrlHelper,
     private ddbSourcesHelper: DdbSourcesHelper
   ) {
-    super(configService, ddbMdHelper);
+    super(injector);
   }
 
   canHandle(entity: Source | SourcePage): number | undefined {
@@ -31,7 +30,7 @@ export class DdbSourcesMdOutput extends DdbEntityMdOutput<Source | SourcePage> {
   }
 
   protected async saveOne(entity: Source | SourcePage): Promise<string> {
-    await this.saveCompendiums(entity);
+    await this.saveGlossary(entity);
     return super.saveOne(entity);
   }
 
@@ -56,7 +55,7 @@ export class DdbSourcesMdOutput extends DdbEntityMdOutput<Source | SourcePage> {
       }
       return super.getMarkdownContent({ ...entity, textContent: content.outerHTML });
     }
-
+    content.querySelector('header h2')?.remove();
     this.ddbMdHelper.fixStatBlocks(content, {
       containers: '.stat-block-ability-scores',
       headings: '.stat-block-ability-scores-heading',
@@ -145,7 +144,7 @@ export class DdbSourcesMdOutput extends DdbEntityMdOutput<Source | SourcePage> {
     return super.getMarkdownContent({ ...entity, textContent: content.outerHTML });
   }
 
-  private async saveCompendiums(entity: Entity): Promise<void> {
+  private async saveGlossary(entity: Entity): Promise<void> {
     const selector = this.compendiumSelectors[entity.uri];
     if (!selector) return;
     const content = parse(entity.textContent);
@@ -153,7 +152,7 @@ export class DdbSourcesMdOutput extends DdbEntityMdOutput<Source | SourcePage> {
       const name = this.urlHelper.sanitizeFilename(compendium.innerText.trim());
       const uri = await this.ddbMdHelper.uriToMdPath(`#${compendium.id}`, entity.uri);
       const content = `![[${uri}]]`;
-      const filePath = path.join(this.getBasePath(), 'Compendiums', name + '.md');
+      const filePath = path.join(this.getBasePath(), 'Glossary', name + '.md');
 
       if (!this.configService.config.force && existsSync(filePath)) {
         consola.log(`Skipping ${entity.name} as ${filePath} already exists`);

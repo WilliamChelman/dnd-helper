@@ -1,10 +1,9 @@
-import { Injectable } from 'injection-js';
-import { parse, HTMLElement } from 'node-html-parser';
+import { Injectable, Injector } from 'injection-js';
+import { HTMLElement, parse } from 'node-html-parser';
 
-import { ConfigService, EntityType, HtmlElementHelper, InfoBoxOptions, KeyValue, Spell } from '../../core';
+import { EntityType, HtmlElementHelper, InfoBoxOptions, KeyValue, Spell } from '../../core';
 import { AdditionalTagFields, ObsidianMdHelper } from '../../markdown-yaml';
 import { DdbEntityMdOutput } from './ddb-entity.md-output';
-import { DdbMdHelper } from './ddb-md.helper';
 
 @Injectable()
 export class DdbSpellsMdOutput extends DdbEntityMdOutput<Spell> {
@@ -20,13 +19,8 @@ export class DdbSpellsMdOutput extends DdbEntityMdOutput<Spell> {
     'spellLists',
   ];
 
-  constructor(
-    configService: ConfigService,
-    ddbMdHelper: DdbMdHelper,
-    private obsidianMdHelper: ObsidianMdHelper,
-    private htmlElementsHelper: HtmlElementHelper
-  ) {
-    super(configService, ddbMdHelper);
+  constructor(injector: Injector, private obsidianMdHelper: ObsidianMdHelper, private htmlElementsHelper: HtmlElementHelper) {
+    super(injector);
   }
 
   protected async getMarkdownContent(entity: Spell): Promise<string> {

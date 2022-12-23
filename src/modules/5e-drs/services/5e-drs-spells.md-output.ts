@@ -1,7 +1,7 @@
-import { Injectable } from 'injection-js';
+import { Injectable, Injector } from 'injection-js';
 import parse from 'node-html-parser';
 
-import { ConfigService, EntityType, Spell } from '../../core';
+import { EntityType, Spell } from '../../core';
 import { FiveEDrsEntityMdOutput } from './5e-drs-entity.md-output';
 
 @Injectable()
@@ -9,8 +9,8 @@ export class FiveEDrsSpellsMdOutput extends FiveEDrsEntityMdOutput<Spell> {
   entityType: EntityType = 'Spell';
   private basePath = 'https://5e-drs.fr';
 
-  constructor(protected configService: ConfigService) {
-    super(configService);
+  constructor(injector: Injector) {
+    super(injector);
   }
 
   protected async getMarkdownContent(entity: Spell): Promise<string> {

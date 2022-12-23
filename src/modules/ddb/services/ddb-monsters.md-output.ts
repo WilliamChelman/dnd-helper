@@ -1,10 +1,9 @@
-import { Injectable } from 'injection-js';
-import { parse, HTMLElement } from 'node-html-parser';
+import { Injectable, Injector } from 'injection-js';
+import { HTMLElement, parse } from 'node-html-parser';
 
-import { ConfigService, EntityType, InfoBoxOptions, KeyValue, Monster } from '../../core';
+import { EntityType, InfoBoxOptions, KeyValue, Monster } from '../../core';
 import { AdditionalTagFields, ObsidianMdHelper } from '../../markdown-yaml';
 import { DdbEntityMdOutput } from './ddb-entity.md-output';
-import { DdbMdHelper } from './ddb-md.helper';
 
 @Injectable()
 export class DdbMonstersMdOutput extends DdbEntityMdOutput<Monster> {
@@ -19,8 +18,8 @@ export class DdbMonstersMdOutput extends DdbEntityMdOutput<Monster> {
     'source',
   ];
 
-  constructor(protected configService: ConfigService, protected ddbMdHelper: DdbMdHelper, private obsidianMdHelper: ObsidianMdHelper) {
-    super(configService, ddbMdHelper);
+  constructor(injector: Injector, private obsidianMdHelper: ObsidianMdHelper) {
+    super(injector);
   }
 
   protected async getMarkdownContent(entity: Monster): Promise<string> {

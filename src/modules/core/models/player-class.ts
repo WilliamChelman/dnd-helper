@@ -8,5 +8,6 @@ export interface PlayerClass extends Entity {
 export interface PlayerSubclass extends Entity {
   type: 'Subclass';
   baseClass?: string;
+  baseClassUri?: string;
   source?: string;
 }

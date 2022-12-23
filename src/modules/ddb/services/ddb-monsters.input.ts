@@ -1,19 +1,8 @@
 import consola from 'consola';
-import { Injectable } from 'injection-js';
+import { Injectable, Injector } from 'injection-js';
 
-import {
-  ConfigService,
-  DataSource,
-  EntityType,
-  HtmlElementHelper,
-  InputService,
-  LabelsHelper,
-  Monster,
-  NewPageService,
-  notNil,
-} from '../../core';
+import { DataSource, EntityType, InputService, Monster, notNil } from '../../core';
 import { DdbSearchableEntityInput } from './ddb-searchable-entity.input';
-import { DdbHelper } from './ddb.helper';
 
 @Injectable()
 export class DdbMonstersInput extends DdbSearchableEntityInput<Monster> implements InputService<Monster> {
@@ -23,14 +12,8 @@ export class DdbMonstersInput extends DdbSearchableEntityInput<Monster> implemen
   protected searchPagePath: string = 'https://www.dndbeyond.com/monsters';
   protected linkSelector: string = '.listing-body ul > div .name a:not(.badge-cta)';
 
-  constructor(
-    pageService: NewPageService,
-    htmlElementHelper: HtmlElementHelper,
-    ddbHelper: DdbHelper,
-    labelsHelper: LabelsHelper,
-    configService: ConfigService
-  ) {
-    super(pageService, htmlElementHelper, ddbHelper, labelsHelper, configService);
+  constructor(injector: Injector) {
+    super(injector);
   }
 
   protected async getEntityFromDetailPage(uri: string): Promise<Monster> {

@@ -1,8 +1,7 @@
-import { Injectable } from 'injection-js';
+import { Injectable, Injector } from 'injection-js';
 
-import { ConfigService, EntityType, HtmlElementHelper, LabelsHelper, NewPageService, Species } from '../../core';
+import { EntityType, Species } from '../../core';
 import { DdbSearchableEntityInput, SearchType } from './ddb-searchable-entity.input';
-import { DdbHelper } from './ddb.helper';
 
 @Injectable()
 export class DdbSpeciesInput extends DdbSearchableEntityInput<Species> {
@@ -11,14 +10,8 @@ export class DdbSpeciesInput extends DdbSearchableEntityInput<Species> {
   protected searchPagePath: string = 'https://www.dndbeyond.com/races';
   protected linkSelector: string = 'a.listing-card__link';
 
-  constructor(
-    pageService: NewPageService,
-    htmlElementHelper: HtmlElementHelper,
-    ddbHelper: DdbHelper,
-    labelsHelper: LabelsHelper,
-    configService: ConfigService
-  ) {
-    super(pageService, htmlElementHelper, ddbHelper, labelsHelper, configService);
+  constructor(injector: Injector) {
+    super(injector);
   }
 
   protected async getEntityFromDetailPage(uri: string): Promise<Species> {

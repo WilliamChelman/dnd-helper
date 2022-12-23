@@ -1,11 +1,10 @@
 - obsidian getting started doc
 - vehicles
-- decimal cr?
 - ddb cache burst if new source detected
 - cleanup path computing for read/write based on config and cwd
 - move filtering config outside of ddb config
 - sourceName, name and type filter for all entities inputs
-- script to parse .md and download files for local access
+- script to parse .md and download images for local access
 - use playwright chrome binary?
 - cmd configs
 - aidedd monsters

@@ -1,9 +1,8 @@
 import consola from 'consola';
-import { Injectable } from 'injection-js';
+import { Injectable, Injector } from 'injection-js';
 
-import { Background, ConfigService, EntityType, HtmlElementHelper, LabelsHelper, NewPageService } from '../../core';
+import { Background, EntityType } from '../../core';
 import { DdbSearchableEntityInput, SearchType } from './ddb-searchable-entity.input';
-import { DdbHelper } from './ddb.helper';
 
 @Injectable()
 export class DdbBackgroundsInput extends DdbSearchableEntityInput<Background> {
@@ -12,14 +11,8 @@ export class DdbBackgroundsInput extends DdbSearchableEntityInput<Background> {
   protected searchPagePath: string = 'https://www.dndbeyond.com/backgrounds';
   protected linkSelector: string = 'ul.listing .list-row-name-primary a';
 
-  constructor(
-    pageService: NewPageService,
-    htmlElementHelper: HtmlElementHelper,
-    ddbHelper: DdbHelper,
-    labelsHelper: LabelsHelper,
-    configService: ConfigService
-  ) {
-    super(pageService, htmlElementHelper, ddbHelper, labelsHelper, configService);
+  constructor(injector: Injector) {
+    super(injector);
   }
 
   protected async getEntityFromDetailPage(uri: string): Promise<Background> {

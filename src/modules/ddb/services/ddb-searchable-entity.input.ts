@@ -1,5 +1,6 @@
 import consola from 'consola';
-import { Injectable } from 'injection-js';
+import ufo from 'ufo';
+import { Injectable, Injector } from 'injection-js';
 import { HTMLElement } from 'node-html-parser';
 
 import {
@@ -15,6 +16,7 @@ import {
   NewPageService,
   notNil,
 } from '../../core';
+import { DdbLinkHelper } from './ddb-link.helper';
 import { DdbHelper } from './ddb.helper';
 
 @Injectable()
@@ -24,15 +26,15 @@ export abstract class DdbSearchableEntityInput<T extends Entity> implements Inpu
   protected abstract entityType: Many<EntityType>;
   protected abstract searchPagePath: string;
   protected abstract linkSelector: string;
-  protected uriBlacklist: string[] = ['https://www.dndbeyond.com/legacy'];
 
-  constructor(
-    protected pageService: NewPageService,
-    protected htmlElementHelper: HtmlElementHelper,
-    protected ddbHelper: DdbHelper,
-    protected labelsHelper: LabelsHelper,
-    protected configService: ConfigService
-  ) {}
+  protected pageService: NewPageService = this.injector.get(NewPageService);
+  protected htmlElementHelper: HtmlElementHelper = this.injector.get(HtmlElementHelper);
+  protected ddbHelper: DdbHelper = this.injector.get(DdbHelper);
+  protected labelsHelper: LabelsHelper = this.injector.get(LabelsHelper);
+  protected configService: ConfigService = this.injector.get(ConfigService);
+  protected ddbLinkHelper: DdbLinkHelper = this.injector.get(DdbLinkHelper);
+
+  constructor(protected injector: Injector) {}
 
   async *getAll(): AsyncGenerator<T> {
     const returnedUris = new Set<string>();
@@ -46,7 +48,7 @@ export abstract class DdbSearchableEntityInput<T extends Entity> implements Inpu
       allUris = Array.from(new Set(allUris)).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
     } else {
       const searchPage = await this.pageService.getPageHtmlElement(this.searchPagePath, this.ddbHelper.getDefaultPageServiceOptions());
-      allUris = await this.getEntityUrisFromSearchPage(searchPage);
+      allUris = await this.getEntityUrisFromSearchPage(searchPage, this.searchPagePath);
     }
 
     let index = 0;
@@ -54,7 +56,7 @@ export abstract class DdbSearchableEntityInput<T extends Entity> implements Inpu
     for (const uri of allUris) {
       ++index;
       consola.info(`Parsing (${index + supplementalCount}/${allUris.length + supplementalCount})`, uri);
-      if (this.uriBlacklist.includes(uri)) {
+      if (this.ddbHelper.isUriBlacklisted(uri)) {
         consola.info('skipping');
         continue;
       }
@@ -79,7 +81,7 @@ export abstract class DdbSearchableEntityInput<T extends Entity> implements Inpu
     return manyToArray(this.entityType).includes(entityType as EntityType) ? 10 : undefined;
   }
 
-  protected getEntityUrisFromSearchPage(page: HTMLElement): string[] {
+  protected getEntityUrisFromSearchPage(page: HTMLElement, currentPageUrl: string): string[] {
     const name = this.configService.config.ddb?.name?.toLowerCase();
     const links = page.querySelectorAll(this.linkSelector);
     return links
@@ -87,8 +89,8 @@ export abstract class DdbSearchableEntityInput<T extends Entity> implements Inpu
         const href = link.getAttribute('href');
         if (href?.match(/\.[a-z]+$/)) return undefined;
         if (this.searchType === 'onePager' && name && !link.textContent.toLowerCase().includes(name)) return undefined;
-        // TODO getAbsoluteUrl
-        return new URL(href!, this.ddbHelper.basePath).toString();
+
+        return this.ddbLinkHelper.getAbsoluteUrl(href!, currentPageUrl).split('?')[0];
       })
       .filter(notNil);
   }

@@ -1,18 +1,17 @@
-import { Injectable } from 'injection-js';
+import { Injectable, Injector } from 'injection-js';
 import { parse } from 'node-html-parser';
 
-import { Background, ConfigService, EntityType } from '../../core';
+import { Background, EntityType } from '../../core';
 import { AdditionalTagFields } from '../../markdown-yaml';
 import { DdbEntityMdOutput } from './ddb-entity.md-output';
-import { DdbMdHelper } from './ddb-md.helper';
 
 @Injectable()
 export class DdbBackgroundsMdOutput extends DdbEntityMdOutput<Background> {
   protected entityType: EntityType = 'Background';
   protected additionalTagFields: AdditionalTagFields<Background>[] = ['source'];
 
-  constructor(configService: ConfigService, ddbMdHelper: DdbMdHelper) {
-    super(configService, ddbMdHelper);
+  constructor(injector: Injector) {
+    super(injector);
   }
 
   protected async getMarkdownContent(entity: Background): Promise<string> {

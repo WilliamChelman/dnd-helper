@@ -1,18 +1,17 @@
-import { Injectable } from 'injection-js';
+import { Injectable, Injector } from 'injection-js';
 import { parse } from 'node-html-parser';
 
-import { ConfigService, EntityType, KeyValue, Species } from '../../core';
+import { EntityType, KeyValue, Species } from '../../core';
 import { AdditionalTagFields, ObsidianMdHelper } from '../../markdown-yaml';
 import { DdbEntityMdOutput } from './ddb-entity.md-output';
-import { DdbMdHelper } from './ddb-md.helper';
 
 @Injectable()
 export class DdbSpeciesMdOutput extends DdbEntityMdOutput<Species> {
   protected entityType: EntityType = 'Class';
   protected additionalTagFields: AdditionalTagFields<Species>[] = [['isLegacy', 'legacy'], 'source'];
 
-  constructor(configService: ConfigService, ddbMdHelper: DdbMdHelper, private obsidianMdHelper: ObsidianMdHelper) {
-    super(configService, ddbMdHelper);
+  constructor(injector: Injector, private obsidianMdHelper: ObsidianMdHelper) {
+    super(injector);
   }
 
   canHandle(entity: Species): number | undefined {

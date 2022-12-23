@@ -1,7 +1,7 @@
-import { Injectable } from 'injection-js';
+import { Injectable, Injector } from 'injection-js';
 import parse from 'node-html-parser';
 
-import { ConfigService, EntityType, Spell } from '../../core';
+import { EntityType, Spell } from '../../core';
 import { DdbMdHelper } from '../../ddb';
 import { AideDdEntityMdOutput } from './aide-dd-entity.md-output';
 
@@ -9,8 +9,10 @@ import { AideDdEntityMdOutput } from './aide-dd-entity.md-output';
 export class AideDdSpellsMdOutput extends AideDdEntityMdOutput<Spell> {
   entityType: EntityType = 'Spell';
 
-  constructor(protected configService: ConfigService, protected ddbMdHelper: DdbMdHelper) {
-    super(configService);
+  protected ddbMdHelper: DdbMdHelper = this.injector.get(DdbMdHelper);
+
+  constructor(injector: Injector) {
+    super(injector);
   }
 
   protected async getMarkdownContent(entity: Spell): Promise<string> {

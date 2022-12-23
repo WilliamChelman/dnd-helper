@@ -1,16 +1,17 @@
-import { Injectable } from 'injection-js';
+import { Injectable, Injector } from 'injection-js';
 import path from 'path';
 
-import { ConfigService, Entity, EntityType } from '../../core';
+import { Entity, EntityType } from '../../core';
 import { DefaultMdOutput } from '../../markdown-yaml';
 import { DdbMdHelper } from './ddb-md.helper';
 
 @Injectable()
 export abstract class DdbEntityMdOutput<T extends Entity> extends DefaultMdOutput<T> {
   protected abstract entityType: EntityType;
+  protected ddbMdHelper: DdbMdHelper = this.injector.get(DdbMdHelper);
 
-  constructor(protected configService: ConfigService, protected ddbMdHelper: DdbMdHelper) {
-    super(configService);
+  constructor(injector: Injector) {
+    super(injector);
   }
 
   canHandle(entity: T): number | undefined {

@@ -1,10 +1,9 @@
 import consola from 'consola';
-import { Injectable } from 'injection-js';
+import { Injectable, Injector } from 'injection-js';
 import { kebabCase } from 'lodash';
 
-import { ConfigService, EntityType, HtmlElementHelper, LabelsHelper, NewPageService, PlayerClass, PlayerSubclass } from '../../core';
+import { EntityType, PlayerClass, PlayerSubclass } from '../../core';
 import { DdbSearchableEntityInput, SearchType } from './ddb-searchable-entity.input';
-import { DdbHelper } from './ddb.helper';
 
 @Injectable()
 export class DdbPlayerClassesInput extends DdbSearchableEntityInput<PlayerClass | PlayerSubclass> {
@@ -13,14 +12,8 @@ export class DdbPlayerClassesInput extends DdbSearchableEntityInput<PlayerClass 
   protected searchPagePath: string = 'https://www.dndbeyond.com/classes';
   protected linkSelector: string = 'a.listing-card__link';
 
-  constructor(
-    pageService: NewPageService,
-    htmlElementHelper: HtmlElementHelper,
-    ddbHelper: DdbHelper,
-    labelsHelper: LabelsHelper,
-    configService: ConfigService
-  ) {
-    super(pageService, htmlElementHelper, ddbHelper, labelsHelper, configService);
+  constructor(injector: Injector) {
+    super(injector);
   }
 
   protected async getEntityFromDetailPage(uri: string): Promise<PlayerClass | PlayerSubclass> {
@@ -68,6 +61,7 @@ export class DdbPlayerClassesInput extends DdbSearchableEntityInput<PlayerClass 
       textContent: content.outerHTML,
       dataSource: 'ddb',
       baseClass: this.htmlElementHelper.getCleanedInnerText(content, '.base-class-callout-link'),
+      baseClassUri: content.querySelector('.base-class-callout-link')?.getAttribute('href'),
       source: this.htmlElementHelper.getCleanedInnerText(content, '.source-description'),
       lang: 'en',
     };

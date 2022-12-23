@@ -1,6 +1,6 @@
 import consola from 'consola';
 import { existsSync, promises as fs } from 'fs';
-import { Injectable } from 'injection-js';
+import { Injectable, Injector } from 'injection-js';
 import { NodeHtmlMarkdown } from 'node-html-markdown';
 import { camelCase } from 'lodash';
 import path from 'path';
@@ -14,8 +14,9 @@ import { ConfigService, Entity, manyToArray, OutputService } from '../../core';
 export abstract class DefaultMdOutput<T extends Entity = Entity> implements OutputService<T> {
   format: string = 'md';
   protected additionalTagFields: AdditionalTagFields<T>[] = [];
+  protected configService: ConfigService = this.injector.get(ConfigService);
 
-  constructor(protected configService: ConfigService) {}
+  constructor(protected injector: Injector) {}
 
   async export(entities: T[]): Promise<string[]> {
     const result: string[] = [];

@@ -5,31 +5,16 @@ import { memoize } from 'lodash';
 import { HTMLElement, parse } from 'node-html-parser';
 import path from 'path';
 
-import { ConfigService, Entity, InputService, Source, SourcePage, UrlHelper } from '../../core';
+import { ConfigService, Entity, InputService, PlayerSubclass, Source, SourcePage, UrlHelper } from '../../core';
 import { DdbLinkHelper } from './ddb-link.helper';
-import { DdbSourcesHelper } from './ddb-sources.helper';
 import { DdbHelper } from './ddb.helper';
 
 @Injectable()
 export class DdbMdHelper {
-  private uriBlacklist: (string | RegExp)[] = [
-    /\/basic-rules\/monster-stat-blocks-.*$/,
-    'https://www.dndbeyond.com/sources/oga/one-grunge-above', // should be 'https://www.dndbeyond.com/sources/oga/one-grung-above'
-    'https://www.dndbeyond.com/monsters/succubus-incubus',
-    'https://www.dndbeyond.com/backgrounds/folkhero',
-    'https://www.dndbeyond.com/sources/cotn/magic-itemsMedalofMuscle',
-    'https://www.dndbeyond.com/sources/cotn/magic-itemsmedalofmuscle',
-    'https://www.dndbeyond.com/sources/cos/appendices',
-    /\/sources\/tftyp\/a\d$/,
-    'https://www.dndbeyond.com/sources/cos/the-town-of-vallaki data-content-chunk-id=',
-    'https://www.dndbeyond.com/backgrounds/criminal', // should be https://www.dndbeyond.com/backgrounds/criminal-spy
-  ];
-
   constructor(
     private configService: ConfigService,
     private ddbHelper: DdbHelper,
     private ddbLinkHelper: DdbLinkHelper,
-    private ddbSourcesHelper: DdbSourcesHelper,
     private urlHelper: UrlHelper,
     @Inject(InputService)
     private inputServices: InputService[]
@@ -144,8 +129,8 @@ export class DdbMdHelper {
           if (source.pagesUris) {
             const index = source.pagesUris.findIndex(url => url === fullUrl.split('#')[0]);
             if (index >= 0) {
-              name = `${(index + 1).toString().padStart(2, '0')} ${name}`;
-            } else if (this.isInBlacklist(fullUrl) || sourceUri === currentPageUrl) {
+              name = `${(index + 1).toString().padStart(2, '0')}. ${name}`;
+            } else if (this.ddbHelper.isUriBlacklisted(fullUrl) || sourceUri === currentPageUrl) {
               return fullUrl;
             } else {
               consola.error({ url: uri, currentPageUrl, fullUrl, sourceUri });
@@ -157,6 +142,15 @@ export class DdbMdHelper {
           const sourcePath = await this.uriToMdPath(sourceUri);
           return path.join(sourcePath, '..', name);
         }
+      } else if (type === 'Subclass') {
+        const content = parse(entity.textContent);
+
+        let baseClassUri = (entity as PlayerSubclass).baseClassUri;
+        if (baseClassUri) {
+          name = this.adaptHashes(fullUrl, name, content);
+          const baseClassPath = await this.uriToMdPath(baseClassUri);
+          return path.join(baseClassPath, name);
+        }
       } else {
         const folder = this.configService.config.markdownYaml?.folderEntityTypeMap[type];
         name = this.adaptHashes(fullUrl, name, parse(entity.textContent));
@@ -166,8 +160,10 @@ export class DdbMdHelper {
             if (this.configService.config.markdownYaml?.typeConfig.Source.useFolderNoteForSourceRoot) {
               return path.join(folder, name.split('#')[0], name);
             } else {
-              return path.join(folder, name, `00 ${name}`);
+              return path.join(folder, name, `00. ${name}`);
             }
+          } else if (type === 'Class') {
+            return path.join(folder, name, name);
           }
           return path.join(folder, name);
         }
@@ -221,14 +217,10 @@ export class DdbMdHelper {
     });
   }
 
-  private isInBlacklist(uri: string): boolean {
-    return this.uriBlacklist.some(bl => (typeof bl === 'string' ? bl === uri : uri.match(bl)));
-  }
-
   private async getEntityByUri(uri: string): Promise<Entity | undefined> {
     uri = uri.split('#')[0];
 
-    if (this.isInBlacklist(uri)) {
+    if (this.ddbHelper.isUriBlacklisted(uri)) {
       return undefined;
     }
 

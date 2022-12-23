@@ -1,9 +1,8 @@
 import consola from 'consola';
-import { Injectable } from 'injection-js';
+import { Injectable, Injector } from 'injection-js';
 
-import { AbilityScores, ConfigService, EntityType, Feat, HtmlElementHelper, LabelsHelper, NewPageService } from '../../core';
+import { AbilityScores, EntityType, Feat } from '../../core';
 import { DdbSearchableEntityInput, SearchType } from './ddb-searchable-entity.input';
-import { DdbHelper } from './ddb.helper';
 
 @Injectable()
 export class DdbFeatsInput extends DdbSearchableEntityInput<Feat> {
@@ -12,14 +11,8 @@ export class DdbFeatsInput extends DdbSearchableEntityInput<Feat> {
   protected searchType: SearchType = 'onePager';
   protected linkSelector: string = 'ul.listing .list-row-name-primary a';
 
-  constructor(
-    pageService: NewPageService,
-    htmlElementHelper: HtmlElementHelper,
-    ddbHelper: DdbHelper,
-    labelsHelper: LabelsHelper,
-    configService: ConfigService
-  ) {
-    super(pageService, htmlElementHelper, ddbHelper, labelsHelper, configService);
+  constructor(injector: Injector) {
+    super(injector);
   }
 
   protected async getEntityFromDetailPage(uri: string): Promise<Feat> {

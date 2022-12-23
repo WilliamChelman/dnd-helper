@@ -1,18 +1,17 @@
-import { Injectable } from 'injection-js';
+import { Injectable, Injector } from 'injection-js';
 import { parse } from 'node-html-parser';
 
-import { ConfigService, EntityType, KeyValue, PlayerClass, PlayerSubclass } from '../../core';
+import { EntityType, KeyValue, PlayerClass, PlayerSubclass } from '../../core';
 import { AdditionalTagFields, ObsidianMdHelper } from '../../markdown-yaml';
 import { DdbEntityMdOutput } from './ddb-entity.md-output';
-import { DdbMdHelper } from './ddb-md.helper';
 
 @Injectable()
 export class DdbPlayerClassesMdOutput extends DdbEntityMdOutput<PlayerClass | PlayerSubclass> {
   protected entityType: EntityType = 'Class';
   protected additionalTagFields: AdditionalTagFields<PlayerClass | PlayerSubclass>[] = [['baseClass', 'class'], 'source'] as any;
 
-  constructor(configService: ConfigService, ddbMdHelper: DdbMdHelper, private obsidianMdHelper: ObsidianMdHelper) {
-    super(configService, ddbMdHelper);
+  constructor(injector: Injector, private obsidianMdHelper: ObsidianMdHelper) {
+    super(injector);
   }
 
   canHandle(entity: PlayerClass | PlayerSubclass): number | undefined {

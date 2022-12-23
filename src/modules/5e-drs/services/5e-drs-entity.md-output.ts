@@ -1,18 +1,18 @@
-import { Injectable } from 'injection-js';
-import { memoize } from 'lodash';
 import { promises as fs } from 'fs';
+import { Injectable, Injector } from 'injection-js';
+import { memoize } from 'lodash';
+import path from 'path';
 import yaml from 'yaml';
 
-import { ConfigService, Entity, EntityType } from '../../core';
+import { Entity, EntityType } from '../../core';
 import { DefaultMdOutput } from '../../markdown-yaml';
-import path from 'path';
 
 @Injectable()
 export abstract class FiveEDrsEntityMdOutput<T extends Entity> extends DefaultMdOutput<T> {
   abstract entityType: EntityType;
 
-  constructor(protected configService: ConfigService) {
-    super(configService);
+  constructor(injector: Injector) {
+    super(injector);
     this.getAllExistingNames = memoize(this.getAllExistingNames.bind(this));
   }
 

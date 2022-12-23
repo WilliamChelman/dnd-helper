@@ -1,9 +1,8 @@
 import consola from 'consola';
-import { Injectable } from 'injection-js';
+import { Injectable, Injector } from 'injection-js';
 
-import { ConfigService, EntityType, HtmlElementHelper, Item, LabelsHelper, NewPageService } from '../../core';
+import { EntityType, Item } from '../../core';
 import { DdbSearchableEntityInput } from './ddb-searchable-entity.input';
-import { DdbHelper } from './ddb.helper';
 
 @Injectable()
 export class DdbItemsInput extends DdbSearchableEntityInput<Item> {
@@ -11,14 +10,8 @@ export class DdbItemsInput extends DdbSearchableEntityInput<Item> {
   protected searchPagePath: string = 'https://www.dndbeyond.com/equipment';
   protected linkSelector: string = 'ul.listing .list-row-name-primary a';
 
-  constructor(
-    pageService: NewPageService,
-    htmlElementHelper: HtmlElementHelper,
-    ddbHelper: DdbHelper,
-    labelsHelper: LabelsHelper,
-    configService: ConfigService
-  ) {
-    super(pageService, htmlElementHelper, ddbHelper, labelsHelper, configService);
+  constructor(injector: Injector) {
+    super(injector);
   }
 
   protected async getEntityFromDetailPage(uri: string): Promise<Item> {

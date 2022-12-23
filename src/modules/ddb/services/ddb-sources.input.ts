@@ -1,23 +1,11 @@
 import consola from 'consola';
-import { Injectable } from 'injection-js';
 import { memoize } from 'lodash';
+import { Injectable, Injector } from 'injection-js';
 import { HTMLElement } from 'node-html-parser';
 
-import {
-  ConfigService,
-  DataSource,
-  EntityType,
-  HtmlElementHelper,
-  LabelsHelper,
-  Many,
-  NewPageService,
-  Source,
-  SourcePage,
-} from '../../core';
-import { DdbLinkHelper } from './ddb-link.helper';
+import { DataSource, EntityType, Many, manyToArray, Source, SourcePage } from '../../core';
 import { DdbSearchableEntityInput, SearchType } from './ddb-searchable-entity.input';
 import { DdbSourcesHelper } from './ddb-sources.helper';
-import { DdbHelper } from './ddb.helper';
 
 @Injectable()
 export class DdbSourcesInput extends DdbSearchableEntityInput<Source | SourcePage> {
@@ -27,18 +15,9 @@ export class DdbSourcesInput extends DdbSearchableEntityInput<Source | SourcePag
   protected entityType: EntityType[] = ['Source', 'SourcePage'];
   protected searchPagePath: string = 'https://www.dndbeyond.com/sources';
   protected linkSelector: string = '.sources-listing--item';
-  protected uriBlacklist: string[] = ['https://www.dndbeyond.com/sources/one-dnd', 'https://www.dndbeyond.com/sources/it/phb'];
 
-  constructor(
-    pageService: NewPageService,
-    htmlElementHelper: HtmlElementHelper,
-    ddbHelper: DdbHelper,
-    configService: ConfigService,
-    labelsHelper: LabelsHelper,
-    private ddbLinkHelper: DdbLinkHelper,
-    private ddbSourcesHelper: DdbSourcesHelper
-  ) {
-    super(pageService, htmlElementHelper, ddbHelper, labelsHelper, configService);
+  constructor(injector: Injector, private ddbSourcesHelper: DdbSourcesHelper) {
+    super(injector);
     this.getEntityFromDetailPage = memoize(this.getEntityFromDetailPage.bind(this));
   }
 
@@ -69,7 +48,7 @@ export class DdbSourcesInput extends DdbSearchableEntityInput<Source | SourcePag
     const subUris: string[] = this.ddbSourcesHelper.getSourcePageUrisFromSource(uri, page);
     if (this.configService.config.ddb?.includeSourcePages) {
       for (const subUri of subUris ?? []) {
-        items.push(await this.getSubPage(subUri));
+        items.push(...manyToArray(await this.getEntityFromDetailPage(subUri)));
       }
     }
 

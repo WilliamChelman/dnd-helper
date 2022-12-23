@@ -10,15 +10,39 @@ export class DdbHelper {
   readonly basePath = 'https://www.dndbeyond.com';
   readonly basePathMatching = /(https\:)?\/\/www\.dndbeyond\.com/;
 
+  private uriBlacklist: (string | RegExp)[] = [
+    'https://www.dndbeyond.com/backgrounds/criminal', // should be https://www.dndbeyond.com/backgrounds/criminal-spy
+    'https://www.dndbeyond.com/backgrounds/folkhero',
+    'https://www.dndbeyond.com/legacy',
+    'https://www.dndbeyond.com/monsters/succubus-incubus',
+    'https://www.dndbeyond.com/sources/cos/appendices',
+    'https://www.dndbeyond.com/sources/cos/the-town-of-vallaki data-content-chunk-id=',
+    'https://www.dndbeyond.com/sources/cotn/magic-itemsmedalofmuscle',
+    'https://www.dndbeyond.com/sources/cotn/magic-itemsMedalofMuscle',
+    'https://www.dndbeyond.com/sources/it/phb',
+    'https://www.dndbeyond.com/sources/oga/one-grunge-above', // should be 'https://www.dndbeyond.com/sources/oga/one-grung-above'
+    'https://www.dndbeyond.com/sources/one-dnd',
+    /\/basic-rules\/monster-stat-blocks-.*$/,
+    /\/sources\/tftyp\/a\d$/,
+  ];
+
   constructor(private configService: ConfigService, private pageService: NewPageService) {}
 
-  async crawlSearchPages<T>(path: string, parser: (page: HTMLElement) => T[], options: NewPageServiceOptions): Promise<T[]> {
+  isUriBlacklisted(uri: string): boolean {
+    return this.uriBlacklist.some(bl => (typeof bl === 'string' ? bl === uri : uri.match(bl)));
+  }
+
+  async crawlSearchPages<T>(
+    path: string,
+    parser: (page: HTMLElement, currentPageUrl: string) => T[],
+    options: NewPageServiceOptions
+  ): Promise<T[]> {
     const items = [];
 
     let nextPageUrl = await this.getBaseSearchPage(path);
     while (true) {
       const listPage = await this.pageService.getPageHtmlElement(nextPageUrl, options);
-      items.push(...parser(listPage));
+      items.push(...parser(listPage, nextPageUrl));
       const nextHref = listPage.querySelector('.b-pagination-item-next a')?.getAttribute('href');
       if (nextHref) {
         nextPageUrl = new URL(nextHref, nextPageUrl).toString();

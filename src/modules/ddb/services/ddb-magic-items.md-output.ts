@@ -1,11 +1,10 @@
-import { Injectable } from 'injection-js';
+import { Injectable, Injector } from 'injection-js';
 import { parse } from 'node-html-parser';
 
-import { ConfigService, EntityType, KeyValue, MagicItem } from '../../core';
+import { EntityType, KeyValue, MagicItem } from '../../core';
 import { AdditionalTagFields, Link, ObsidianMdHelper } from '../../markdown-yaml';
 import { DdbEntityMdOutput } from './ddb-entity.md-output';
 import { DdbMagicItemsHelper } from './ddb-magic-items.helper';
-import { DdbMdHelper } from './ddb-md.helper';
 
 @Injectable()
 export class DdbMagicItemsMdOutput extends DdbEntityMdOutput<MagicItem> {
@@ -20,12 +19,12 @@ export class DdbMagicItemsMdOutput extends DdbEntityMdOutput<MagicItem> {
   ];
 
   constructor(
-    configService: ConfigService,
-    ddbMdHelper: DdbMdHelper,
+    injector: Injector,
+
     private ddbMagicItemsHelper: DdbMagicItemsHelper,
     private obsidianMdHelper: ObsidianMdHelper
   ) {
-    super(configService, ddbMdHelper);
+    super(injector);
   }
 
   protected async getMarkdownContent(entity: MagicItem): Promise<string> {
